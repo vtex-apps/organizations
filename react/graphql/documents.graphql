@@ -1,0 +1,23 @@
+query getDocuments(
+  $acronym: String
+  $fields: [String]
+  $schema: String
+  $where: String
+  $page: Int
+  $pageSize: Int
+) {
+  documents(
+    acronym: $acronym
+    fields: $fields
+    schema: $schema
+    where: $where
+    page: $page
+    pageSize: $pageSize
+  ) {
+    id
+    fields {
+      key
+      value
+    }
+  }
+}

@@ -71,9 +71,7 @@ const AddUser = ({ intl, roles }: Props & InjectedIntlProps) => {
           ]
         }
         if (
-          !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
-            action.args.email
-          )
+          !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(action.args.email)
         ) {
           errors = [
             ...state.formErrors.email,

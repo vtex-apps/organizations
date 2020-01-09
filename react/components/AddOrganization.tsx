@@ -34,7 +34,7 @@ const AddOrganization = (props: Props) => {
 
   const reducer = (state: ErrorState, action: Actions): ErrorState => {
     switch (action.type) {
-      case 'NAME_ERROR':
+      case 'NAME_ERROR': {
         const isErrorN = isEmpty(action.args.name)
         const messageN = isErrorN ? 'Name is required' : ''
         const _errorN: ErrorMessage = {
@@ -54,7 +54,8 @@ const AddOrganization = (props: Props) => {
             ],
           },
         }
-      case 'TELEPHONE_ERROR':
+      }
+      case 'TELEPHONE_ERROR': {
         const isErrorT = isEmpty(action.args.telephone)
         const messageT = isErrorT ? 'Telephone is required' : ''
         const _errorT: ErrorMessage = {
@@ -74,14 +75,13 @@ const AddOrganization = (props: Props) => {
             ],
           },
         }
-      case 'EMAIL_ERROR':
+      }
+      case 'EMAIL_ERROR': {
         let isErrorE = false
         let messageE = ''
         if (
           !isEmpty(action.args.email) &&
-          !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
-            action.args.email
-          )
+          !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(action.args.email)
         ) {
           isErrorE = true
         }
@@ -104,6 +104,7 @@ const AddOrganization = (props: Props) => {
             ],
           },
         }
+      }
       default:
         return state
     }

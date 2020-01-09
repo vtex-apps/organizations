@@ -42,8 +42,8 @@ const MyUsers = () => {
   )
   const defaultSchema = {
     properties: {
-      name: {
-        title: 'Name',
+      email: {
+        title: 'Email',
       },
       role: {
         title: 'Role',
@@ -70,19 +70,24 @@ const MyUsers = () => {
         ['value'],
         find(propEq('key', 'email'), document.fields || { key: '', value: '' })
       ),
-      role: find(
-        propEq('key', 'id') &&
-          propEq(
-            'value',
-            pathOr(
-              '',
-              ['value'],
-              find(
-                propEq('key', 'roleId'),
-                document.fields || { key: '', value: '' }
+      role: pathOr(
+        '',
+        ['label'],
+        find(
+          propEq('key', 'id') &&
+            propEq(
+              'value',
+              pathOr(
+                '',
+                ['value'],
+                find(
+                  propEq('key', 'roleId'),
+                  document.fields || { key: '', value: '' }
+                )
               )
-            )
-          )
+            ),
+          roles
+        )
       ),
     })
   )

@@ -3,10 +3,11 @@ import { pathOr, isEmpty, filter, propEq, reject } from 'ramda'
 import { Layout, PageHeader, PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
-import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 
 interface Props {
   userId: string
+  userEmail: string
+  roleId: string
   organizationCreated: Function
 }
 
@@ -119,7 +120,7 @@ const AddOrganization = (props: Props) => {
 
   const [addOrganization] = useMutation(CREATE_DOCUMENT)
   const [addOrganizationAssignment] = useMutation(CREATE_DOCUMENT)
-  const [editUser] = useMutation(UPDATE_DOCUMENT)
+  const [addPersona] = useMutation(CREATE_DOCUMENT)
 
   const getOrganizationFields = () => {
     return [
@@ -130,18 +131,20 @@ const AddOrganization = (props: Props) => {
     ]
   }
 
-  const getOrganizationAssignmentFields = (organizationId: string) => {
+  const getOrganizationAssignmentFields = (organizationId: string, personaId: string) => {
     return [
-      { key: 'clientId', value: props.userId },
+      { key: 'personaId', value: personaId },
       { key: 'businessOrganizationId', value: organizationId },
-      { key: 'status', value: 'DEFAULT' },
+      { key: 'roleId', value: props.roleId },
+      { key: 'status', value: 'ACTIVE' },
     ]
   }
 
-  const getUpdateUserFields = (organizationId: string) => {
+  const getPersonaFields = (organizationId: string) => {
     return [
-      { key: 'id', value: props.userId },
-      { key: 'organizationId', value: organizationId },
+      { key: 'clientId', value: props.userId },
+      { key: 'email', value: props.userEmail },
+      { key: 'businessOrganizationId', value: organizationId },
     ]
   }
 
@@ -160,25 +163,36 @@ const AddOrganization = (props: Props) => {
       organizationResponse
     )
 
-    if (!organizationId || organizationId === '') {
-      return
-    }
+    // if (!organizationId || organizationId === '') {
+    //   return
+    // }
+
+    const personaResponse = await addPersona({
+      variables: {
+        acronym: 'Persona',
+        document: { fields: getPersonaFields(organizationId) },
+        schema: 'persona-schema-v1',
+      },
+    })
+
+    const personaId = pathOr(
+      '',
+      ['data', 'createDocument', 'cacheId'],
+      personaResponse
+    )
+
+    // if (!personaId || personaId === '') {
+    //   return
+    // }
 
     await addOrganizationAssignment({
       variables: {
         acronym: 'OrganizationAssignment',
-        document: { fields: getOrganizationAssignmentFields(organizationId) },
+        document: { fields: getOrganizationAssignmentFields(organizationId, personaId) },
         schema: 'organization-assignment-schema-v1',
       },
     })
-
-    await editUser({
-      variables: {
-        acronym: 'CL',
-        document: { fields: getUpdateUserFields(organizationId) },
-      },
-    })
-
+    
     props.organizationCreated()
   }
 

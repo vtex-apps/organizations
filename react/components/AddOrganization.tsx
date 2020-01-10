@@ -1,14 +1,13 @@
 import React, { useState, useReducer } from 'react'
-import { pathOr, isEmpty, filter, propEq, reject } from 'ramda'
+import { pathOr, isEmpty, filter, propEq, reject, last, find } from 'ramda'
 import { Layout, PageHeader, PageBlock, Input, Button } from 'vtex.styleguide'
-import { useMutation } from 'react-apollo'
+import { useMutation, useQuery } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
+import GET_DOCUMENT from '../graphql/documents.graphql'
 
 interface Props {
-  userId: string
   userEmail: string
-  roleId: string
-  organizationCreated: Function
+  redirectToUsers: Function
 }
 
 interface ErrorMessage {
@@ -131,24 +130,27 @@ const AddOrganization = (props: Props) => {
     ]
   }
 
-  const getOrganizationAssignmentFields = (organizationId: string, personaId: string) => {
+  const getOrganizationAssignmentFields = (organizationId: string, personaId: string, roleId: string) => {
     return [
       { key: 'personaId', value: personaId },
       { key: 'businessOrganizationId', value: organizationId },
-      { key: 'roleId', value: props.roleId },
-      { key: 'status', value: 'ACTIVE' },
+      { key: 'roleId', value: roleId },
+      { key: 'status', value: 'APPROVED' },
     ]
   }
 
-  const getPersonaFields = (organizationId: string) => {
+  const getPersonaFields = (clientId: string, organizationId: string) => {
     return [
-      { key: 'clientId', value: props.userId },
+      { key: 'clientId', value: clientId },
       { key: 'email', value: props.userEmail },
       { key: 'businessOrganizationId', value: organizationId },
     ]
   }
 
-  const createOrganization = async () => {
+  const createOrganization = async (roleId: string, clientId: string) => {
+    console.log(roleId)
+    console.log(clientId)
+
     const organizationResponse = await addOrganization({
       variables: {
         acronym: 'BusinessOrganization',
@@ -170,7 +172,7 @@ const AddOrganization = (props: Props) => {
     const personaResponse = await addPersona({
       variables: {
         acronym: 'Persona',
-        document: { fields: getPersonaFields(organizationId) },
+        document: { fields: getPersonaFields(clientId, organizationId) },
         schema: 'persona-schema-v1',
       },
     })
@@ -188,13 +190,49 @@ const AddOrganization = (props: Props) => {
     await addOrganizationAssignment({
       variables: {
         acronym: 'OrganizationAssignment',
-        document: { fields: getOrganizationAssignmentFields(organizationId, personaId) },
+        document: { fields: getOrganizationAssignmentFields(organizationId, personaId, roleId) },
         schema: 'organization-assignment-schema-v1',
       },
     })
 
-    props.organizationCreated()
+    // TODO: return required ids
+    props.redirectToUsers()
   }
+
+  const {
+
+    data: clientData,
+  } = useQuery(GET_DOCUMENT, {
+    variables: {
+      acronym: 'CL',
+      fields: ['id'],
+      where: `(email=${props.userEmail})`,
+    },
+  })
+
+  const { 
+    data: roleData 
+  } = useQuery(
+    GET_DOCUMENT,
+    {
+      variables: {
+        acronym: 'BusinessRole',
+        fields: ['id', 'name', 'label'],
+        where: '(name=*test-role*)', // TODO: add admin role
+        schema: 'business-role-schema-v1',
+      },
+    }
+  )
+
+   const roleFields = roleData
+    ? pathOr([], ['fields'], last(roleData.documents))
+    : []
+  const clientFields = clientData
+    ? pathOr([], ['fields'], last(clientData.documents))
+    : []
+
+  const roleId = roleFields.length > 0? pathOr('', ['value'], find(propEq('key', 'id'), roleFields)): ''
+  const clientId = clientFields.length > 0? pathOr('', ['value'], find(propEq('key', 'id'), clientFields)): ''
 
   return (
     <Layout
@@ -295,7 +333,7 @@ const AddOrganization = (props: Props) => {
                   filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
                 ))
             }
-            onClick={() => createOrganization()}>
+            onClick={() => createOrganization(roleId, clientId)}>
             Save
           </Button>
         </div>

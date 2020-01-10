@@ -192,7 +192,7 @@ const AddOrganization = (props: Props) => {
         schema: 'organization-assignment-schema-v1',
       },
     })
-    
+
     props.organizationCreated()
   }
 

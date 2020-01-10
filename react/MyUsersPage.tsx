@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from 'react'
-import { prop, last, find, propEq, pathOr } from 'ramda'
+import { last, find, prop, propEq, pathOr } from 'ramda'
 import { Route } from 'react-router-dom'
 import { useQuery } from 'react-apollo'
 import documentQuery from './graphql/documents.graphql'
@@ -22,7 +22,7 @@ const MyUsersPage = () => {
   const {
     loading: organizationLoading,
     error: organizationError,
-    data: organizationData,
+    data: persona,
   } = useQuery(documentQuery, {
     skip:
       !profileData ||
@@ -30,11 +30,12 @@ const MyUsersPage = () => {
       profileData.profile == null ||
       !profileData.profile.email,
     variables: {
-      acronym: 'CL',
-      fields: ['id', 'organizationId'],
+      acronym: 'Persona',
+      fields: ['clientId', 'businessOrganizationId_linked'],
       where: `(email=${
         profileData && profileData.profile ? profileData.profile.email : ''
       })`,
+      schema: 'persona-schema-v1',
     },
   })
 
@@ -51,21 +52,21 @@ const MyUsersPage = () => {
     )
   }
 
-  const fields: MDField[] = prop(
-    'fields',
-    last((organizationData ? organizationData.documents : []) as any[])
+  const businessOrganization: BusinessOrganization = JSON.parse(
+    pathOr(
+      '',
+      ['value'],
+      find(
+        propEq('key', 'businessOrganizationId_linked'),
+        pathOr([], ['fields'], last(persona.documents))
+      )
+    )
   )
+  const organizationId = prop('id', businessOrganization)
 
-  const organizationId: string = pathOr(
-    '',
-    ['value'],
-    find(propEq('key', 'organizationId'), fields || { key: '', value: '' })
-  )
-
-  const userId: string = pathOr(
-    '',
-    ['value'],
-    find(propEq('key', 'id'), fields || { key: '', value: '' })
+  const userId: string = find(
+    propEq('key', 'clientId'),
+    pathOr([], ['fields'], last(persona.documents))
   )
 
   const hasOrganization =
@@ -82,7 +83,11 @@ const MyUsersPage = () => {
     <Fragment>
       {/* This `path` will be added at the end of the URL */}
       {hasOrganization || organizationCreated ? (
-        <Route path="/users" exact component={MyUsers} />
+        <Route
+          path="/users"
+          exact
+          component={() => <MyUsers organizationId={organizationId} />}
+        />
       ) : (
         <Route
           path="/users"

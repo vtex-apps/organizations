@@ -166,7 +166,7 @@ const AddOrganization = (props: Props) => {
 
     await addOrganizationAssignment({
       variables: {
-        acronym: 'OrganizationAssignment',
+        acronym: 'OrgAssignment',
         document: { fields: getOrganizationAssignmentFields(organizationId) },
         schema: 'organization-assignment-schema-v1',
       },

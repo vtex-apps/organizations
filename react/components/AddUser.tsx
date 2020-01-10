@@ -2,12 +2,14 @@ import React, { SyntheticEvent, useReducer } from 'react'
 import { isEmpty, path } from 'ramda'
 import classNames from 'classnames'
 import { Button, Dropdown, Input } from 'vtex.styleguide'
-import { useMutation } from 'react-apollo'
-import ADD_USER from '../graphql/addUser.graphql'
+import { ExecutionResult, useMutation } from 'react-apollo'
+import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import { injectIntl, InjectedIntlProps } from 'react-intl'
+import documentQuery from '../graphql/documents.graphql'
 
 interface Props {
   roles: Role[]
+  organizationId: string
 }
 
 interface State {
@@ -45,9 +47,32 @@ type Actions =
     >
   | Action<'INPUT_TOUCHED', { args: { input: string } }>
 
-const AddUser = ({ intl, roles }: Props & InjectedIntlProps) => {
+const AddUser = ({
+  intl,
+  roles,
+  organizationId,
+}: Props & InjectedIntlProps) => {
   // const [addUser, { error: userError, data: userData }] = useMutation(ADD_USER)
-  const [addUser] = useMutation(ADD_USER)
+  const [createDocument] = useMutation(CREATE_DOCUMENT)
+  const [createOrgAssignment] = useMutation(CREATE_DOCUMENT, {
+    refetchQueries: [
+      {
+        query: documentQuery,
+        variables: {
+          acronym: 'OrgAssignment',
+          fields: [
+            'id',
+            'personaId_linked',
+            'businessOrganizationId_linked',
+            'status',
+            'roleId_linked',
+          ],
+          where: `businessOrganizationId=${organizationId}`,
+          schema: 'organization-assignment-schema-v1',
+        },
+      },
+    ],
+  })
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
     switch (action.type) {
@@ -136,7 +161,7 @@ const AddUser = ({ intl, roles }: Props & InjectedIntlProps) => {
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
     if (state.email && state.roleId) {
-      addUser({
+      createDocument({
         variables: {
           acronym: 'CL',
           document: {
@@ -147,7 +172,61 @@ const AddUser = ({ intl, roles }: Props & InjectedIntlProps) => {
           },
         },
       })
-        .then(() => {
+        .then((r: ExecutionResult<{ Id: string }>) => {
+          createDocument({
+            variables: {
+              acronym: 'Persona',
+              document: {
+                fields: [
+                  { key: 'email', value: state.email },
+                  {
+                    key: 'businessOrganizationId',
+                    value: organizationId,
+                  },
+                  {
+                    key: 'clientId',
+                    value: path<string>(
+                      ['data', 'createDocument', 'cacheId'],
+                      r
+                    ),
+                  },
+                ],
+              },
+              schema: 'persona-schema-v1',
+            },
+          }).then((r: ExecutionResult<{ Id: string }>) => {
+            createOrgAssignment({
+              variables: {
+                acronym: 'OrgAssignment',
+                document: {
+                  fields: [
+                    {
+                      key: 'businessOrganizationId',
+                      value: organizationId,
+                    },
+                    {
+                      key: 'personaId',
+                      value: path<string>(
+                        ['data', 'createDocument', 'cacheId'],
+                        r
+                      ),
+                    },
+                    {
+                      key: 'roleId',
+                      value: state.roleId,
+                    },
+                    {
+                      key: 'status',
+                      value: 'PENDING',
+                    },
+                  ],
+                },
+                schema: 'organization-assignment-schema-v1',
+              },
+            })
+              .then()
+              .catch()
+          })
           dispatch({
             type: 'RESPONSE',
             args: {

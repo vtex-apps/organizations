@@ -3,10 +3,14 @@ import { useQuery } from 'react-apollo'
 import { injectIntl } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
 import { Table } from 'vtex.styleguide'
-import { find, pathOr, propEq } from 'ramda'
+import { find, path, pathOr, propEq } from 'ramda'
 import AddUser from './AddUser'
 
-const MyUsers = () => {
+interface Props {
+  organizationId: string
+}
+
+const MyUsers = ({ organizationId }: Props) => {
   const { data: roleData } = useQuery(documentQuery, {
     // skip: !rolePermissionFields || isEmpty(roleId),
     variables: {
@@ -15,10 +19,18 @@ const MyUsers = () => {
       schema: 'business-role-schema-v1',
     },
   })
-  const { data: userData } = useQuery(documentQuery, {
+  const { data: orgAssignments } = useQuery(documentQuery, {
     variables: {
-      acronym: 'CL',
-      fields: ['id', 'email', 'roleId'],
+      acronym: 'OrgAssignment',
+      fields: [
+        'id',
+        'personaId_linked',
+        'businessOrganizationId_linked',
+        'status',
+        'roleId_linked',
+      ],
+      where: `businessOrganizationId=${organizationId}`,
+      schema: 'organization-assignment-schema-v1',
     },
   })
 
@@ -50,25 +62,20 @@ const MyUsers = () => {
       },
     },
   }
-  const lineActions = [
-    {
-      label: () => `Edit`,
-      onClick: ({ rowData }: { rowData: { name: string } }) =>
-        alert(`Executed action for ${rowData.name}`),
-    },
-    // {
-    //   label: ({ rowData }) => `DANGEROUS action for ${rowData.name}`,
-    //   isDangerous: true,
-    //   onClick: ({ rowData }) =>
-    //     alert(`Executed a DANGEROUS action for ${rowData.name}`),
-    // },
-  ]
-  const tableItems = pathOr([], ['documents'], userData).map(
+  const tableItems = pathOr([], ['documents'], orgAssignments).map(
     (document: MDSearchDocumentResult) => ({
-      email: pathOr(
-        '',
-        ['value'],
-        find(propEq('key', 'email'), document.fields || { key: '', value: '' })
+      email: path(
+        ['email'],
+        JSON.parse(
+          pathOr(
+            '',
+            ['value'],
+            find(
+              propEq('key', 'personaId_linked'),
+              document.fields || { key: '', value: '' }
+            )
+          )
+        )
       ),
       role: pathOr(
         '',
@@ -77,12 +84,17 @@ const MyUsers = () => {
           propEq('key', 'id') &&
             propEq(
               'value',
-              pathOr(
-                '',
-                ['value'],
-                find(
-                  propEq('key', 'roleId'),
-                  document.fields || { key: '', value: '' }
+              path(
+                ['id'],
+                JSON.parse(
+                  pathOr(
+                    '',
+                    ['value'],
+                    find(
+                      propEq('key', 'roleId_linked'),
+                      document.fields || { key: '', value: '' }
+                    )
+                  )
                 )
               )
             ),
@@ -93,15 +105,10 @@ const MyUsers = () => {
   )
   return (
     <div className="flex flex-column">
-      <AddUser roles={roles} />
+      <AddUser roles={roles} organizationId={organizationId} />
       <div>
         <div className="mb5">
-          <Table
-            fullWidth
-            schema={defaultSchema}
-            items={tableItems}
-            lineActions={lineActions}
-          />
+          <Table fullWidth schema={defaultSchema} items={tableItems} />
         </div>
       </div>
     </div>

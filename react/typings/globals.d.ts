@@ -35,4 +35,12 @@ declare global {
     value: string
     label: string
   }
+
+  interface BusinessOrganization {
+    name: string
+    telephone: string
+    id: string
+    address?: string
+    email?: string
+  }
 }

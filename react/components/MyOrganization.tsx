@@ -11,7 +11,7 @@ import {
 import { last, find, propEq, pathOr } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
-import UPDATE_DOCUMENT from '../graphql/createDocument.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 
 interface Props {
   userEmail: string
@@ -73,8 +73,8 @@ const MyOrganization = (props: Props) => {
     assignmentId: string,
     status: string
   ) => {
-    debugger
-    const a = await updateOrganizationAssignment({
+
+    await updateOrganizationAssignment({
       variables: {
         acronym: 'OrgAssignment',
         document: {
@@ -86,8 +86,6 @@ const MyOrganization = (props: Props) => {
         schema: 'organization-assignment-schema-v1',
       },
     })
-
-    console.log(a)
 
     setRedirectTo(status === 'APPROVED' ? 'USERS' : 'CREATE_ORGANIZATION')
   }

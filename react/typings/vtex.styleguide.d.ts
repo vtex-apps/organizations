@@ -8,7 +8,8 @@ declare module 'vtex.styleguide' {
   export const PageHeader: ComponentType<InputProps>
   export const Layout: ComponentType<InputProps>
   export const PageBlock: ComponentType<InputProps>
-
+  export const Divider: ComponentType<InputProps>
+  
   interface InputProps {
     [key: string]: any
   }

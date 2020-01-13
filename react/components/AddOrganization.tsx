@@ -1,5 +1,5 @@
 import React, { useState, useReducer } from 'react'
-import { pathOr, isEmpty, filter, propEq, reject, last, find } from 'ramda'
+import { pathOr, isEmpty, filter, propEq, reject, find, last } from 'ramda'
 import { Layout, PageHeader, PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
@@ -148,9 +148,6 @@ const AddOrganization = (props: Props) => {
   }
 
   const createOrganization = async (roleId: string, clientId: string) => {
-    console.log(roleId)
-    console.log(clientId)
-
     const organizationResponse = await addOrganization({
       variables: {
         acronym: 'BusinessOrganization',
@@ -189,14 +186,13 @@ const AddOrganization = (props: Props) => {
 
     await addOrganizationAssignment({
       variables: {
-        acronym: 'OrganizationAssignment',
+        acronym: 'OrgAssignment',
         document: { fields: getOrganizationAssignmentFields(organizationId, personaId, roleId) },
         schema: 'organization-assignment-schema-v1',
       },
     })
 
-    // TODO: return required ids
-    props.redirectToUsers()
+    props.redirectToUsers(organizationId)
   }
 
   const {

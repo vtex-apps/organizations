@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React, { Fragment, useState } from 'react'
 import { last, find, prop, propEq, pathOr, hasPath } from 'ramda'
 import { Route } from 'react-router-dom'
 import { useQuery } from 'react-apollo'
@@ -8,6 +8,10 @@ import { EmptyState } from 'vtex.styleguide'
 import MyOrganization from './components/MyOrganization'
 
 const MyUsersPage = () => {
+
+  const [persona, setPersonaId] = useState('')
+  const [orgId, setOrgId] = useState('')
+
   const {
     loading: profileLoading,
     error: profileError,
@@ -17,7 +21,7 @@ const MyUsersPage = () => {
   const {
     loading: personaLoading,
     error: personaError,
-    data: persona,
+    data: personaData,
   } = useQuery(documentQuery, {
     skip:
       !profileData ||
@@ -49,7 +53,7 @@ const MyUsersPage = () => {
     )
   }
 
-  const personaFields = pathOr([], ['fields'], last(persona.documents))
+  const personaFields = pathOr([], ['fields'], last(personaData.documents))
 
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(
@@ -73,6 +77,16 @@ const MyUsersPage = () => {
       ? profileData.profile.email
       : ''
 
+
+  const updated = (newPersonaId: string, newOrgId: string) => {
+    if(newPersonaId && newPersonaId !== ''){
+      setPersonaId(newPersonaId)
+    }
+    if(newOrgId && newOrgId !== ''){
+      setOrgId(newOrgId)
+    }
+  }
+
   return (
     <Fragment>
       <Route
@@ -80,9 +94,10 @@ const MyUsersPage = () => {
         exact
         component={() => (
           <MyOrganization
-            personaId={personaId}
-            organizationId={organizationId}
+            personaId={personaId || persona}
+            organizationId={organizationId || orgId}
             userEmail={profileEmail}
+            infoUpdated={updated}
           />
         )}
       />

@@ -43,4 +43,12 @@ declare global {
     address?: string
     email?: string
   }
+
+  interface OrganizationAssignment {
+    id: string
+    personaId?: string
+    roleId?: string
+    status?: string
+    businessOrganizationId_linked?: BusinessOrganization
+  }
 }

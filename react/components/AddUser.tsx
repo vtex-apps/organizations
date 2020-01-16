@@ -1,9 +1,16 @@
 import React, { SyntheticEvent, useReducer } from 'react'
-import { isEmpty, path } from 'ramda'
+import { isEmpty, path, pathOr, find, propEq, last } from 'ramda'
 import classNames from 'classnames'
-import { Button, Dropdown, Input } from 'vtex.styleguide'
-import { ExecutionResult, useMutation } from 'react-apollo'
+import {
+  Button,
+  Dropdown,
+  Input,
+  ButtonWithIcon,
+  IconCheck,
+} from 'vtex.styleguide'
+import { useMutation, useLazyQuery } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 import { injectIntl, InjectedIntlProps } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
 
@@ -54,6 +61,7 @@ const AddUser = ({
 }: Props & InjectedIntlProps) => {
   // const [addUser, { error: userError, data: userData }] = useMutation(ADD_USER)
   const [createDocument] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [createOrgAssignment] = useMutation(CREATE_DOCUMENT, {
     refetchQueries: [
       {
@@ -103,6 +111,7 @@ const AddUser = ({
             intl.formatMessage({ id: 'store/my-users.errors.email.invalid' }),
           ]
         }
+
         return {
           ...state,
           email: action.args.email,
@@ -158,75 +167,120 @@ const AddUser = ({
     },
   }
   const [state, dispatch] = useReducer(reducer, initialState)
-  const handleSubmit = (e: SyntheticEvent) => {
-    e.preventDefault()
-    if (state.email && state.roleId) {
-      createDocument({
-        variables: {
-          acronym: 'CL',
-          document: {
-            fields: [
-              { key: 'email', value: state.email },
-              { key: 'roleId', value: state.roleId },
+  const [loadUser, { loading: loadingUser, data: userData }] = useLazyQuery(
+    documentQuery,
+    {
+      variables: {
+        acronym: 'Persona',
+        schema: 'persona-schema-v1',
+        fields: ['id', 'email'],
+        where: `email=${state.email}`,
+      },
+    }
+  )
+
+  const emailFields = userData
+    ? pathOr([], ['fields'], last(userData.documents))
+    : []
+
+  const email =
+    emailFields.length > 0
+      ? pathOr('', ['value'], find(propEq('key', 'email'), emailFields))
+      : ''
+  const personaId =
+    emailFields.length > 0
+      ? pathOr('', ['value'], find(propEq('key', 'id'), emailFields))
+      : ''
+
+  const handleGraphqlError = () => {
+    return (e: Error) => {
+      dispatch({
+        type: 'RESPONSE',
+        args: {
+          type: 'ERROR',
+          message: path(
+            [
+              'graphQLErrors',
+              0,
+              'extensions',
+              'exception',
+              'response',
+              'data',
+              'Message',
             ],
-          },
+            e
+          ) as string,
         },
       })
-        .then((r: ExecutionResult<{ Id: string }>) => {
-          createDocument({
+    }
+  }
+
+  const getPersonaFields = () => {
+    const clientEmail = state.email || email
+    const fields = [
+      { key: 'email', value: clientEmail },
+      {
+        key: 'businessOrganizationId',
+        value: organizationId,
+      },
+    ]
+    if (personaId) {
+      fields.push({ key: 'id', value: personaId })
+    }
+    return fields
+  }
+
+  const handleSubmit = (e: SyntheticEvent) => {
+    e.preventDefault()
+
+    if (state.email && state.roleId) {
+      const savePersona =
+        personaId !== '' && email !== '' && email === state.email
+          ? updateDocument
+          : createDocument
+
+      savePersona({
+        variables: {
+          acronym: 'Persona',
+          document: {
+            fields: getPersonaFields(),
+          },
+          schema: 'persona-schema-v1',
+        },
+      })
+        .catch(handleGraphqlError())
+        .then((response: any) => {
+          return createOrgAssignment({
             variables: {
-              acronym: 'Persona',
+              acronym: 'OrgAssignment',
               document: {
                 fields: [
-                  { key: 'email', value: state.email },
                   {
                     key: 'businessOrganizationId',
                     value: organizationId,
                   },
                   {
-                    key: 'clientId',
+                    key: 'personaId',
                     value: path<string>(
                       ['data', 'createDocument', 'cacheId'],
-                      r
+                      response
                     ),
+                  },
+                  {
+                    key: 'roleId',
+                    value: state.roleId,
+                  },
+                  {
+                    key: 'status',
+                    value: 'PENDING',
                   },
                 ],
               },
-              schema: 'persona-schema-v1',
+              schema: 'organization-assignment-schema-v1',
             },
-          }).then((r: ExecutionResult<{ Id: string }>) => {
-            createOrgAssignment({
-              variables: {
-                acronym: 'OrgAssignment',
-                document: {
-                  fields: [
-                    {
-                      key: 'businessOrganizationId',
-                      value: organizationId,
-                    },
-                    {
-                      key: 'personaId',
-                      value: path<string>(
-                        ['data', 'createDocument', 'cacheId'],
-                        r
-                      ),
-                    },
-                    {
-                      key: 'roleId',
-                      value: state.roleId,
-                    },
-                    {
-                      key: 'status',
-                      value: 'PENDING',
-                    },
-                  ],
-                },
-                schema: 'organization-assignment-schema-v1',
-              },
-            })
-              .then()
-              .catch()
-          })
+          }).catch(handleGraphqlError())
+        })
+        .then(() => {
           dispatch({
             type: 'RESPONSE',
             args: {
@@ -235,27 +289,104 @@ const AddUser = ({
             },
           })
         })
-        .catch(e => {
-          dispatch({
-            type: 'RESPONSE',
-            args: {
-              type: 'ERROR',
-              message: path(
-                [
-                  'graphQLErrors',
-                  0,
-                  'extensions',
-                  'exception',
-                  'response',
-                  'data',
-                  'Message',
-                ],
-                e
-              ) as string,
-            },
-          })
-        })
     }
+
+    // if (state.email && state.roleId) {
+    //   createDocument({
+    //     variables: {
+    //       acronym: 'CL',
+    //       document: {
+    //         fields: [
+    //           { key: 'email', value: state.email },
+    //           { key: 'roleId', value: state.roleId },
+    //         ],
+    //       },
+    //     },
+    //   })
+    //     .then((r: ExecutionResult<{ Id: string }>) => {
+    //       createDocument({
+    //         variables: {
+    //           acronym: 'Persona',
+    //           document: {
+    //             fields: [
+    //               { key: 'email', value: state.email },
+    //               {
+    //                 key: 'businessOrganizationId',
+    //                 value: organizationId,
+    //               },
+    //               {
+    //                 key: 'clientId',
+    //                 value: path<string>(
+    //                   ['data', 'createDocument', 'cacheId'],
+    //                   r
+    //                 ),
+    //               },
+    //             ],
+    //           },
+    //           schema: 'persona-schema-v1',
+    //         },
+    //       }).then((r: ExecutionResult<{ Id: string }>) => {
+    //         createOrgAssignment({
+    //           variables: {
+    //             acronym: 'OrgAssignment',
+    //             document: {
+    //               fields: [
+    //                 {
+    //                   key: 'businessOrganizationId',
+    //                   value: organizationId,
+    //                 },
+    //                 {
+    //                   key: 'personaId',
+    //                   value: path<string>(
+    //                     ['data', 'createDocument', 'cacheId'],
+    //                     r
+    //                   ),
+    //                 },
+    //                 {
+    //                   key: 'roleId',
+    //                   value: state.roleId,
+    //                 },
+    //                 {
+    //                   key: 'status',
+    //                   value: 'PENDING',
+    //                 },
+    //               ],
+    //             },
+    //             schema: 'organization-assignment-schema-v1',
+    //           },
+    //         })
+    //           .then()
+    //           .catch()
+    //       })
+    //       dispatch({
+    //         type: 'RESPONSE',
+    //         args: {
+    //           type: 'SUCCESS',
+    //           message: intl.formatMessage({ id: 'store/my-users.success' }),
+    //         },
+    //       })
+    //     })
+    //     .catch(e => {
+    //       dispatch({
+    //         type: 'RESPONSE',
+    //         args: {
+    //           type: 'ERROR',
+    //           message: path(
+    //             [
+    //               'graphQLErrors',
+    //               0,
+    //               'extensions',
+    //               'exception',
+    //               'response',
+    //               'data',
+    //               'Message',
+    //             ],
+    //             e
+    //           ) as string,
+    //         },
+    //       })
+    //     })
+    // }
   }
   return (
     <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
@@ -275,7 +406,7 @@ const AddUser = ({
           )}
         </div>
       )}
-      <div className="mb5">
+      <div className="mb5 flex">
         <Input
           type="text"
           label={intl.formatMessage({ id: 'store/my-users.email' })}
@@ -286,8 +417,14 @@ const AddUser = ({
             })
             dispatch({ type: 'INPUT_TOUCHED', args: { input: 'email' } })
           }}
+          value={email || state.email}
           errorMessage={path(['formErrors', 'email', 0], state)}
         />
+        <ButtonWithIcon
+          icon={<IconCheck />}
+          isLoading={loadingUser}
+          variation="secondary"
+          onClick={() => loadUser()}></ButtonWithIcon>
       </div>
       <div className="mb5">
         <Dropdown

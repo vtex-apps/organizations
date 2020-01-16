@@ -1,12 +1,16 @@
-import React from 'react'
-import { useQuery } from 'react-apollo'
+import React, { useState } from 'react'
+import { useQuery, useMutation } from 'react-apollo'
 import { injectIntl } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
 import { Table, Button } from 'vtex.styleguide'
-import { pathOr, find } from 'ramda'
+import { pathOr, find, path } from 'ramda'
 import AddUser from './AddUser'
 import { documentSerializer } from '../utils/documentSerializer'
 import propEq from 'ramda/es/propEq'
+import UserConfirmationModal from './modals/UserConfirmationModal'
+import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import UserEditModal from './modals/UserEditModal'
 
 interface Props {
   personaId: string
@@ -14,6 +18,24 @@ interface Props {
 }
 
 const MyUsers = ({ organizationId, personaId }: Props) => {
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [deleteDocument] = useMutation(DELETE_DOCUMENT)
+
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(
+    false
+  )
+
+  const [deleteConfirmationLoading, setDeleteConfirmationLoading] = useState(
+    false
+  )
+  const [globalErrorMessage, setGlobalErrorMessage] = useState('')
+
+  const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
+    {} as OrganizationAssignment
+  )
+
+  const [isUserEditOpen, setIsUserEditOpen] = useState(false)
+
   const { data: roleData } = useQuery(documentQuery, {
     // skip: !rolePermissionFields || isEmpty(roleId),
     variables: {
@@ -38,7 +60,13 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
     },
   })
 
-  const roles: Role[] = documentSerializer(pathOr([], ['documents'], roleData))
+  const rolesList: any[] = documentSerializer(
+    pathOr([], ['documents'], roleData)
+  )
+  const roles: Role[] = rolesList.map((role: any) => ({
+    label: role.label,
+    value: role.id,
+  }))
   const assignments: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['documents'], orgAssignments)
   )
@@ -72,9 +100,13 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
       editAssignment: {
         title: 'Edit',
         cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
-            <Button variation="tertiary" size="small">
-              Eedit
+          return defaultUserAssignment &&
+            cellData !== defaultUserAssignment.id ? (
+            <Button
+              variation="tertiary"
+              size="small"
+              onClick={() => editUser(cellData)}>
+              Edit
             </Button>
           ) : (
             ''
@@ -82,10 +114,17 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         },
       },
       reInviteAssignment: {
-        title: 'Delete',
+        title: 'Invite',
         cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
-            <Button variation="tertiary" size="small">
+          const assignment = find(propEq('id', cellData), assignments)
+          return defaultUserAssignment &&
+            cellData !== defaultUserAssignment.id &&
+            assignment &&
+            assignment.status === 'DECLINED' ? (
+            <Button
+              variation="tertiary"
+              size="small"
+              onClick={() => reInvite(cellData)}>
               Re Invite
             </Button>
           ) : (
@@ -96,8 +135,12 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
       deleteAssignment: {
         title: 'Delete',
         cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
-            <Button variation="danger-tertiary" size="small">
+          return defaultUserAssignment &&
+            cellData !== defaultUserAssignment.id ? (
+            <Button
+              variation="danger-tertiary"
+              size="small"
+              onClick={() => deleteUserAssignment(cellData as string)}>
               Delete
             </Button>
           ) : (
@@ -117,14 +160,150 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
     deleteAssignment: pathOr('', ['id'], assignment),
   }))
 
+  const handleGlobalError = () => {
+    return (e: Error) => {
+      setGlobalErrorMessage(path(
+        [
+          'graphQLErrors',
+          0,
+          'extensions',
+          'exception',
+          'response',
+          'data',
+          'Message',
+        ],
+        e
+      ) as string)
+      return Promise.reject()
+    }
+  }
+
+  const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
+    return deleteDocument({
+      variables: {
+        acronym: 'OrgAssignment',
+        documentId: assignment.id,
+      },
+    }).catch(handleGlobalError())
+  }
+
+  const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
+    return deleteOrgAssignment(assignment)
+      .then(() => {
+        return updateDocument({
+          variables: {
+            acronym: 'Persona',
+            document: {
+              fields: [
+                { key: 'id', value: assignment.personaId },
+                { key: 'businessOrganizationId', value: '' },
+              ],
+            },
+            schema: 'persona-schema-v1',
+          },
+        })
+      })
+      .catch(handleGlobalError())
+  }
+
+  // DELETE
+  const deleteUserAssignment = (assignmentId: string) => {
+    const assignment = find(propEq('id', assignmentId), assignments)
+    setSharedOrgAssignment(assignment as OrganizationAssignment)
+    setIsDeleteConfirmationOpen(true)
+  }
+
+  const confirmDelete = () => {
+    setDeleteConfirmationLoading(true)
+    const doDelete =
+      sharedOrgAssignment.status === 'APPROVED'
+        ? deleteAssignmentWithUser
+        : deleteOrgAssignment
+    doDelete(sharedOrgAssignment).then(() => {
+      setDeleteConfirmationLoading(false)
+      setIsDeleteConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
+    })
+  }
+
+  const closeDelete = () => {
+    setIsDeleteConfirmationOpen(false)
+    setSharedOrgAssignment({} as OrganizationAssignment)
+  }
+
+  // RE Invite
+  const reInvite = (assignmentId: string) => {
+    return updateDocument({
+      variables: {
+        acronym: 'OrgAssignment',
+        document: {
+          fields: [
+            { key: 'id', value: assignmentId },
+            { key: 'status', value: 'PENDING' },
+          ],
+        },
+        schema: 'organization-assignment-schema-v1',
+      },
+    }).catch(handleGlobalError())
+  }
+
+  // EDIT
+  const editUser = (assignmentId: string) => {
+    const assignment = find(propEq('id', assignmentId), assignments)
+    setSharedOrgAssignment(assignment as OrganizationAssignment)
+    setIsUserEditOpen(true)
+  }
+
+  const closeUserEdit = () => {
+    setSharedOrgAssignment({} as OrganizationAssignment)
+    setIsUserEditOpen(false)
+  }
+
+  const saveEditUser = (assignmentId: string, roleId: string) => {
+    return updateDocument({
+      variables: {
+        acronym: 'OrgAssignment',
+        document: {
+          fields: [
+            { key: 'id', value: assignmentId },
+            { key: 'roleId', value: roleId },
+          ],
+        },
+        schema: 'organization-assignment-schema-v1',
+      },
+    })
+      .catch(handleGlobalError())
+      .then(() => {
+        setSharedOrgAssignment({} as OrganizationAssignment)
+        setIsUserEditOpen(false)
+      })
+  }
+
   return (
     <div className="flex flex-column">
       <AddUser roles={roles} organizationId={organizationId} />
       <div>
+        <div className="red">{globalErrorMessage}</div>
         <div className="mb5">
           <Table fullWidth schema={defaultSchema} items={tableItems} />
         </div>
       </div>
+      <UserConfirmationModal
+        isOpen={isDeleteConfirmationOpen}
+        isLoading={deleteConfirmationLoading}
+        onConfirm={confirmDelete}
+        onClose={closeDelete}
+        assignment={sharedOrgAssignment}
+        confirmAction={'Delete'}
+        message={'Do you want to delete user: '}
+      />
+      <UserEditModal
+        isOpen={isUserEditOpen}
+        onClose={closeUserEdit}
+        onSave={saveEditUser}
+        orgAssignment={sharedOrgAssignment}
+        roles={roles}
+      />
     </div>
   )
 }

@@ -8,10 +8,11 @@ import {
   Layout,
   Button,
 } from 'vtex.styleguide'
-import { find, propEq, filter, reject } from 'ramda'
+import { find, propEq, filter, reject, path } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import { documentSerializer } from '../utils/documentSerializer'
 import pathOr from 'ramda/es/pathOr'
 import WarningModal from './modals/WarningModal'
@@ -26,21 +27,43 @@ interface Props {
 
 const MyOrganization = (props: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
-  const [isApproveMessageOpen, setIsApproveMessageOpen] = useState(false)
-  const [
-    isLeaveOrganizationMessageOpen,
-    setIsLeaveOrganizationMessageOpen,
-  ] = useState(false)
-  const [
-    isDeclineOrganizationMessageOpen,
-    setIsDeclineOrganizationMessageOpen,
-  ] = useState(false)
-  const [declineOrgAssignment, setDeclineOrgAssignment] = useState(
-    {} as OrganizationAssignment
-  )
-  const [declineOrganizationLoading, setDeclineOrganizationLoading] = useState(
+  const [deleteDocument] = useMutation(DELETE_DOCUMENT)
+  
+  const [globalErrorMessage, setGlobalErrorMessage] = useState('')
+  const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
+  const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
+  const [isDeclineConfirmationOpen, setIsDeclineConfirmationOpen] = useState(
     false
   )
+  const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
+    {} as OrganizationAssignment
+  )
+  const [declineAssignmentLoading, setDeclineAssignmentLoading] = useState(
+    false
+  )
+  const [
+    isDeleteAssignmentWarningOpen,
+    setIsDeleteAssignmentWarningOpen,
+  ] = useState(false)
+
+  const [
+    isDeleteOrgConfirmationOpen,
+    setIsDeleteOrgConfirmationOpen,
+  ] = useState(false)
+
+  const [
+    deleteOrgConfirmationLoading,
+    setDeleteOrgConfirmationLoading,
+  ] = useState(false)
+
+  const [isLeaveOrgConfirmationOpen, setIsLeaveOrgConfirmationOpen] = useState(
+    false
+  )
+
+  const [
+    leaveOrgConfirmationLoading,
+    setLeaveOrgConfirmationLoading,
+  ] = useState(false)
 
   const assignmentFilter =
     `(personaId=${props.personaId}` +
@@ -126,6 +149,24 @@ const MyOrganization = (props: Props) => {
       ? find(propEq('id', defaultAssignment.roleId))(roles)
       : {}
 
+  const handleGlobalError = () => {
+    return (e: Error) => {
+      setGlobalErrorMessage(path(
+        [
+          'graphQLErrors',
+          0,
+          'extensions',
+          'exception',
+          'response',
+          'data',
+          'Message',
+        ],
+        e
+      ) as string)
+      return Promise.reject()
+    }
+  }
+
   const updateAssignmentStatus = async (
     assignmentId: string,
     status: string
@@ -141,7 +182,8 @@ const MyOrganization = (props: Props) => {
         },
         schema: 'organization-assignment-schema-v1',
       },
-    }).then(() => {
+    }).catch(handleGlobalError())
+    .then(() => {
       const updatedAssignmentId: string =
         status === 'APPROVED'
           ? pathOr('', ['id'], find(propEq('id', assignmentId))(orgAssignments))
@@ -158,9 +200,33 @@ const MyOrganization = (props: Props) => {
           schema: 'persona-schema-v1',
         },
       })
-    })
+    }).catch(handleGlobalError())
   }
 
+  const deleteOrgAssignment = (assignmentId: string) => {
+    return deleteDocument({
+      variables: {
+        acronym: 'OrgAssignment',
+        documentId: assignmentId,
+      },
+    }).catch(handleGlobalError())
+    .then(() => {
+      return updateDocument({
+        variables: {
+          acronym: 'Persona',
+          document: {
+            fields: [
+              { key: 'id', value: props.personaId },
+              { key: 'businessOrganizationId', value: '' },
+            ],
+          },
+          schema: 'persona-schema-v1',
+        },
+      })
+    }).catch(handleGlobalError())
+  }
+
+  // LEAVE
   const leaveOrganization = (assignment: OrganizationAssignment) => {
     const assignmentsExceptMe = reject(
       propEq('personaId', props.personaId),
@@ -175,18 +241,36 @@ const MyOrganization = (props: Props) => {
       assignmentsExceptMe.length == 0 ||
       assignmentsWithManagerRole.length > 0
     ) {
-      // updateAssignmentStatus(assignmentId, 'DECLINED').then(() => {
-      //   props.infoUpdated(props.personaId, '')
-      // })
-      declineOrganization(assignment)
+      setSharedOrgAssignment(assignment)
+      setIsLeaveOrgConfirmationOpen(true)
     } else {
-      setIsLeaveOrganizationMessageOpen(true)
+      setIsLeaveWarningOpen(true)
     }
   }
 
+  const closeLeaveOrganizationMessageModal = () => {
+    setIsLeaveWarningOpen(false)
+  }
+
+  const confirmLeaveOrganization = () => {
+    setLeaveOrgConfirmationLoading(true)
+    updateAssignmentStatus(sharedOrgAssignment.id, 'DECLINE').then(() => {
+      setLeaveOrgConfirmationLoading(false)
+      setIsLeaveOrgConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
+
+      props.infoUpdated(props.personaId, '')
+    })
+  }
+  const closeLeaveOrganization = () => {
+    setLeaveOrgConfirmationLoading(false)
+    setSharedOrgAssignment({} as OrganizationAssignment)
+  }
+
+  // APPROVE
   const approveOrganization = (assignmentId: string) => {
     if (defaultAssignment) {
-      setIsApproveMessageOpen(true)
+      setIsApproveWarningOpen(true)
     } else {
       updateAssignmentStatus(assignmentId, 'APPROVE').then(() => {
         const updatedOrgId: string = pathOr(
@@ -199,38 +283,68 @@ const MyOrganization = (props: Props) => {
     }
   }
 
+  const closeApproveMessageModal = () => {
+    setIsApproveWarningOpen(false)
+  }
+
+  // DECLINE
   const declineOrganization = (assignment: OrganizationAssignment) => {
-    setDeclineOrgAssignment(assignment)
-    setIsDeclineOrganizationMessageOpen(true)
+    setSharedOrgAssignment(assignment)
+    setIsDeclineConfirmationOpen(true)
   }
 
   const confirmDeclineOrgAssignment = () => {
-    setDeclineOrganizationLoading(true)
-    updateAssignmentStatus(declineOrgAssignment.id, 'DECLINE').then(() => {
-      setDeclineOrganizationLoading(false)
-      setIsDeclineOrganizationMessageOpen(false)
-      setDeclineOrgAssignment({} as OrganizationAssignment)
+    setDeclineAssignmentLoading(true)
+    updateAssignmentStatus(sharedOrgAssignment.id, 'DECLINE').then(() => {
+      setDeclineAssignmentLoading(false)
+      setIsDeclineConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
+
+      props.infoUpdated(props.personaId, '')
+    })
+  }
+  const closeDeclineOrgAssignment = () => {
+    setIsDeclineConfirmationOpen(false)
+    setSharedOrgAssignment({} as OrganizationAssignment)
+  }
+
+  // DELETE ORGANIZATION
+  const deleteCurrentOrganization = (assignment: OrganizationAssignment) => {
+    const assignmentsExceptMe = reject(
+      propEq('personaId', props.personaId),
+      organizationAssignments
+    )
+    if (assignmentsExceptMe && assignmentsExceptMe.length > 0) {
+      setIsDeleteAssignmentWarningOpen(true)
+    } else {
+      deleteOrganization
+      console.log(assignment)
+    }
+  }
+
+  const closeDeleteAssignmentWarningModal = () => {
+    setIsDeleteAssignmentWarningOpen(false)
+  }
+
+  const deleteOrganization = (assignment: OrganizationAssignment) => {
+    setSharedOrgAssignment(assignment)
+    setIsDeleteOrgConfirmationOpen(true)
+  }
+
+  const confirmDeleteOrganization = () => {
+    setDeleteOrgConfirmationLoading(true)
+    deleteOrgAssignment(sharedOrgAssignment.id).then(() => {
+      setDeleteOrgConfirmationLoading(false)
+      setIsDeleteOrgConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
 
       props.infoUpdated(props.personaId, '')
     })
   }
 
-  const deleteOrganization = (assignment: OrganizationAssignment) => {
-    debugger
-    console.log(assignment)
-  }
-
-  const closeApproveMessageModal = () => {
-    setIsApproveMessageOpen(false)
-  }
-
-  const closeLeaveOrganizationMessageModal = () => {
-    setIsLeaveOrganizationMessageOpen(false)
-  }
-
-  const closeDeclineOrgAssignment = () => {
-    setIsDeclineOrganizationMessageOpen(false)
-    setDeclineOrgAssignment({} as OrganizationAssignment)
+  const closeDeleteOrganization = () => {
+    setIsDeleteOrgConfirmationOpen(false)
+    setSharedOrgAssignment({} as OrganizationAssignment)
   }
 
   if (props.personaId == '') {
@@ -249,6 +363,7 @@ const MyOrganization = (props: Props) => {
         <PageHeader title="Organization" linkLabel="Return"></PageHeader>
       }>
       <PageBlock>
+    <div className="red">{globalErrorMessage}</div>
         {pendingAssignments &&
           pendingAssignments.map(x => (
             <div className="mb7">
@@ -320,14 +435,16 @@ const MyOrganization = (props: Props) => {
                     Leave
                   </Button>
                 </span>
-                <span className="ml2">
+                { userRole && userRole.name && userRole.name === 'manager' && (<span className="ml2">
                   <Button
                     variation="danger-tertiary"
                     size="small"
-                    onClick={() => deleteOrganization(defaultAssignment)}>
+                    onClick={() =>
+                      deleteCurrentOrganization(defaultAssignment)
+                    }>
                     Delete
                   </Button>
-                </span>
+                </span>)}
               </div>
             </div>
 
@@ -346,31 +463,70 @@ const MyOrganization = (props: Props) => {
         <WarningModal
           onOk={closeApproveMessageModal}
           onClose={closeApproveMessageModal}
-          isOpen={isApproveMessageOpen}
+          isOpen={isApproveWarningOpen}
           assignment={defaultAssignment}
           title={'Unable to join organization'}
           messageLine1={'You have already joined organization: '}
-          messageLine2={'Please leave current organization before joining another organization'}
+          messageLine2={
+            'Please leave current organization before joining another organization'
+          }
         />
+
         <WarningModal
           onOk={closeLeaveOrganizationMessageModal}
           onClose={closeLeaveOrganizationMessageModal}
-          isOpen={isLeaveOrganizationMessageOpen}
+          isOpen={isLeaveWarningOpen}
           assignment={defaultAssignment}
           title={'Unable to leave organization'}
           messageLine1={'You are unable to leave organization: '}
-          messageLine2={'You should transfer "Manager" role before leaving the organization'}
+          messageLine2={
+            'You should transfer "Manager" role before leaving the organization'
+          }
         />
 
-        <ConfirmationModal 
-          isOpen={isDeclineOrganizationMessageOpen}
-          isLoading={declineOrganizationLoading}
+        <WarningModal
+          onOk={closeDeleteAssignmentWarningModal}
+          onClose={closeDeleteAssignmentWarningModal}
+          isOpen={isDeleteAssignmentWarningOpen}
+          assignment={defaultAssignment}
+          title={'Unable to delete organization'}
+          messageLine1={
+            'You have more than one assigned users in organization: '
+          }
+          messageLine2={
+            'Please delete all the users before deleting this organization'
+          }
+        />
+
+        <ConfirmationModal
+          isOpen={isDeclineConfirmationOpen}
+          isLoading={declineAssignmentLoading}
           onConfirm={confirmDeclineOrgAssignment}
           onClose={closeDeclineOrgAssignment}
-          assignment={declineOrgAssignment}
+          assignment={sharedOrgAssignment}
           confirmAction={'Decline'}
           message={'Do you want to decline join request to organization: '}
-          />
+        />
+
+        <ConfirmationModal
+          isOpen={isLeaveOrgConfirmationOpen}
+          isLoading={leaveOrgConfirmationLoading}
+          onConfirm={confirmLeaveOrganization}
+          onClose={closeLeaveOrganization}
+          assignment={sharedOrgAssignment}
+          confirmAction={'Leave'}
+          message={'Do you want to leave organization: '}
+        />
+
+        <ConfirmationModal
+          isOpen={isDeleteOrgConfirmationOpen}
+          isLoading={deleteOrgConfirmationLoading}
+          onConfirm={confirmDeleteOrganization}
+          onClose={closeDeleteOrganization}
+          assignment={sharedOrgAssignment}
+          confirmAction={'Delete'}
+          message={'Do you want to delete organization: '}
+        />
       </PageBlock>
     </Layout>
   )

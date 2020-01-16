@@ -1,0 +1,6 @@
+mutation deleteDocument($acronym: String!, $documentId: String!) {
+  deleteDocument(acronym: $acronym, documentId: $documentId) {
+    id
+    cacheId
+  }
+}

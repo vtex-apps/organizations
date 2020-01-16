@@ -218,12 +218,11 @@ const AddUser = ({
   }
 
   const getPersonaFields = () => {
-    const clientEmail = state.email || email
     const fields = [
-      { key: 'email', value: clientEmail },
+      { key: 'email', value: state.email },
       {
         key: 'businessOrganizationId',
-        value: organizationId,
+        value: '',
       },
     ]
     if (personaId) {
@@ -263,10 +262,11 @@ const AddUser = ({
                   },
                   {
                     key: 'personaId',
-                    value: path<string>(
+                    value: pathOr(
+                      pathOr('', ['data', 'updateDocument', 'cacheId'], response),
                       ['data', 'createDocument', 'cacheId'],
                       response
-                    ),
+                    )
                   },
                   {
                     key: 'roleId',
@@ -330,7 +330,7 @@ const AddUser = ({
             })
             dispatch({ type: 'INPUT_TOUCHED', args: { input: 'email' } })
           }}
-          value={email || state.email}
+          value={state.email}
           errorMessage={path(['formErrors', 'email', 0], state)}
         />
         <div className="mt6">

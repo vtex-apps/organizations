@@ -49,6 +49,7 @@ declare global {
     personaId?: string
     roleId?: string
     status?: string
+    roleId_linked?: Role
     businessOrganizationId_linked?: BusinessOrganization
   }
 }

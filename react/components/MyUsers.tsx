@@ -2,15 +2,18 @@ import React from 'react'
 import { useQuery } from 'react-apollo'
 import { injectIntl } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
-import { Table } from 'vtex.styleguide'
-import { find, path, pathOr, propEq } from 'ramda'
+import { Table, Button } from 'vtex.styleguide'
+import { pathOr, find } from 'ramda'
 import AddUser from './AddUser'
+import { documentSerializer } from '../utils/documentSerializer'
+import propEq from 'ramda/es/propEq'
 
 interface Props {
+  personaId: string
   organizationId: string
 }
 
-const MyUsers = ({ organizationId }: Props) => {
+const MyUsers = ({ organizationId, personaId }: Props) => {
   const { data: roleData } = useQuery(documentQuery, {
     // skip: !rolePermissionFields || isEmpty(roleId),
     variables: {
@@ -24,6 +27,7 @@ const MyUsers = ({ organizationId }: Props) => {
       acronym: 'OrgAssignment',
       fields: [
         'id',
+        'personaId',
         'personaId_linked',
         'businessOrganizationId_linked',
         'status',
@@ -34,75 +38,85 @@ const MyUsers = ({ organizationId }: Props) => {
     },
   })
 
-  const roleDocuments: MDSearchDocumentResult[] = roleData
-    ? roleData.documents
-    : []
-
-  const roles: Role[] = roleDocuments.map(
-    (document: MDSearchDocumentResult) => ({
-      label: pathOr(
-        '',
-        ['value'],
-        find(propEq('key', 'label'), document.fields || { key: '', value: '' })
-      ),
-      value: pathOr(
-        '',
-        ['value'],
-        find(propEq('key', 'id'), document.fields || { key: '', value: '' })
-      ),
-    })
+  const roles: Role[] = documentSerializer(pathOr([], ['documents'], roleData))
+  const assignments: OrganizationAssignment[] = documentSerializer(
+    pathOr([], ['documents'], orgAssignments)
   )
+
+  const defaultUserAssignment = find(
+    propEq('personaId', personaId),
+    assignments
+  )
+
   const defaultSchema = {
     properties: {
       email: {
         title: 'Email',
       },
+      status: {
+        title: 'Status',
+        cellRenderer: ({ cellData }: any) => {
+          if (cellData === 'APPROVED') {
+            return 'Active'
+          } else if (cellData === 'DECLINED') {
+            return 'Inactive'
+          } else if (cellData === 'PENDING') {
+            return 'Pending'
+          }
+          return ''
+        },
+      },
       role: {
         title: 'Role',
       },
+      editAssignment: {
+        title: 'Edit',
+        cellRenderer: ({ cellData }: any) => {
+          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
+            <Button variation="tertiary" size="small">
+              Eedit
+            </Button>
+          ) : (
+            ''
+          )
+        },
+      },
+      reInviteAssignment: {
+        title: 'Delete',
+        cellRenderer: ({ cellData }: any) => {
+          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
+            <Button variation="tertiary" size="small">
+              Re Invite
+            </Button>
+          ) : (
+            ''
+          )
+        },
+      },
+      deleteAssignment: {
+        title: 'Delete',
+        cellRenderer: ({ cellData }: any) => {
+          return defaultUserAssignment && cellData !== defaultUserAssignment.id ? (
+            <Button variation="danger-tertiary" size="small">
+              Delete
+            </Button>
+          ) : (
+            ''
+          )
+        },
+      },
     },
   }
-  const tableItems = pathOr([], ['documents'], orgAssignments).map(
-    (document: MDSearchDocumentResult) => ({
-      email: path(
-        ['email'],
-        JSON.parse(
-          pathOr(
-            '',
-            ['value'],
-            find(
-              propEq('key', 'personaId_linked'),
-              document.fields || { key: '', value: '' }
-            )
-          )
-        )
-      ),
-      role: pathOr(
-        '',
-        ['label'],
-        find(
-          propEq('key', 'id') &&
-            propEq(
-              'value',
-              path(
-                ['id'],
-                JSON.parse(
-                  pathOr(
-                    '',
-                    ['value'],
-                    find(
-                      propEq('key', 'roleId_linked'),
-                      document.fields || { key: '', value: '' }
-                    )
-                  )
-                )
-              )
-            ),
-          roles
-        )
-      ),
-    })
-  )
+
+  const tableItems = assignments.map((assignment: OrganizationAssignment) => ({
+    email: pathOr('', ['personaId_linked', 'email'], assignment),
+    status: pathOr('', ['status'], assignment),
+    role: pathOr('', ['roleId_linked', 'label'], assignment),
+    editAssignment: pathOr('', ['id'], assignment),
+    reInviteAssignment: pathOr('', ['id'], assignment),
+    deleteAssignment: pathOr('', ['id'], assignment),
+  }))
+
   return (
     <div className="flex flex-column">
       <AddUser roles={roles} organizationId={organizationId} />

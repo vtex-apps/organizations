@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useReducer } from 'react'
+import React, { SyntheticEvent, useReducer, useState } from 'react'
 import { isEmpty, path, pathOr, find, propEq, last } from 'ramda'
 import classNames from 'classnames'
 import {
@@ -62,25 +62,26 @@ const AddUser = ({
   // const [addUser, { error: userError, data: userData }] = useMutation(ADD_USER)
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
-  const [createOrgAssignment] = useMutation(CREATE_DOCUMENT, {
-    refetchQueries: [
-      {
-        query: documentQuery,
-        variables: {
-          acronym: 'OrgAssignment',
-          fields: [
-            'id',
-            'personaId_linked',
-            'businessOrganizationId_linked',
-            'status',
-            'roleId_linked',
-          ],
-          where: `businessOrganizationId=${organizationId}`,
-          schema: 'organization-assignment-schema-v1',
-        },
-      },
-    ],
-  })
+  const [isEmailChecked, setIsEmailChecked] = useState(false)
+  // const [createOrgAssignment] = useMutation(CREATE_DOCUMENT, {
+  //   refetchQueries: [
+  //     {
+  //       query: documentQuery,
+  //       variables: {
+  //         acronym: 'OrgAssignment',
+  //         fields: [
+  //           'id',
+  //           'personaId_linked',
+  //           'businessOrganizationId_linked',
+  //           'status',
+  //           'roleId_linked',
+  //         ],
+  //         where: `businessOrganizationId=${organizationId}`,
+  //         schema: 'organization-assignment-schema-v1',
+  //       },
+  //     },
+  //   ],
+  // })
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
     switch (action.type) {
@@ -97,6 +98,7 @@ const AddUser = ({
           formErrors: { roleId: errors, email: state.formErrors.email },
         }
       case 'CHANGE_EMAIL': {
+        setIsEmailChecked(false)
         if (isEmpty(action.args.email)) {
           errors = [
             ...state.formErrors.email,
@@ -250,7 +252,7 @@ const AddUser = ({
       })
         .catch(handleGraphqlError())
         .then((response: any) => {
-          return createOrgAssignment({
+          return createDocument({
             variables: {
               acronym: 'OrgAssignment',
               document: {
@@ -288,105 +290,16 @@ const AddUser = ({
               message: intl.formatMessage({ id: 'store/my-users.success' }),
             },
           })
+          dispatch({
+            type: 'CHANGE_EMAIL',
+            args: { email: '' },
+          })
+          dispatch({
+            type: 'CHANGE_ROLE',
+            args: { roleId: '' },
+          })
         })
     }
-
-    // if (state.email && state.roleId) {
-    //   createDocument({
-    //     variables: {
-    //       acronym: 'CL',
-    //       document: {
-    //         fields: [
-    //           { key: 'email', value: state.email },
-    //           { key: 'roleId', value: state.roleId },
-    //         ],
-    //       },
-    //     },
-    //   })
-    //     .then((r: ExecutionResult<{ Id: string }>) => {
-    //       createDocument({
-    //         variables: {
-    //           acronym: 'Persona',
-    //           document: {
-    //             fields: [
-    //               { key: 'email', value: state.email },
-    //               {
-    //                 key: 'businessOrganizationId',
-    //                 value: organizationId,
-    //               },
-    //               {
-    //                 key: 'clientId',
-    //                 value: path<string>(
-    //                   ['data', 'createDocument', 'cacheId'],
-    //                   r
-    //                 ),
-    //               },
-    //             ],
-    //           },
-    //           schema: 'persona-schema-v1',
-    //         },
-    //       }).then((r: ExecutionResult<{ Id: string }>) => {
-    //         createOrgAssignment({
-    //           variables: {
-    //             acronym: 'OrgAssignment',
-    //             document: {
-    //               fields: [
-    //                 {
-    //                   key: 'businessOrganizationId',
-    //                   value: organizationId,
-    //                 },
-    //                 {
-    //                   key: 'personaId',
-    //                   value: path<string>(
-    //                     ['data', 'createDocument', 'cacheId'],
-    //                     r
-    //                   ),
-    //                 },
-    //                 {
-    //                   key: 'roleId',
-    //                   value: state.roleId,
-    //                 },
-    //                 {
-    //                   key: 'status',
-    //                   value: 'PENDING',
-    //                 },
-    //               ],
-    //             },
-    //             schema: 'organization-assignment-schema-v1',
-    //           },
-    //         })
-    //           .then()
-    //           .catch()
-    //       })
-    //       dispatch({
-    //         type: 'RESPONSE',
-    //         args: {
-    //           type: 'SUCCESS',
-    //           message: intl.formatMessage({ id: 'store/my-users.success' }),
-    //         },
-    //       })
-    //     })
-    //     .catch(e => {
-    //       dispatch({
-    //         type: 'RESPONSE',
-    //         args: {
-    //           type: 'ERROR',
-    //           message: path(
-    //             [
-    //               'graphQLErrors',
-    //               0,
-    //               'extensions',
-    //               'exception',
-    //               'response',
-    //               'data',
-    //               'Message',
-    //             ],
-    //             e
-    //           ) as string,
-    //         },
-    //       })
-    //     })
-    // }
   }
   return (
     <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
@@ -420,11 +333,17 @@ const AddUser = ({
           value={email || state.email}
           errorMessage={path(['formErrors', 'email', 0], state)}
         />
-        <ButtonWithIcon
-          icon={<IconCheck />}
-          isLoading={loadingUser}
-          variation="secondary"
-          onClick={() => loadUser()}></ButtonWithIcon>
+        <div className="mt6">
+          <ButtonWithIcon
+            icon={<IconCheck />}
+            isLoading={loadingUser}
+            variation="secondary"
+            disabled={!state.touched.email ||
+              (state.touched.email && !isEmpty(state.formErrors.email))}
+            onClick={() => {loadUser(); setIsEmailChecked(true)}}>
+            Check
+          </ButtonWithIcon>
+        </div>
       </div>
       <div className="mb5">
         <Dropdown
@@ -439,6 +358,7 @@ const AddUser = ({
           }}
           value={state.roleId}
           errorMessage={path(['formErrors', 'roleId', 0], state)}
+          disabled={!isEmailChecked}
         />
       </div>
       <div className="mb5">
@@ -446,9 +366,10 @@ const AddUser = ({
           variation="primary"
           type="submit"
           disabled={
-            (!state.touched.email && !state.touched.roleId) ||
+            !state.touched.email || !state.touched.roleId ||
             (state.touched.email && !isEmpty(state.formErrors.email)) ||
-            (state.touched.roleId && !isEmpty(state.formErrors.roleId))
+            (state.touched.roleId && !isEmpty(state.formErrors.roleId)) || 
+            !isEmailChecked
           }>
           {intl.formatMessage({ id: 'store/my-users.add-user' })}
         </Button>

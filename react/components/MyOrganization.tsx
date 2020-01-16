@@ -7,8 +7,6 @@ import {
   PageHeader,
   Layout,
   Button,
-  Modal,
-  ModalDialog,
 } from 'vtex.styleguide'
 import { find, propEq, filter, reject } from 'ramda'
 import MyUsers from './MyUsers'
@@ -16,6 +14,8 @@ import AddOrganization from './AddOrganization'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 import { documentSerializer } from '../utils/documentSerializer'
 import pathOr from 'ramda/es/pathOr'
+import WarningModal from './modals/WarningModal'
+import ConfirmationModal from './modals/ConfirmationModal'
 
 interface Props {
   userEmail: string
@@ -25,10 +25,6 @@ interface Props {
 }
 
 const MyOrganization = (props: Props) => {
-  //const [redirectTo, setRedirectTo] = useState('')
-  //const [props.organizationId, setprops.organizationId] = useState(props.organizationId)
-
-  // const [updateOrganizationAssignment] = useMutation(UPDATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [isApproveMessageOpen, setIsApproveMessageOpen] = useState(false)
   const [
@@ -41,6 +37,9 @@ const MyOrganization = (props: Props) => {
   ] = useState(false)
   const [declineOrgAssignment, setDeclineOrgAssignment] = useState(
     {} as OrganizationAssignment
+  )
+  const [declineOrganizationLoading, setDeclineOrganizationLoading] = useState(
+    false
   )
 
   const assignmentFilter =
@@ -127,32 +126,11 @@ const MyOrganization = (props: Props) => {
       ? find(propEq('id', defaultAssignment.roleId))(roles)
       : {}
 
-  // const orgAssignmentFields = orgAssignmentData
-  //   ? pathOr([], ['fields'], last(orgAssignmentData.documents))
-  //   : []
-
-  // const orgAssignmentId = pathOr(
-  //   '',
-  //   ['value'],
-  //   find(propEq('key', 'id'), orgAssignmentFields)
-  // )
-
-  // const organizationStatus: string = pathOr(
-  //   '',
-  //   ['value'],
-  //   find(propEq('key', 'status'), orgAssignmentFields)
-  // )
-
-  // const orgInfoUpdated = (newPersonaId: string, newOrganizationId: string) => {
-  //   props.infoUpdated(newPersonaId, newOrganizationId)
-  //   debugger
-  // }
-
   const updateAssignmentStatus = async (
     assignmentId: string,
     status: string
   ) => {
-    updateDocument({
+    return updateDocument({
       variables: {
         acronym: 'OrgAssignment',
         document: {
@@ -163,46 +141,27 @@ const MyOrganization = (props: Props) => {
         },
         schema: 'organization-assignment-schema-v1',
       },
-    })
-      .then(() => {
-        const updatedAssignmentId: string =
-          status === 'APPROVED'
-            ? pathOr(
-                '',
-                ['id'],
-                find(propEq('id', assignmentId))(orgAssignments)
-              )
-            : ''
-        return updateDocument({
-          variables: {
-            acronym: 'Persona',
-            document: {
-              fields: [
-                { key: 'id', value: props.personaId },
-                { key: 'businessOrganizationId', value: updatedAssignmentId },
-              ],
-            },
-            schema: 'persona-schema-v1',
+    }).then(() => {
+      const updatedAssignmentId: string =
+        status === 'APPROVED'
+          ? pathOr('', ['id'], find(propEq('id', assignmentId))(orgAssignments))
+          : ''
+      return updateDocument({
+        variables: {
+          acronym: 'Persona',
+          document: {
+            fields: [
+              { key: 'id', value: props.personaId },
+              { key: 'businessOrganizationId', value: updatedAssignmentId },
+            ],
           },
-        })
+          schema: 'persona-schema-v1',
+        },
       })
-      .then(() => {
-        const updatedOrgId: string =
-          status === 'APPROVED'
-            ? pathOr(
-                '',
-                ['businessOrganizationId'],
-                find(propEq('id', assignmentId))(orgAssignments)
-              )
-            : ''
-        props.infoUpdated(
-          props.personaId,
-          status === 'APPROVED' ? updatedOrgId : ''
-        )
-      })
+    })
   }
 
-  const leaveOrganization = (assignmentId: string) => {
+  const leaveOrganization = (assignment: OrganizationAssignment) => {
     const assignmentsExceptMe = reject(
       propEq('personaId', props.personaId),
       organizationAssignments
@@ -216,7 +175,10 @@ const MyOrganization = (props: Props) => {
       assignmentsExceptMe.length == 0 ||
       assignmentsWithManagerRole.length > 0
     ) {
-      updateAssignmentStatus(assignmentId, 'DECLINED')
+      // updateAssignmentStatus(assignmentId, 'DECLINED').then(() => {
+      //   props.infoUpdated(props.personaId, '')
+      // })
+      declineOrganization(assignment)
     } else {
       setIsLeaveOrganizationMessageOpen(true)
     }
@@ -226,7 +188,14 @@ const MyOrganization = (props: Props) => {
     if (defaultAssignment) {
       setIsApproveMessageOpen(true)
     } else {
-      updateAssignmentStatus(assignmentId, 'APPROVE')
+      updateAssignmentStatus(assignmentId, 'APPROVE').then(() => {
+        const updatedOrgId: string = pathOr(
+          '',
+          ['businessOrganizationId'],
+          find(propEq('id', assignmentId))(orgAssignments)
+        )
+        props.infoUpdated(props.personaId, updatedOrgId)
+      })
     }
   }
 
@@ -236,8 +205,14 @@ const MyOrganization = (props: Props) => {
   }
 
   const confirmDeclineOrgAssignment = () => {
-    updateAssignmentStatus(declineOrgAssignment.id, 'DECLINE')
-    setIsDeclineOrganizationMessageOpen(false)
+    setDeclineOrganizationLoading(true)
+    updateAssignmentStatus(declineOrgAssignment.id, 'DECLINE').then(() => {
+      setDeclineOrganizationLoading(false)
+      setIsDeclineOrganizationMessageOpen(false)
+      setDeclineOrgAssignment({} as OrganizationAssignment)
+
+      props.infoUpdated(props.personaId, '')
+    })
   }
 
   const deleteOrganization = (assignment: OrganizationAssignment) => {
@@ -255,11 +230,8 @@ const MyOrganization = (props: Props) => {
 
   const closeDeclineOrgAssignment = () => {
     setIsDeclineOrganizationMessageOpen(false)
+    setDeclineOrgAssignment({} as OrganizationAssignment)
   }
-
-  // if (organizationStatus === 'APPROVED' || redirectTo == 'USERS') {
-  //   return <MyUsers organizationId={props.organizationId} />
-  // } else
 
   if (props.personaId == '') {
     return (
@@ -285,10 +257,7 @@ const MyOrganization = (props: Props) => {
                 <div className="mt3 w-75">
                   Join request from:{' '}
                   <span className="b">
-                    {x.businessOrganizationId_linked &&
-                    x.businessOrganizationId_linked.name
-                      ? x.businessOrganizationId_linked.name
-                      : ''}
+                    {pathOr('', ['businessOrganizationId_linked', 'name'], x)}
                   </span>
                 </div>
                 <div className="ml5 w-25 flex">
@@ -329,10 +298,11 @@ const MyOrganization = (props: Props) => {
                 <h2>
                   Organization :{' '}
                   <span className="b">
-                    {defaultAssignment.businessOrganizationId_linked &&
-                    defaultAssignment.businessOrganizationId_linked.name
-                      ? defaultAssignment.businessOrganizationId_linked.name
-                      : ''}
+                    {pathOr(
+                      '',
+                      ['businessOrganizationId_linked', 'name'],
+                      defaultAssignment
+                    )}
                   </span>
                 </h2>
               </div>
@@ -344,9 +314,9 @@ const MyOrganization = (props: Props) => {
               <div className="ml5 w-25 flex items-center">
                 <span className="mr2">
                   <Button
-                    variation="secondary"
+                    variation="danger-tertiary"
                     size="small"
-                    onClick={() => leaveOrganization(defaultAssignment.id)}>
+                    onClick={() => leaveOrganization(defaultAssignment)}>
                     Leave
                   </Button>
                 </span>
@@ -364,111 +334,43 @@ const MyOrganization = (props: Props) => {
             {userRole && userRole.name && userRole.name === 'manager' && (
               <div className="flex flex-column mb5 mt5">
                 <h2 className="">Users in organization</h2>
-                <MyUsers organizationId={props.organizationId} />
+                <MyUsers
+                  organizationId={props.organizationId}
+                  personaId={props.personaId}
+                />
               </div>
             )}
           </div>
         )}
 
-        <Modal
+        <WarningModal
+          onOk={closeApproveMessageModal}
+          onClose={closeApproveMessageModal}
           isOpen={isApproveMessageOpen}
-          title="Unable to join organization "
-          responsiveFullScreen
-          centered
-          bottomBar={
-            <div className="nowrap">
-              <span className="mr4">
-                <Button
-                  variation="tertiary"
-                  onClick={() => closeApproveMessageModal()}>
-                  Ok
-                </Button>
-              </span>
-            </div>
-          }
-          onClose={() => closeApproveMessageModal()}>
-          <div className="flex flex-column mb5 mt5">
-            <div>
-              <span>You have already joined organization: </span>
-              <span className="b">
-                {defaultAssignment.businessOrganizationId_linked &&
-                defaultAssignment.businessOrganizationId_linked.name
-                  ? defaultAssignment.businessOrganizationId_linked.name
-                  : ''}
-              </span>
-            </div>
-            <div className="mt2">
-              <span className="yellow">
-                Please leave current organization before joining another
-                organization
-              </span>
-            </div>
-          </div>
-        </Modal>
-        <Modal
+          assignment={defaultAssignment}
+          title={'Unable to join organization'}
+          messageLine1={'You have already joined organization: '}
+          messageLine2={'Please leave current organization before joining another organization'}
+        />
+        <WarningModal
+          onOk={closeLeaveOrganizationMessageModal}
+          onClose={closeLeaveOrganizationMessageModal}
           isOpen={isLeaveOrganizationMessageOpen}
-          title="Unable to leave organization "
-          responsiveFullScreen
-          centered
-          bottomBar={
-            <div className="nowrap">
-              <span className="mr4">
-                <Button
-                  variation="tertiary"
-                  onClick={() => closeLeaveOrganizationMessageModal()}>
-                  Ok
-                </Button>
-              </span>
-            </div>
-          }
-          onClose={() => closeLeaveOrganizationMessageModal()}>
-          <div className="flex flex-column mb5 mt5">
-            <div>
-              <span>You are unable to leave organization: </span>
-              <span className="b">
-                {defaultAssignment.businessOrganizationId_linked &&
-                defaultAssignment.businessOrganizationId_linked.name
-                  ? defaultAssignment.businessOrganizationId_linked.name
-                  : ''}
-              </span>
-            </div>
-            <div className="mt2">
-              <span className="red">
-                You should transfer "Manager" role before leaving the
-                organization
-              </span>
-            </div>
-          </div>
-        </Modal>
-        <ModalDialog
-          centered
-          loading={false}
-          confirmation={{
-            onClick: () => confirmDeclineOrgAssignment(),
-            label: 'Decline',
-            isDangerous: true,
-          }}
-          cancelation={{
-            onClick: () => closeDeclineOrgAssignment(),
-            label: 'Cancel',
-          }}
+          assignment={defaultAssignment}
+          title={'Unable to leave organization'}
+          messageLine1={'You are unable to leave organization: '}
+          messageLine2={'You should transfer "Manager" role before leaving the organization'}
+        />
+
+        <ConfirmationModal 
           isOpen={isDeclineOrganizationMessageOpen}
-          onClose={() => closeDeclineOrgAssignment()}>
-          <h1>Decline organization</h1>
-          <div className="flex flex-column mb5 mt5">
-            <div>
-              <span>
-                Do you need to decline the join request from organization:{' '}
-              </span>
-              <span className="b">
-                {declineOrgAssignment.businessOrganizationId_linked &&
-                declineOrgAssignment.businessOrganizationId_linked.name
-                  ? declineOrgAssignment.businessOrganizationId_linked.name
-                  : ''}
-              </span>
-            </div>
-          </div>
-        </ModalDialog>
+          isLoading={declineOrganizationLoading}
+          onConfirm={confirmDeclineOrgAssignment}
+          onClose={closeDeclineOrgAssignment}
+          assignment={declineOrgAssignment}
+          confirmAction={'Decline'}
+          message={'Do you want to decline join request to organization: '}
+          />
       </PageBlock>
     </Layout>
   )

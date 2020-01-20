@@ -11,6 +11,7 @@ import UserConfirmationModal from './modals/UserConfirmationModal'
 import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 import UserEditModal from './modals/UserEditModal'
+import { updateCacheDeleteUser } from '../utils/cacheUtils'
 
 interface Props {
   personaId: string
@@ -19,7 +20,10 @@ interface Props {
 
 const MyUsers = ({ organizationId, personaId }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
-  const [deleteDocument] = useMutation(DELETE_DOCUMENT)
+  const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
+    update: (cache: any, { data }: any) =>
+      updateCacheDeleteUser(cache, data, organizationId),
+  })
 
   const [isAddNewUserOpen, setIsAddNewUserOpen] = useState(false)
 
@@ -52,6 +56,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         'id',
         'personaId',
         'personaId_linked',
+        'businessOrganizationId',
         'businessOrganizationId_linked',
         'status',
         'roleId_linked',
@@ -67,7 +72,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const roles: Role[] = rolesList.map((role: any) => ({
     label: role.label,
     value: role.id,
-    name: role.name
+    name: role.name,
   }))
   const assignments: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['documents'], orgAssignments)
@@ -261,24 +266,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
     setIsUserEditOpen(false)
   }
 
-  const saveEditUser = (assignmentId: string, roleId: string) => {
-    return updateDocument({
-      variables: {
-        acronym: 'OrgAssignment',
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'roleId', value: roleId },
-          ],
-        },
-        schema: 'organization-assignment-schema-v1',
-      },
-    })
-      .catch(handleGlobalError())
-      .then(() => {
-        setSharedOrgAssignment({} as OrganizationAssignment)
-        setIsUserEditOpen(false)
-      })
+  const saveEditUser = () => {
+    setSharedOrgAssignment({} as OrganizationAssignment)
+    setIsUserEditOpen(false)
   }
 
   // CREATE
@@ -287,7 +277,6 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   }
 
   const newUserAdded = () => {
-    // TODO: update cache
     setIsAddNewUserOpen(false)
   }
 

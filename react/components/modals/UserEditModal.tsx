@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Button, Dropdown } from 'vtex.styleguide'
+import { useMutation } from 'react-apollo'
 import { pathOr } from 'ramda'
+import { updateCacheEditUser } from '../../utils/cacheUtils'
+import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
 
 interface Props {
   isOpen: boolean
@@ -15,16 +18,46 @@ const UserEditModal = ({
   onClose,
   onSave,
   orgAssignment,
-  roles,
+  roles
 }: Props) => {
   const [roleId, setRoleId] = useState('')
+  const [assignmentId, setAssignmentId] = useState('')
+  const [organizationId, setOrganizationId] = useState('')
 
+  const [updateUserDocument] = useMutation(UPDATE_DOCUMENT, {
+    update: (cache: any, { data }: any) =>
+      updateCacheEditUser(cache, data, roles, organizationId, roleId),
+  })
   useEffect(() => {
+    setAssignmentId(pathOr('', ['id'], orgAssignment))
     setRoleId(pathOr('', ['roleId_linked', 'id'], orgAssignment))
+    setOrganizationId(pathOr('', ['businessOrganizationId'], orgAssignment))
   }, [orgAssignment])
 
+  const handleGlobalError = () => {
+    return (e: Error) => {
+      console.log(e)
+      return Promise.reject()
+    }
+  }
+
   const onSaveEdit = () => {
-    onSave(orgAssignment.id, roleId)
+    updateUserDocument({
+      variables: {
+        acronym: 'OrgAssignment',
+        document: {
+          fields: [
+            { key: 'id', value: assignmentId },
+            { key: 'roleId', value: roleId },
+          ],
+        },
+        schema: 'organization-assignment-schema-v1',
+      },
+    })
+      .catch(handleGlobalError())
+      .then(() => {
+        onSave()
+      })
   }
 
   return (

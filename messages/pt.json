@@ -5,6 +5,7 @@
   "store/my-users.role-id": "Função",
   "store/my-users.errors.role-id.empty": "A função está vazia",
   "store/my-users.errors.email.empty": "O email está vazio",
+  "store/my-users.errors.email.exists": "User already exists",
   "store/my-users.errors.email.invalid": "Email inválido",
   "store/my-users.success": "Usuário adicionado com sucesso",
   "admin/editor.challenge-permission.title": "Desafio de permissão",

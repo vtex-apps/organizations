@@ -4,7 +4,7 @@ import { injectIntl } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
 import { Table, Button } from 'vtex.styleguide'
 import { pathOr, find, path } from 'ramda'
-import AddUser from './AddUser'
+import AddUser from './modals/AddUser'
 import { documentSerializer } from '../utils/documentSerializer'
 import propEq from 'ramda/es/propEq'
 import UserConfirmationModal from './modals/UserConfirmationModal'
@@ -20,6 +20,8 @@ interface Props {
 const MyUsers = ({ organizationId, personaId }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
+
+  const [isAddNewUserOpen, setIsAddNewUserOpen] = useState(false)
 
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(
     false
@@ -37,7 +39,6 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const [isUserEditOpen, setIsUserEditOpen] = useState(false)
 
   const { data: roleData } = useQuery(documentQuery, {
-    // skip: !rolePermissionFields || isEmpty(roleId),
     variables: {
       acronym: 'BusinessRole',
       fields: ['id', 'name', 'label'],
@@ -66,6 +67,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const roles: Role[] = rolesList.map((role: any) => ({
     label: role.label,
     value: role.id,
+    name: role.name
   }))
   const assignments: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['documents'], orgAssignments)
@@ -279,13 +281,36 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
       })
   }
 
+  // CREATE
+  const addNewUser = () => {
+    setIsAddNewUserOpen(true)
+  }
+
+  const newUserAdded = () => {
+    // TODO: update cache
+    setIsAddNewUserOpen(false)
+  }
+
+  const addNewUserClosed = () => {
+    setIsAddNewUserOpen(false)
+  }
+
   return (
     <div className="flex flex-column">
-      <AddUser roles={roles} organizationId={organizationId} />
       <div>
         <div className="red">{globalErrorMessage}</div>
         <div className="mb5">
-          <Table fullWidth schema={defaultSchema} items={tableItems} />
+          <Table
+            fullWidth
+            schema={defaultSchema}
+            items={tableItems}
+            toolbar={{
+              newLine: {
+                label: 'Add User',
+                handleCallback: () => addNewUser(),
+              },
+            }}
+          />
         </div>
       </div>
       <UserConfirmationModal
@@ -303,6 +328,16 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         onSave={saveEditUser}
         orgAssignment={sharedOrgAssignment}
         roles={roles}
+      />
+      <AddUser
+        roles={roles}
+        organizationId={organizationId}
+        isOpen={isAddNewUserOpen}
+        onClose={addNewUserClosed}
+        onSuccess={newUserAdded}
+        existingUsers={assignments.map((assignment: OrganizationAssignment) =>
+          pathOr('', ['personaId_linked', 'email'], assignment)
+        )}
       />
     </div>
   )

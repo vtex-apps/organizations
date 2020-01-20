@@ -5,6 +5,7 @@
   "store/my-users.role-id": "Role",
   "store/my-users.errors.role-id.empty": "Role is empty",
   "store/my-users.errors.email.empty": "Email is empty",
+  "store/my-users.errors.email.exists": "User already exists",
   "store/my-users.errors.email.invalid": "Email is invalid",
   "store/my-users.success": "User added successfully",
   "admin/editor.challenge-permission.title": "Permission Challenge",

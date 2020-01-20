@@ -30,7 +30,7 @@ const MyUsersPage = () => {
       !profileData.profile.email,
     variables: {
       acronym: 'Persona',
-      fields: ['id', 'clientId', 'businessOrganizationId_linked'],
+      fields: ['id', 'businessOrganizationId_linked'],
       where: `(email=${
         profileData && profileData.profile ? profileData.profile.email : ''
       })`,

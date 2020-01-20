@@ -34,6 +34,7 @@ declare global {
   interface Role {
     value: string
     label: string
+    name: string
   }
 
   interface BusinessOrganization {

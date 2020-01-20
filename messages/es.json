@@ -5,6 +5,7 @@
   "store/my-users.role-id": "Papel",
   "store/my-users.errors.role-id.empty": "El rol está vacío.",
   "store/my-users.errors.email.empty": "El correo esta vacio",
+  "store/my-users.errors.email.exists": "User already exists",
   "store/my-users.errors.email.invalid": "el correo electrónico es invalido",
   "store/my-users.success": "Usuario agregado exitosamente",
   "admin/editor.challenge-permission.title": "Desafío de permisos",

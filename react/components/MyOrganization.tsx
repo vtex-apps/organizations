@@ -263,7 +263,7 @@ const MyOrganization = (props: Props) => {
     })
   }
   const closeLeaveOrganization = () => {
-    setLeaveOrgConfirmationLoading(false)
+    setIsLeaveOrgConfirmationOpen(false)
     setSharedOrgAssignment({} as OrganizationAssignment)
   }
 

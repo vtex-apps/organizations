@@ -11,6 +11,7 @@ import {
 import { useMutation, useLazyQuery } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import GET_DOCUMENT from '../graphql/documents.graphql'
 import { injectIntl, InjectedIntlProps } from 'react-intl'
 import documentQuery from '../graphql/documents.graphql'
 
@@ -60,8 +61,29 @@ const AddUser = ({
   organizationId,
 }: Props & InjectedIntlProps) => {
   // const [addUser, { error: userError, data: userData }] = useMutation(ADD_USER)
+
+  const updateCache = (cache: any, {data}: any) => {
+    const response: any = cache.readQuery({ query: GET_DOCUMENT, variables: {
+      acronym: 'OrgAssignment',
+      fields: [
+        'id',
+        'personaId',
+        'personaId_linked',
+        'businessOrganizationId_linked',
+        'status',
+        'roleId_linked',
+      ],
+      where: `businessOrganizationId=${organizationId}`,
+      schema: 'organization-assignment-schema-v1',
+    }});
+    console.log(data)
+    console.log(response)
+  }
+
   const [createDocument] = useMutation(CREATE_DOCUMENT)
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  //const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [updateUserDocument] = useMutation(UPDATE_DOCUMENT, { update: updateCache})
+  const [createUserDocument] = useMutation(UPDATE_DOCUMENT, { update: updateCache})
   const [isEmailChecked, setIsEmailChecked] = useState(false)
   // const [createOrgAssignment] = useMutation(CREATE_DOCUMENT, {
   //   refetchQueries: [
@@ -231,15 +253,18 @@ const AddUser = ({
     return fields
   }
 
+
+
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
 
     if (state.email && state.roleId) {
       const savePersona =
         personaId !== '' && email !== '' && email === state.email
-          ? updateDocument
-          : createDocument
+          ? updateUserDocument
+          : createUserDocument
 
+      
       savePersona({
         variables: {
           acronym: 'Persona',
@@ -247,7 +272,7 @@ const AddUser = ({
             fields: getPersonaFields(),
           },
           schema: 'persona-schema-v1',
-        },
+        }
       })
         .catch(handleGraphqlError())
         .then((response: any) => {

@@ -14,6 +14,7 @@ import { useMutation, useQuery } from 'react-apollo'
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import { updateCacheCreatePersona } from '../utils/cacheUtils'
 
 interface Props {
   userEmail: string
@@ -129,10 +130,13 @@ const AddOrganization = (props: Props) => {
   const [email, setEmail] = useState('')
   const [globalErrorMessage, setGlobalErrorMessage] = useState('')
 
-  const [addOrganization] = useMutation(CREATE_DOCUMENT)
-  const [addOrganizationAssignment] = useMutation(CREATE_DOCUMENT)
-  const [addPersona] = useMutation(CREATE_DOCUMENT)
-  const [updatePersona] = useMutation(UPDATE_DOCUMENT)
+  const [createDocument] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+
+  const [addPersona] = useMutation(CREATE_DOCUMENT, {
+    update: (cache: any, { data }: any) =>
+      updateCacheCreatePersona(cache, data, props.userEmail),
+  })
 
   const getOrganizationFields = () => {
     return [
@@ -161,7 +165,7 @@ const AddOrganization = (props: Props) => {
       { key: 'email', value: props.userEmail },
       { key: 'businessOrganizationId', value: organizationId },
     ]
-    if(personaId !== undefined){
+    if (personaId !== undefined) {
       array.push({ key: 'id', value: personaId })
     }
     return array
@@ -185,60 +189,11 @@ const AddOrganization = (props: Props) => {
     }
   }
 
-  // const getMessage = (error: Error) => {
-  //   return path(
-  //     [
-  //       'graphQLErrors',
-  //       0,
-  //       'extensions',
-  //       'exception',
-  //       'response',
-  //       'data',
-  //       'Message',
-  //     ],
-  //     error
-  //   ) as string
-  // }
-
-  // const createOrg = () => {
-  //   return addOrganization({
-  //     variables: {
-  //       acronym: 'BusinessOrganization',
-  //       document: { fields: getOrganizationFields() },
-  //       schema: 'business-organization-schema-v1',
-  //     },
-  //   }).then((organizationResponse: any) => {
-  //     const organizationId = pathOr(
-  //       '',
-  //       ['data', 'createDocument', 'cacheId'],
-  //       organizationResponse
-  //     )
-  //     return Promise.resolve({ organizationId: organizationId })
-  //   })
-  //     .catch((e: Error) => {
-  //       const error = getMessage(e)
-  //       if(error === 'The document already exist with id or alternate key.'){
-  //         useQuery(GET_DOCUMENT, {
-  //           variables: {
-  //             acronym: 'BusinessOrganization',
-  //             schema: 'business-organization-schema-v1',
-  //             fields: [
-  //               'id'
-  //             ], where: `name=${name}`
-  //           },
-  //         }).then((data: any) => {
-
-  //         })
-  //       }
-  //       return Promise.reject()
-  //     })
-  // }
-
   const createOrganization = async (roleId: string) => {
     let orgId = ''
-    let pid = props.personaId? props.personaId: ''
+    let pid = props.personaId ? props.personaId : ''
 
-    addOrganization({
+    createDocument({
       variables: {
         acronym: 'BusinessOrganization',
         document: { fields: getOrganizationFields() },
@@ -252,7 +207,7 @@ const AddOrganization = (props: Props) => {
           ['data', 'createDocument', 'cacheId'],
           organizationResponse
         )
-        const save = props.personaId !== undefined? updatePersona: addPersona
+        const save = props.personaId !== undefined ? updateDocument : addPersona
 
         return save({
           variables: {
@@ -268,15 +223,11 @@ const AddOrganization = (props: Props) => {
           ['data', 'createDocument', 'cacheId'],
           personaResponse
         )
-        addOrganizationAssignment({
+        createDocument({
           variables: {
             acronym: 'OrgAssignment',
             document: {
-              fields: getOrganizationAssignmentFields(
-                orgId,
-                pid,
-                roleId
-              ),
+              fields: getOrganizationAssignmentFields(orgId, pid, roleId),
             },
             schema: 'organization-assignment-schema-v1',
           },
@@ -287,67 +238,15 @@ const AddOrganization = (props: Props) => {
         setTelephone('')
         setAddress('')
         setEmail('')
-        props.updateOrgInfo(pid ,orgId)
+        props.updateOrgInfo(pid, orgId)
       })
-
-    // const organizationResponse = await
-
-    // const organizationId = pathOr(
-    //   '',
-    //   ['data', 'createDocument', 'cacheId'],
-    //   organizationResponse
-    // )
-
-    // if (!organizationId || organizationId === '') {
-    //   return
-    // }
-
-    // const personaResponse = await addPersona({
-    //   variables: {
-    //     acronym: 'Persona',
-    //     document: { fields: getPersonaFields(clientId, organizationId) },
-    //     schema: 'persona-schema-v1',
-    //   },
-    // })
-
-    // const personaId = pathOr(
-    //   '',
-    //   ['data', 'createDocument', 'cacheId'],
-    //   personaResponse
-    // )
-
-    // // if (!personaId || personaId === '') {
-    // //   return
-    // // }
-
-    // await addOrganizationAssignment({
-    //   variables: {
-    //     acronym: 'OrgAssignment',
-    //     document: {
-    //       fields: getOrganizationAssignmentFields(
-    //         organizationId,
-    //         personaId,
-    //         roleId
-    //       ),
-    //     },
-    //     schema: 'organization-assignment-schema-v1',
-    //   },
-    // })
   }
-
-  // const { data: clientData } = useQuery(GET_DOCUMENT, {
-  //   variables: {
-  //     acronym: 'CL',
-  //     fields: ['id'],
-  //     where: `(email=${props.userEmail})`,
-  //   },
-  // })
 
   const { data: roleData } = useQuery(GET_DOCUMENT, {
     variables: {
       acronym: 'BusinessRole',
       fields: ['id', 'name', 'label'],
-      where: '(name=*manager*)', 
+      where: '(name=*manager*)',
       schema: 'business-role-schema-v1',
     },
   })
@@ -355,18 +254,11 @@ const AddOrganization = (props: Props) => {
   const roleFields = roleData
     ? pathOr([], ['fields'], last(roleData.documents))
     : []
-  // const clientFields = clientData
-  //   ? pathOr([], ['fields'], last(clientData.documents))
-  //   : []
 
   const roleId =
     roleFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), roleFields))
       : ''
-  // const clientId =
-  //   clientFields.length > 0
-  //     ? pathOr('', ['value'], find(propEq('key', 'id'), clientFields))
-  //     : ''
 
   return (
     <PageBlock>

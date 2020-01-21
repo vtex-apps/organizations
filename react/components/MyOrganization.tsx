@@ -17,6 +17,11 @@ import { documentSerializer } from '../utils/documentSerializer'
 import pathOr from 'ramda/es/pathOr'
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
+import {
+  updateCacheOrgAssignmentStatus,
+  updateCachePersonaOrgId,
+  updateCacheDeleteAssignment,
+} from '../utils/cacheUtils'
 
 interface Props {
   userEmail: string
@@ -28,7 +33,9 @@ interface Props {
 const MyOrganization = (props: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
-  
+  const [updateOrgAssignmentStatus] = useMutation(UPDATE_DOCUMENT)
+  const [updatePersonaOrgId] = useMutation(UPDATE_DOCUMENT)
+
   const [globalErrorMessage, setGlobalErrorMessage] = useState('')
   const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
@@ -82,6 +89,7 @@ const MyOrganization = (props: Props) => {
       fields: [
         'id',
         'personaId',
+        'personaId_linked',
         'roleId',
         'status',
         'businessOrganizationId',
@@ -171,7 +179,7 @@ const MyOrganization = (props: Props) => {
     assignmentId: string,
     status: string
   ) => {
-    return updateDocument({
+    return updateOrgAssignmentStatus({
       variables: {
         acronym: 'OrgAssignment',
         document: {
@@ -182,25 +190,67 @@ const MyOrganization = (props: Props) => {
         },
         schema: 'organization-assignment-schema-v1',
       },
-    }).catch(handleGlobalError())
-    .then(() => {
-      const updatedAssignmentId: string =
-        status === 'APPROVED'
-          ? pathOr('', ['id'], find(propEq('id', assignmentId))(orgAssignments))
-          : ''
-      return updateDocument({
-        variables: {
-          acronym: 'Persona',
-          document: {
-            fields: [
-              { key: 'id', value: props.personaId },
-              { key: 'businessOrganizationId', value: updatedAssignmentId },
-            ],
+      update: (cache: any) =>
+        updateCacheOrgAssignmentStatus(
+          cache,
+          assignmentId,
+          status,
+          props.organizationId,
+          props.personaId
+        ),
+    })
+      .catch(handleGlobalError())
+      .then(() => {
+        const updatedOrgId: string =
+          status === 'APPROVED'
+            ? pathOr(
+                '',
+                ['businessOrganizationId'],
+                find(propEq('id', assignmentId))(orgAssignments)
+              )
+            : ''
+        const orgFields: any =
+          status === 'APPROVED'
+            ? pathOr(
+                [],
+                ['businessOrganizationId_linked'],
+                find(propEq('id', assignmentId))(orgAssignments)
+              )
+            : []
+        const personaEmail: any = pathOr(
+          '',
+          ['value'],
+          find(
+            propEq('key', 'email'),
+            pathOr(
+              [],
+              ['personaId_linked'],
+              find(propEq('id', assignmentId))(orgAssignments)
+            )
+          )
+        )
+
+        return updatePersonaOrgId({
+          variables: {
+            acronym: 'Persona',
+            document: {
+              fields: [
+                { key: 'id', value: props.personaId },
+                { key: 'businessOrganizationId', value: updatedOrgId },
+              ],
+            },
+            schema: 'persona-schema-v1',
           },
-          schema: 'persona-schema-v1',
-        },
+          update: (cache: any) =>
+            updateCachePersonaOrgId(
+              cache,
+              orgFields,
+              personaEmail,
+              props.personaId
+            ),
+        })
       })
-    }).catch(handleGlobalError())
+      .catch(handleGlobalError())
   }
 
   const deleteOrgAssignment = (assignmentId: string) => {
@@ -209,21 +259,39 @@ const MyOrganization = (props: Props) => {
         acronym: 'OrgAssignment',
         documentId: assignmentId,
       },
-    }).catch(handleGlobalError())
-    .then(() => {
-      return updateDocument({
-        variables: {
-          acronym: 'Persona',
-          document: {
-            fields: [
-              { key: 'id', value: props.personaId },
-              { key: 'businessOrganizationId', value: '' },
-            ],
+      update: (cache: any, { data }: any) =>
+        updateCacheDeleteAssignment(cache, data, assignmentId),
+    })
+      .catch(handleGlobalError())
+      .then(() => {
+        const personaEmail: any = pathOr(
+          '',
+          ['value'],
+          find(
+            propEq('key', 'email'),
+            pathOr(
+              [],
+              ['personaId_linked'],
+              find(propEq('id', assignmentId))(orgAssignments)
+            )
+          )
+        )
+        return updateDocument({
+          variables: {
+            acronym: 'Persona',
+            document: {
+              fields: [
+                { key: 'id', value: props.personaId },
+                { key: 'businessOrganizationId', value: '' },
+              ],
+            },
+            schema: 'persona-schema-v1',
           },
-          schema: 'persona-schema-v1',
-        },
+          update: (cache: any) =>
+            updateCachePersonaOrgId(cache, [], personaEmail, props.personaId),
+        })
       })
-    }).catch(handleGlobalError())
+      .catch(handleGlobalError())
   }
 
   // LEAVE
@@ -317,7 +385,7 @@ const MyOrganization = (props: Props) => {
     if (assignmentsExceptMe && assignmentsExceptMe.length > 0) {
       setIsDeleteAssignmentWarningOpen(true)
     } else {
-      deleteOrganization
+      deleteOrganization(assignment)
       console.log(assignment)
     }
   }
@@ -363,7 +431,7 @@ const MyOrganization = (props: Props) => {
         <PageHeader title="Organization" linkLabel="Return"></PageHeader>
       }>
       <PageBlock>
-    <div className="red">{globalErrorMessage}</div>
+        <div className="red">{globalErrorMessage}</div>
         {pendingAssignments &&
           pendingAssignments.map(x => (
             <div className="mb7">
@@ -435,16 +503,18 @@ const MyOrganization = (props: Props) => {
                     Leave
                   </Button>
                 </span>
-                { userRole && userRole.name && userRole.name === 'manager' && (<span className="ml2">
-                  <Button
-                    variation="danger-tertiary"
-                    size="small"
-                    onClick={() =>
-                      deleteCurrentOrganization(defaultAssignment)
-                    }>
-                    Delete
-                  </Button>
-                </span>)}
+                {userRole && userRole.name && userRole.name === 'manager' && (
+                  <span className="ml2">
+                    <Button
+                      variation="danger-tertiary"
+                      size="small"
+                      onClick={() =>
+                        deleteCurrentOrganization(defaultAssignment)
+                      }>
+                      Delete
+                    </Button>
+                  </span>
+                )}
               </div>
             </div>
 

@@ -53,7 +53,7 @@ const MyUsersPage = () => {
     )
   }
 
-  const personaFields = pathOr([], ['fields'], last(personaData.documents))
+  const personaFields = pathOr([], ['fields'], last(personaData.documents2))
 
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(
@@ -68,7 +68,7 @@ const MyUsersPage = () => {
       ? prop('id', businessOrganization)
       : ''
   const personaId =
-    personaFields.length > 0
+  personaFields && personaFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
       : ''
 

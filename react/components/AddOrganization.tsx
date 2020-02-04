@@ -252,7 +252,7 @@ const AddOrganization = (props: Props) => {
   })
 
   const roleFields = roleData
-    ? pathOr([], ['fields'], last(roleData.documents))
+    ? pathOr([], ['fields'], last(roleData.documents2))
     : []
 
   const roleId =

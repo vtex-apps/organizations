@@ -67,7 +67,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   })
 
   const rolesList: any[] = documentSerializer(
-    pathOr([], ['documents'], roleData)
+    pathOr([], ['documents2'], roleData)
   )
   const roles: Role[] = rolesList.map((role: any) => ({
     label: role.label,
@@ -75,7 +75,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
     name: role.name,
   }))
   const assignments: OrganizationAssignment[] = documentSerializer(
-    pathOr([], ['documents'], orgAssignments)
+    pathOr([], ['documents2'], orgAssignments)
   )
 
   const defaultUserAssignment = find(

@@ -126,7 +126,7 @@ const MyOrganization = (props: Props) => {
   }
 
   const orgAssignments: OrganizationAssignment[] = orgAssignmentData
-    ? documentSerializer(orgAssignmentData.documents)
+    ? documentSerializer(orgAssignmentData.documents2)
     : []
 
   const userAssignments =
@@ -150,7 +150,7 @@ const MyOrganization = (props: Props) => {
     propEq('businessOrganizationId', props.organizationId)
   )(userAssignments)
 
-  const roles: Role[] = rolesData ? documentSerializer(rolesData.documents) : []
+  const roles: Role[] = rolesData ? documentSerializer(rolesData.documents2) : []
 
   const userRole =
     defaultAssignment && defaultAssignment.roleId

@@ -249,8 +249,8 @@ const AddUser = ({
         .catch(handleGraphqlError())
         .then(({ data: personaData }: any) => {
           const personaFields =
-            personaData && personaData.documents
-              ? pathOr([], ['fields'], last(personaData.documents))
+            personaData && personaData.documents2
+              ? pathOr([], ['fields'], last(personaData.documents2))
               : []
           const personaId =
             personaFields.length > 0

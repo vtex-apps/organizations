@@ -21,7 +21,7 @@ const ConfirmationModal = ({
   assignment,
   confirmAction,
   message,
-  intl
+  intl,
 }: Props & InjectedIntlProps) => {
   return (
     <ModalDialog
@@ -38,12 +38,13 @@ const ConfirmationModal = ({
       }}
       isOpen={isOpen}
       onClose={() => onClose()}>
-      <h1>{confirmAction} {intl.formatMessage({ id: 'store/my-users.errors.organization.text' })}</h1>
+      <h1>
+        {confirmAction}{' '}
+        {intl.formatMessage({ id: 'store/my-users.errors.organization.text' })}
+      </h1>
       <div className="flex flex-column mb5 mt5">
         <div>
-          <span>
-            {message}
-          </span>
+          <span>{message}</span>
           <span className="b">
             {pathOr('', ['businessOrganizationId_linked', 'name'], assignment)}
           </span>

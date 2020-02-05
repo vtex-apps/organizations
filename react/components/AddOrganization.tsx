@@ -11,6 +11,7 @@ import {
 } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
@@ -24,7 +25,7 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
   BUSINESS_ORGANIZATION,
-  BUSINESS_ORGANIZATION_SCHEMA
+  BUSINESS_ORGANIZATION_SCHEMA,
 } from '../utils/const'
 
 interface Props {
@@ -50,7 +51,12 @@ type Actions =
   | Action<'TELEPHONE_ERROR', { args: { telephone: string } }>
   | Action<'EMAIL_ERROR', { args: { email: string } }>
 
-const AddOrganization = (props: Props) => {
+const AddOrganization = ({
+  userEmail,
+  personaId,
+  intl,
+  updateOrgInfo,
+}: Props & InjectedIntlProps) => {
   const initialState = {
     errorMessages: [] as ErrorMessage[],
   }
@@ -146,7 +152,7 @@ const AddOrganization = (props: Props) => {
 
   const [addPersona] = useMutation(CREATE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
-      updateCacheCreatePersona(cache, data, props.userEmail),
+      updateCacheCreatePersona(cache, data, userEmail),
   })
 
   const getOrganizationFields = () => {
@@ -173,7 +179,7 @@ const AddOrganization = (props: Props) => {
 
   const getPersonaFields = (organizationId: string, personaId?: string) => {
     let array = [
-      { key: 'email', value: props.userEmail },
+      { key: 'email', value: userEmail },
       { key: 'businessOrganizationId', value: organizationId },
     ]
     if (personaId !== undefined) {
@@ -202,7 +208,7 @@ const AddOrganization = (props: Props) => {
 
   const createOrganization = async (roleId: string) => {
     let orgId = ''
-    let pid = props.personaId ? props.personaId : ''
+    let pid = personaId ? personaId : ''
 
     createDocument({
       variables: {
@@ -218,12 +224,12 @@ const AddOrganization = (props: Props) => {
           ['data', 'createMyDocument', 'cacheId'],
           organizationResponse
         )
-        const save = props.personaId !== undefined ? updateDocument : addPersona
+        const save = personaId !== undefined ? updateDocument : addPersona
 
         return save({
           variables: {
             acronym: 'Persona',
-            document: { fields: getPersonaFields(orgId, props.personaId) },
+            document: { fields: getPersonaFields(orgId, personaId) },
             schema: 'persona-schema-v1',
           },
         }).catch(handleGlobalError())
@@ -249,7 +255,7 @@ const AddOrganization = (props: Props) => {
         setTelephone('')
         setAddress('')
         setEmail('')
-        props.updateOrgInfo(pid, orgId)
+        updateOrgInfo(pid, orgId)
       })
   }
 
@@ -278,9 +284,12 @@ const AddOrganization = (props: Props) => {
           <span className="red">{globalErrorMessage}</span>
         </div>
         <Input
-          placeholder="Organization name"
-          dataAttributes={{ 'hj-white-list': true }}
-          label="Name"
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.organizationName',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.organizationName',
+          })}
           value={name}
           error={pathOr(
             false,
@@ -300,9 +309,12 @@ const AddOrganization = (props: Props) => {
       </div>
       <div className="mb5">
         <Input
-          placeholder="Telephone"
-          dataAttributes={{ 'hj-white-list': true }}
-          label="Telephone"
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.telephone',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.telephone',
+          })}
           value={telephone}
           error={pathOr(
             false,
@@ -325,18 +337,24 @@ const AddOrganization = (props: Props) => {
       </div>
       <div className="mb5">
         <Input
-          placeholder="Address"
-          dataAttributes={{ 'hj-white-list': true }}
-          label="Address"
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.address',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.address',
+          })}
           value={address}
           onChange={(e: any) => setAddress(e.target.value)}
         />
       </div>
       <div className="mb5">
         <Input
-          placeholder="Organization email"
-          dataAttributes={{ 'hj-white-list': true }}
-          label="Email"
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.email',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.email',
+          })}
           value={email}
           error={pathOr(
             false,
@@ -369,11 +387,11 @@ const AddOrganization = (props: Props) => {
               ))
           }
           onClick={() => createOrganization(roleId)}>
-          Save
+          {intl.formatMessage({ id: 'store/my-users.button.save' })}
         </Button>
       </div>
     </PageBlock>
   )
 }
 
-export default AddOrganization
+export default injectIntl(AddOrganization)

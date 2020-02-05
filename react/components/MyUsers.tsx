@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
-import { injectIntl } from 'react-intl'
 import { Table, Button } from 'vtex.styleguide'
 import { pathOr, find, path, propEq } from 'ramda'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -31,7 +31,11 @@ interface Props {
   organizationId: string
 }
 
-const MyUsers = ({ organizationId, personaId }: Props) => {
+const MyUsers = ({
+  organizationId,
+  personaId,
+  intl,
+}: Props & InjectedIntlProps) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -91,10 +95,14 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const defaultSchema = {
     properties: {
       email: {
-        title: 'Email',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.email',
+        }),
       },
       status: {
-        title: 'Status',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.status',
+        }),
         cellRenderer: ({ cellData }: any) => {
           if (cellData === 'APPROVED') {
             return 'Active'
@@ -107,10 +115,14 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         },
       },
       role: {
-        title: 'Role',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.role',
+        }),
       },
       editAssignment: {
-        title: 'Edit',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.edit',
+        }),
         cellRenderer: ({ cellData }: any) => {
           return defaultUserAssignment &&
             cellData !== defaultUserAssignment.id ? (
@@ -118,7 +130,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
               variation="tertiary"
               size="small"
               onClick={() => editUser(cellData)}>
-              Edit
+              {intl.formatMessage({
+                id: 'store/my-users.my-user.table-title.edit',
+              })}
             </Button>
           ) : (
             ''
@@ -126,7 +140,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         },
       },
       reInviteAssignment: {
-        title: 'Invite',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.invite',
+        }),
         cellRenderer: ({ cellData }: any) => {
           const assignment = find(propEq('id', cellData), assignments)
           return defaultUserAssignment &&
@@ -137,7 +153,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
               variation="tertiary"
               size="small"
               onClick={() => reInvite(cellData)}>
-              Re Invite
+              {intl.formatMessage({
+                id: 'store/my-users.my-user.table-title.invite',
+              })}
             </Button>
           ) : (
             ''
@@ -145,7 +163,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         },
       },
       deleteAssignment: {
-        title: 'Delete',
+        title: intl.formatMessage({
+          id: 'store/my-users.my-user.table-title.delete',
+        }),
         cellRenderer: ({ cellData }: any) => {
           return defaultUserAssignment &&
             cellData !== defaultUserAssignment.id ? (
@@ -153,7 +173,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
               variation="danger-tertiary"
               size="small"
               onClick={() => deleteUserAssignment(cellData as string)}>
-              Delete
+              {intl.formatMessage({
+                id: 'store/my-users.my-user.table-title.delete',
+              })}
             </Button>
           ) : (
             ''
@@ -300,7 +322,9 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
             items={tableItems}
             toolbar={{
               newLine: {
-                label: 'Add User',
+                label: intl.formatMessage({
+                  id: 'store/my-users.my-user.table.button.add-new',
+                }),
                 handleCallback: () => addNewUser(),
               },
             }}
@@ -313,8 +337,12 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
         onConfirm={confirmDelete}
         onClose={closeDelete}
         assignment={sharedOrgAssignment}
-        confirmAction={'Delete'}
-        message={'Do you want to delete user: '}
+        confirmAction={intl.formatMessage({
+          id: 'store/my-users.my-user.delete-confirmation-action',
+        })}
+        message={intl.formatMessage({
+          id: 'store/my-users.my-user.delete-confirmation-message',
+        })}
       />
       <UserEditModal
         isOpen={isUserEditOpen}

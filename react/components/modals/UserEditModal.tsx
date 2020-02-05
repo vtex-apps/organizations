@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Button, Dropdown } from 'vtex.styleguide'
 import { useMutation } from 'react-apollo'
 import { pathOr } from 'ramda'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
+
 import { updateCacheEditUser } from '../../utils/cacheUtils'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
+
+import { ORG_ASSIGNMENT, ORG_ASSIGNMENT_SCHEMA } from '../../utils/const'
 
 interface Props {
   isOpen: boolean
@@ -18,8 +22,9 @@ const UserEditModal = ({
   onClose,
   onSave,
   orgAssignment,
-  roles
-}: Props) => {
+  roles,
+  intl,
+}: Props & InjectedIntlProps) => {
   const [roleId, setRoleId] = useState('')
   const [assignmentId, setAssignmentId] = useState('')
   const [organizationId, setOrganizationId] = useState('')
@@ -44,14 +49,14 @@ const UserEditModal = ({
   const onSaveEdit = () => {
     updateUserDocument({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         document: {
           fields: [
             { key: 'id', value: assignmentId },
             { key: 'roleId', value: roleId },
           ],
         },
-        schema: 'organization-assignment-schema-v1',
+        schema: ORG_ASSIGNMENT_SCHEMA,
       },
     })
       .catch(handleGlobalError())
@@ -70,7 +75,7 @@ const UserEditModal = ({
         <div className="nowrap">
           <span className="mr4">
             <Button variation="tertiary" onClick={() => onClose()}>
-              Cancel
+              {intl.formatMessage({ id: 'store/my-users.button.cancel' })}
             </Button>
           </span>
           <span>
@@ -78,7 +83,7 @@ const UserEditModal = ({
               variation="secondary"
               disabled={roleId === ''}
               onClick={() => onSaveEdit()}>
-              Save
+              {intl.formatMessage({ id: 'store/my-users.button.save' })}
             </Button>
           </span>
         </div>
@@ -86,7 +91,8 @@ const UserEditModal = ({
       onClose={() => onClose()}>
       <div>
         <div className="mb5 mt5">
-          Email : {pathOr('', ['personaId_linked', 'email'], orgAssignment)}
+          {intl.formatMessage({ id: 'store/my-users.label.email' })} :{' '}
+          {pathOr('', ['personaId_linked', 'email'], orgAssignment)}
         </div>
         <div className="mb5">
           <Dropdown
@@ -104,4 +110,4 @@ const UserEditModal = ({
   )
 }
 
-export default UserEditModal
+export default injectIntl(UserEditModal)

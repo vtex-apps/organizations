@@ -1,6 +1,7 @@
 import React from 'react'
 import { Modal, Button } from 'vtex.styleguide'
 import { pathOr } from 'ramda'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 interface Props {
   isOpen: boolean
@@ -12,7 +13,16 @@ interface Props {
   messageLine2?: string
 }
 
-const WarningModal = ({ isOpen, onOk, onClose, assignment, title, messageLine1, messageLine2 }: Props) => {
+const WarningModal = ({
+  isOpen,
+  onOk,
+  onClose,
+  assignment,
+  title,
+  messageLine1,
+  messageLine2,
+  intl
+}: Props & InjectedIntlProps) => {
   return (
     <Modal
       isOpen={isOpen}
@@ -23,7 +33,7 @@ const WarningModal = ({ isOpen, onOk, onClose, assignment, title, messageLine1, 
         <div className="nowrap">
           <span className="mr4">
             <Button variation="tertiary" onClick={() => onOk()}>
-              Ok
+            {intl.formatMessage({ id: 'store/my-users.button.ok' })}
             </Button>
           </span>
         </div>
@@ -37,13 +47,11 @@ const WarningModal = ({ isOpen, onOk, onClose, assignment, title, messageLine1, 
           </span>
         </div>
         <div className="mt2">
-          <span className="red">
-          {messageLine2}
-          </span>
+          <span className="red">{messageLine2}</span>
         </div>
       </div>
     </Modal>
   )
 }
 
-export default WarningModal
+export default injectIntl(WarningModal)

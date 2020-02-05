@@ -2,7 +2,7 @@ type Query {
   """
   Search documents
   """
-  documents2(
+  myDocuments(
     """
     Schema name. e.g.: CL, AD
     """
@@ -27,12 +27,12 @@ type Query {
     Defines the Master Data schema to be used
     """
     schema: String
-  ): [Document]
+  ): [Document] @cacheControl(maxAge: SHORT)
 
   """
   Get document
   """
-  document2(
+  myDocument(
     """
     Schema name. e.g.: CL, AD
     """
@@ -45,12 +45,12 @@ type Query {
     Document id
     """
     id: String
-  ): Document
+  ): Document @cacheControl(maxAge: SHORT)
 
   """
   Get a document schema
   """
-  documentSchema2(
+  myDocumentSchema(
     """
     Data entity name. e.g.: CL, AD
     """
@@ -59,22 +59,22 @@ type Query {
     MasterData schema name.
     """
     schema: String
-  ): DocumentSchema
+  ): DocumentSchema @cacheControl(maxAge: SHORT)
 }
 
 type Mutation {
   """
   Document
   """
-  createDocument2(
+  createMyDocument(
     acronym: String!
     document: DocumentInput
     schema: String
   ): DocumentResponse
-  updateDocument2(
+  updateMyDocument(
     acronym: String!
     document: DocumentInput
     schema: String
   ): DocumentResponse
-  deleteDocument2(acronym: String!, documentId: String!): DocumentResponse
+  deleteMyDocument(acronym: String!, documentId: String!): DocumentResponse
 }

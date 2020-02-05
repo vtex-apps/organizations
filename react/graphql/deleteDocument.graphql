@@ -1,5 +1,5 @@
 mutation deleteDocument($acronym: String!, $documentId: String!) {
-  deleteDocument2(acronym: $acronym, documentId: $documentId) {
+  deleteMyDocument(acronym: $acronym, documentId: $documentId) {
     id
     cacheId
   }

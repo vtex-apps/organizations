@@ -2,10 +2,13 @@ import React, { Fragment, useState } from 'react'
 import { last, find, prop, propEq, pathOr, hasPath } from 'ramda'
 import { Route } from 'react-router-dom'
 import { useQuery } from 'react-apollo'
+
 import documentQuery from './graphql/documents.graphql'
 import profileQuery from './graphql/getProfile.graphql'
+
 import { EmptyState } from 'vtex.styleguide'
 import MyOrganization from './components/MyOrganization'
+import { PERSONA_ACRONYM, PERSONA_FIELDS, PERSONA_SCHEMA } from './utils/const'
 
 const MyUsersPage = () => {
 
@@ -29,12 +32,12 @@ const MyUsersPage = () => {
       profileData.profile == null ||
       !profileData.profile.email,
     variables: {
-      acronym: 'Persona',
-      fields: ['id', 'businessOrganizationId_linked'],
+      acronym: PERSONA_ACRONYM,
+      fields: PERSONA_FIELDS,
       where: `(email=${
         profileData && profileData.profile ? profileData.profile.email : ''
       })`,
-      schema: 'persona-schema-v1',
+      schema: PERSONA_SCHEMA,
     },
   })
 
@@ -53,7 +56,7 @@ const MyUsersPage = () => {
     )
   }
 
-  const personaFields = pathOr([], ['fields'], last(personaData.documents2))
+  const personaFields = pathOr([], ['fields'], last(personaData.myDocuments))
 
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(

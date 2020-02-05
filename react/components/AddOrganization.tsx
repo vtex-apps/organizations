@@ -11,10 +11,21 @@ import {
 } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
+
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+
 import { updateCacheCreatePersona } from '../utils/cacheUtils'
+import {
+  BUSINESS_ROLE,
+  BUSINESS_ROLE_FIELDS,
+  BUSINESS_ROLE_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_SCHEMA,
+  BUSINESS_ORGANIZATION,
+  BUSINESS_ORGANIZATION_SCHEMA
+} from '../utils/const'
 
 interface Props {
   userEmail: string
@@ -195,16 +206,16 @@ const AddOrganization = (props: Props) => {
 
     createDocument({
       variables: {
-        acronym: 'BusinessOrganization',
+        acronym: BUSINESS_ORGANIZATION,
         document: { fields: getOrganizationFields() },
-        schema: 'business-organization-schema-v1',
+        schema: BUSINESS_ORGANIZATION_SCHEMA,
       },
     })
       .catch(handleGlobalError())
       .then((organizationResponse: any) => {
         orgId = pathOr(
           '',
-          ['data', 'createDocument', 'cacheId'],
+          ['data', 'createMyDocument', 'cacheId'],
           organizationResponse
         )
         const save = props.personaId !== undefined ? updateDocument : addPersona
@@ -219,17 +230,17 @@ const AddOrganization = (props: Props) => {
       })
       .then((personaResponse: any) => {
         pid = pathOr(
-          pathOr('', ['data', 'updateDocument', 'cacheId'], personaResponse),
-          ['data', 'createDocument', 'cacheId'],
+          pathOr('', ['data', 'updateMyDocument', 'cacheId'], personaResponse),
+          ['data', 'createMyDocument', 'cacheId'],
           personaResponse
         )
         createDocument({
           variables: {
-            acronym: 'OrgAssignment',
+            acronym: ORG_ASSIGNMENT,
             document: {
               fields: getOrganizationAssignmentFields(orgId, pid, roleId),
             },
-            schema: 'organization-assignment-schema-v1',
+            schema: ORG_ASSIGNMENT_SCHEMA,
           },
         })
       })
@@ -244,15 +255,15 @@ const AddOrganization = (props: Props) => {
 
   const { data: roleData } = useQuery(GET_DOCUMENT, {
     variables: {
-      acronym: 'BusinessRole',
-      fields: ['id', 'name', 'label'],
+      acronym: BUSINESS_ROLE,
+      fields: BUSINESS_ROLE_FIELDS,
       where: '(name=*manager*)',
-      schema: 'business-role-schema-v1',
+      schema: BUSINESS_ROLE_SCHEMA,
     },
   })
 
   const roleFields = roleData
-    ? pathOr([], ['fields'], last(roleData.documents2))
+    ? pathOr([], ['fields'], last(roleData.myDocuments))
     : []
 
   const roleId =

@@ -1,12 +1,20 @@
 import React, { SyntheticEvent, useReducer } from 'react'
 import { isEmpty, path, pathOr, find, propEq, last, contains } from 'ramda'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
 import { Modal, Button, Dropdown, Input } from 'vtex.styleguide'
 import { useMutation, useApolloClient } from 'react-apollo'
+
 import CREATE_DOCUMENT from '../../graphql/createDocument.graphql'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
 import GET_DOCUMENT from '../../graphql/documents.graphql'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+
 import { updateCacheAddUser } from '../../utils/cacheUtils'
+import {
+  PERSONA_ACRONYM,
+  PERSONA_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_SCHEMA,
+} from '../../utils/const'
 
 interface Props {
   isOpen: boolean
@@ -240,8 +248,8 @@ const AddUser = ({
         .query({
           query: GET_DOCUMENT,
           variables: {
-            acronym: 'Persona',
-            schema: 'persona-schema-v1',
+            acronym: PERSONA_ACRONYM,
+            schema: PERSONA_SCHEMA,
             fields: ['id', 'email', 'businessOrganizationId'],
             where: `email=${state.email}`,
           },
@@ -249,8 +257,8 @@ const AddUser = ({
         .catch(handleGraphqlError())
         .then(({ data: personaData }: any) => {
           const personaFields =
-            personaData && personaData.documents2
-              ? pathOr([], ['fields'], last(personaData.documents2))
+            personaData && personaData.myDocuments
+              ? pathOr([], ['fields'], last(personaData.myDocuments))
               : []
           const personaId =
             personaFields.length > 0
@@ -263,19 +271,19 @@ const AddUser = ({
             data && data.personaId ? updateDocument : createDocument
           return savePersona({
             variables: {
-              acronym: 'Persona',
+              acronym: PERSONA_ACRONYM,
               document: {
                 fields: getPersonaFields(data.personaId),
               },
-              schema: 'persona-schema-v1',
+              schema: PERSONA_SCHEMA,
             },
           })
         })
         .catch(handleGraphqlError())
         .then((response: any) => {
           const persona = pathOr(
-            pathOr('', ['data', 'updateDocument', 'cacheId'], response),
-            ['data', 'createDocument', 'cacheId'],
+            pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
+            ['data', 'createMyDocument', 'cacheId'],
             response
           )
 
@@ -286,11 +294,11 @@ const AddUser = ({
 
           return createAssignmentDocument({
             variables: {
-              acronym: 'OrgAssignment',
+              acronym: ORG_ASSIGNMENT,
               document: {
                 fields: getAssignmentFields(persona),
               },
-              schema: 'organization-assignment-schema-v1',
+              schema: ORG_ASSIGNMENT_SCHEMA,
             },
           }).catch(handleGraphqlError())
         })
@@ -322,22 +330,6 @@ const AddUser = ({
   return (
     <Modal isOpen={isOpen} onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
-        {/* {!isEmpty(state.messages) && (
-          <div className="mb5">
-            {state.messages.map(
-              (message: { value: string; type: string }, index: number) => (
-                <p
-                  key={`message-${index}`}
-                  className={classNames(
-                    { 'c-danger hover-c-danger': message.type == 'ERROR' },
-                    { 'c-success hover-c-success': message.type == 'SUCCESS' }
-                  )}>
-                  {message.value}
-                </p>
-              )
-            )}
-          </div>
-        )} */}
         <div className="mb5 flex">
           <Input
             type="text"

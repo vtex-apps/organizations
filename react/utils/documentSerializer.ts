@@ -12,8 +12,6 @@ export const documentSerializer = (documents: any) => {
     if(endsWith('_linked', field.key) && !isNil(field.value) && !isEmpty(field.value)){
       fieldsAccumulator[field.key] = JSON.parse(field.value)
     }
-
-    //fieldsAccumulator[field.key] = field.value
     return fieldsAccumulator
   }
 

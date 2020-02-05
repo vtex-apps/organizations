@@ -1,6 +1,7 @@
 import React from 'react'
 import { ModalDialog } from 'vtex.styleguide'
 import { pathOr } from 'ramda'
+import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 interface Props {
   isOpen: boolean
@@ -19,8 +20,9 @@ const ConfirmationModal = ({
   onClose,
   assignment,
   confirmAction,
-  message
-}: Props) => {
+  message,
+  intl
+}: Props & InjectedIntlProps) => {
   return (
     <ModalDialog
       centered
@@ -36,7 +38,7 @@ const ConfirmationModal = ({
       }}
       isOpen={isOpen}
       onClose={() => onClose()}>
-      <h1>{confirmAction} organization</h1>
+      <h1>{confirmAction} {intl.formatMessage({ id: 'store/my-users.errors.organization.text' })}</h1>
       <div className="flex flex-column mb5 mt5">
         <div>
           <span>
@@ -51,4 +53,4 @@ const ConfirmationModal = ({
   )
 }
 
-export default ConfirmationModal
+export default injectIntl(ConfirmationModal)

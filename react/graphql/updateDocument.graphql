@@ -3,7 +3,7 @@ mutation updateDocument(
   $document: DocumentInput
   $schema: String
 ) {
-  updateDocument2(acronym: $acronym, document: $document, schema: $schema) {
+  updateMyDocument(acronym: $acronym, document: $document, schema: $schema) {
     id
     cacheId
   }

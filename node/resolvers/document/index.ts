@@ -4,7 +4,7 @@ import { parseFieldsToJson } from '../../utils/object'
 import { resolvers as documentSchemaResolvers} from './documentSchema'
 
 export const queries = {
-  documents2: async (_: any, args: DocumentsArgs, context: Context) => {
+  myDocuments: async (_: any, args: DocumentsArgs, context: Context) => {
     const { acronym, fields, page, pageSize, where, schema } = args
     const { clients: { masterdata } } = context
     const fieldsWithId = union(fields, ['id'])
@@ -22,7 +22,7 @@ export const queries = {
     )(data)
   },
 
-  document2: async (_: any, args: DocumentArgs, context: Context) => {
+  myDocument: async (_: any, args: DocumentArgs, context: Context) => {
     const { acronym, fields, id } = args
     const {
       clients: { masterdata },
@@ -35,7 +35,7 @@ export const queries = {
     }
   },
 
-  documentSchema2: async(_: any, args: DocumentSchemaArgs, context: Context) => {
+  myDocumentSchema: async(_: any, args: DocumentSchemaArgs, context: Context) => {
     const { dataEntity, schema } = args;
 
     const {
@@ -53,7 +53,7 @@ export const fieldResolvers = {
 }
 
 export const mutations = {
-  createDocument2: async (
+  createMyDocument: async (
     _: any,
     args: CreateDocumentArgs,
     context: Context
@@ -81,7 +81,7 @@ export const mutations = {
     }
   },
 
-  updateDocument2: async (
+  updateMyDocument: async (
     _: any,
     args: UpdateDocumentArgs,
     context: Context
@@ -111,7 +111,7 @@ export const mutations = {
     }
   },
 
-  deleteDocument2: async (
+  deleteMyDocument: async (
     _: any,
     args: DeleteDocumentArgs,
     context: Context

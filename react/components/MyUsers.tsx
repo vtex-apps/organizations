@@ -1,17 +1,30 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
 import { injectIntl } from 'react-intl'
-import documentQuery from '../graphql/documents.graphql'
 import { Table, Button } from 'vtex.styleguide'
-import { pathOr, find, path } from 'ramda'
-import AddUser from './modals/AddUser'
+import { pathOr, find, path, propEq } from 'ramda'
+
 import { documentSerializer } from '../utils/documentSerializer'
-import propEq from 'ramda/es/propEq'
+
+import AddUser from './modals/AddUser'
 import UserConfirmationModal from './modals/UserConfirmationModal'
+import UserEditModal from './modals/UserEditModal'
+
+import documentQuery from '../graphql/documents.graphql'
 import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
-import UserEditModal from './modals/UserEditModal'
+
 import { updateCacheDeleteUser } from '../utils/cacheUtils'
+import {
+  PERSONA_ACRONYM,
+  PERSONA_SCHEMA,
+  BUSINESS_ROLE,
+  BUSINESS_ROLE_FIELDS,
+  BUSINESS_ROLE_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_FIELDS,
+  ORG_ASSIGNMENT_SCHEMA,
+} from '../utils/const'
 
 interface Props {
   personaId: string
@@ -44,30 +57,22 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
 
   const { data: roleData } = useQuery(documentQuery, {
     variables: {
-      acronym: 'BusinessRole',
-      fields: ['id', 'name', 'label'],
-      schema: 'business-role-schema-v1',
+      acronym: BUSINESS_ROLE,
+      fields: BUSINESS_ROLE_FIELDS,
+      schema: BUSINESS_ROLE_SCHEMA,
     },
   })
   const { data: orgAssignments } = useQuery(documentQuery, {
     variables: {
-      acronym: 'OrgAssignment',
-      fields: [
-        'id',
-        'personaId',
-        'personaId_linked',
-        'businessOrganizationId',
-        'businessOrganizationId_linked',
-        'status',
-        'roleId_linked',
-      ],
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${organizationId}`,
-      schema: 'organization-assignment-schema-v1',
+      schema: ORG_ASSIGNMENT_SCHEMA,
     },
   })
 
   const rolesList: any[] = documentSerializer(
-    pathOr([], ['documents2'], roleData)
+    pathOr([], ['myDocuments'], roleData)
   )
   const roles: Role[] = rolesList.map((role: any) => ({
     label: role.label,
@@ -75,7 +80,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
     name: role.name,
   }))
   const assignments: OrganizationAssignment[] = documentSerializer(
-    pathOr([], ['documents2'], orgAssignments)
+    pathOr([], ['myDocuments'], orgAssignments)
   )
 
   const defaultUserAssignment = find(
@@ -188,7 +193,7 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         documentId: assignment.id,
       },
     }).catch(handleGlobalError())
@@ -199,14 +204,14 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
       .then(() => {
         return updateDocument({
           variables: {
-            acronym: 'Persona',
+            acronym: PERSONA_ACRONYM,
             document: {
               fields: [
                 { key: 'id', value: assignment.personaId },
                 { key: 'businessOrganizationId', value: '' },
               ],
             },
-            schema: 'persona-schema-v1',
+            schema: PERSONA_SCHEMA,
           },
         })
       })
@@ -242,14 +247,14 @@ const MyUsers = ({ organizationId, personaId }: Props) => {
   const reInvite = (assignmentId: string) => {
     return updateDocument({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         document: {
           fields: [
             { key: 'id', value: assignmentId },
             { key: 'status', value: 'PENDING' },
           ],
         },
-        schema: 'organization-assignment-schema-v1',
+        schema: ORG_ASSIGNMENT_SCHEMA,
       },
     }).catch(handleGlobalError())
   }

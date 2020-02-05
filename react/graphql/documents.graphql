@@ -6,7 +6,7 @@ query getDocuments(
   $page: Int
   $pageSize: Int
 ) {
-  documents2(
+  myDocuments(
     acronym: $acronym
     fields: $fields
     schema: $schema

@@ -13,5 +13,6 @@
   "admin/editor.challenge-permission.permissions.items.title": "Permissions",
   "admin/editor.challenge-permission.permissions.items.name": "Name",
   "admin/test": "test",
-  "store/test": "test"
+  "store/test": "test",
+  "store/my-users.errors.organization.text": "Organization"
 }

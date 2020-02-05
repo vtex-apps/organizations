@@ -1,6 +1,5 @@
 import React, { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
-import documentQuery from '../graphql/documents.graphql'
 import {
   EmptyState,
   PageBlock,
@@ -8,20 +7,34 @@ import {
   Layout,
   Button,
 } from 'vtex.styleguide'
-import { find, propEq, filter, reject, path } from 'ramda'
+
+import { find, propEq, filter, reject, path, pathOr } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
-import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
-import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
-import { documentSerializer } from '../utils/documentSerializer'
-import pathOr from 'ramda/es/pathOr'
+
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
+
+import DOCUMENTS from '../graphql/documents.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
+
+import { documentSerializer } from '../utils/documentSerializer'
 import {
   updateCacheOrgAssignmentStatus,
   updateCachePersonaOrgId,
   updateCacheDeleteAssignment,
 } from '../utils/cacheUtils'
+import {
+  PERSONA_ACRONYM,
+  PERSONA_SCHEMA,
+  BUSINESS_ROLE,
+  BUSINESS_ROLE_FIELDS,
+  BUSINESS_ROLE_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_FIELDS,
+  ORG_ASSIGNMENT_SCHEMA,
+} from '../utils/const'
 
 interface Props {
   userEmail: string
@@ -37,6 +50,7 @@ const MyOrganization = (props: Props) => {
   const [updatePersonaOrgId] = useMutation(UPDATE_DOCUMENT)
 
   const [globalErrorMessage, setGlobalErrorMessage] = useState('')
+
   const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [isDeclineConfirmationOpen, setIsDeclineConfirmationOpen] = useState(
@@ -77,24 +91,17 @@ const MyOrganization = (props: Props) => {
     (props.organizationId !== ''
       ? ` OR businessOrganizationId=${props.organizationId})`
       : ')')
+
   const {
     loading: orgAssignmentLoading,
     error: orgAssignmentError,
     data: orgAssignmentData,
-  } = useQuery(documentQuery, {
+  } = useQuery(DOCUMENTS, {
     skip: props.personaId === '',
     variables: {
-      acronym: 'OrgAssignment',
-      schema: 'organization-assignment-schema-v1',
-      fields: [
-        'id',
-        'personaId',
-        'personaId_linked',
-        'roleId',
-        'status',
-        'businessOrganizationId',
-        'businessOrganizationId_linked',
-      ],
+      acronym: ORG_ASSIGNMENT,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      fields: ORG_ASSIGNMENT_FIELDS,
       where: assignmentFilter,
     },
   })
@@ -103,12 +110,12 @@ const MyOrganization = (props: Props) => {
     loading: rolesLoading,
     error: rolesError,
     data: rolesData,
-  } = useQuery(documentQuery, {
+  } = useQuery(DOCUMENTS, {
     skip: props.personaId === '',
     variables: {
-      acronym: 'BusinessRole',
-      schema: 'business-role-schema-v1',
-      fields: ['id', 'name', 'label'],
+      acronym: BUSINESS_ROLE,
+      schema: BUSINESS_ROLE_SCHEMA,
+      fields: BUSINESS_ROLE_FIELDS,
     },
   })
 
@@ -126,7 +133,7 @@ const MyOrganization = (props: Props) => {
   }
 
   const orgAssignments: OrganizationAssignment[] = orgAssignmentData
-    ? documentSerializer(orgAssignmentData.documents2)
+    ? documentSerializer(orgAssignmentData.myDocuments)
     : []
 
   const userAssignments =
@@ -150,7 +157,9 @@ const MyOrganization = (props: Props) => {
     propEq('businessOrganizationId', props.organizationId)
   )(userAssignments)
 
-  const roles: Role[] = rolesData ? documentSerializer(rolesData.documents2) : []
+  const roles: Role[] = rolesData
+    ? documentSerializer(rolesData.myDocuments)
+    : []
 
   const userRole =
     defaultAssignment && defaultAssignment.roleId
@@ -181,14 +190,14 @@ const MyOrganization = (props: Props) => {
   ) => {
     return updateOrgAssignmentStatus({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         document: {
           fields: [
             { key: 'id', value: assignmentId },
             { key: 'status', value: status },
           ],
         },
-        schema: 'organization-assignment-schema-v1',
+        schema: ORG_ASSIGNMENT_SCHEMA,
       },
       update: (cache: any) =>
         updateCacheOrgAssignmentStatus(
@@ -232,14 +241,14 @@ const MyOrganization = (props: Props) => {
 
         return updatePersonaOrgId({
           variables: {
-            acronym: 'Persona',
+            acronym: PERSONA_ACRONYM,
             document: {
               fields: [
                 { key: 'id', value: props.personaId },
                 { key: 'businessOrganizationId', value: updatedOrgId },
               ],
             },
-            schema: 'persona-schema-v1',
+            schema: PERSONA_SCHEMA,
           },
           update: (cache: any) =>
             updateCachePersonaOrgId(
@@ -256,7 +265,7 @@ const MyOrganization = (props: Props) => {
   const deleteOrgAssignment = (assignmentId: string) => {
     return deleteDocument({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         documentId: assignmentId,
       },
       update: (cache: any, { data }: any) =>
@@ -278,14 +287,14 @@ const MyOrganization = (props: Props) => {
         )
         return updateDocument({
           variables: {
-            acronym: 'Persona',
+            acronym: PERSONA_ACRONYM,
             document: {
               fields: [
                 { key: 'id', value: props.personaId },
                 { key: 'businessOrganizationId', value: '' },
               ],
             },
-            schema: 'persona-schema-v1',
+            schema: PERSONA_SCHEMA,
           },
           update: (cache: any) =>
             updateCachePersonaOrgId(cache, [], personaEmail, props.personaId),
@@ -340,7 +349,7 @@ const MyOrganization = (props: Props) => {
     if (defaultAssignment) {
       setIsApproveWarningOpen(true)
     } else {
-      updateAssignmentStatus(assignmentId, 'APPROVE').then(() => {
+      updateAssignmentStatus(assignmentId, 'APPROVED').then(() => {
         const updatedOrgId: string = pathOr(
           '',
           ['businessOrganizationId'],

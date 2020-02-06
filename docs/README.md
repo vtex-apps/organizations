@@ -23,7 +23,8 @@ You should have these master data tables in order to use this application
 `BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
 
 <details><summary>Roles Schema</summary>
-``` json
+
+``` 
 {
     "properties": {
         "name": {

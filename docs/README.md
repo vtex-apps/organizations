@@ -19,10 +19,9 @@ Add this app to your theme dependencies:
 
 You should have created these master data entities and schemas in order to use this application
 
-### Roles (`BusinessRole`)
-`BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
+> **_NOTE:_**  `BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
 
-<details><summary>BusinessRole Schema</summary>
+<details><summary>BusinessRole</summary>
 
 ``` 
 
@@ -84,12 +83,7 @@ Schema Name: business-role-schema-v1
 ```
 </details>
 
-
-### Persona
-
-Schema for Persona master data entity 
-
-<details><summary>Persona Schema</summary>
+<details><summary>Persona</summary>
 
 ``` 
 
@@ -144,12 +138,7 @@ Schema Name: persona-schema-v1
 ```
 </details>
 
-
-### Business Organization
-
-Schema for business organization master data entity
-
-<details><summary>BusinessOrganization Schema</summary>
+<details><summary>BusinessOrganization</summary>
 
 ``` 
 
@@ -214,12 +203,7 @@ Schema Name: business-organization-schema-v1
 ```
 </details>
 
-
-### Organization Assignment
-
-Schema for `OrgAssignement` master data entity 
-
-<details><summary>OrgAssignment Schema</summary>
+<details><summary>OrgAssignment</summary>
 
 ``` 
 

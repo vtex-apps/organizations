@@ -17,14 +17,18 @@ Add this app to your theme dependencies:
 
 ## Master data tables and schemas
 
-You should have these master data tables in order to use this application
+You should have created these master data entities and schemas in order to use this application
 
 ### Roles (`BusinessRole`)
 `BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
 
-<details><summary>Roles Schema</summary>
+<details><summary>BusinessRole Schema</summary>
 
 ``` 
+
+Data Entity Name: BusinessRole
+Schema Name: business-role-schema-v1
+
 {
     "properties": {
         "name": {
@@ -81,6 +85,213 @@ You should have these master data tables in order to use this application
 </details>
 
 
+### Persona
 
-If the user does not have an organization, he will have the option to create one. If he already has one he will see te list of users he has added
-and the option to add, edit users.
+Schema for Persona master data entity 
+
+<details><summary>Persona Schema</summary>
+
+``` 
+
+Data Entity Name: Persona
+Schema Name: persona-schema-v1
+
+{
+	"properties": {
+		"businessOrganizationId": {
+			"type": "string",
+			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
+		},
+		"email": {
+			"type": "string",
+			"format": "email"
+		}
+	},
+	"v-default-fields": [
+		"id",
+		"businessOrganizationId",
+		"businessOrganizationId_linked",
+		"email"
+	],
+	"required": [
+		"businessOrganizationId",
+		"email"
+	],
+	"v-indexed": [
+		"businessOrganizationId",
+		"email"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"id",
+			"businessOrganizationId",
+			"businessOrganizationId_linked",
+			"email"
+		],
+		"publicWrite": [
+			"businessOrganizationId",
+			"email"
+		],
+		"publicFilter": [
+			"id",
+			"businessOrganizationId",
+			"email"
+		]
+	}
+}
+
+```
+</details>
+
+
+### Business Organization
+
+Schema for business organization master data entity
+
+<details><summary>BusinessOrganization Schema</summary>
+
+``` 
+
+Data Entity Name: BusinessOrganization
+Schema Name: business-organization-schema-v1
+
+{
+	"properties": {
+		"name": {
+			"type": "string"
+		},
+		"telephone": {
+			"type": "string"
+		},
+		"address": {
+			"type": "string"
+		},
+		"email": {
+			"type": "string"
+		}
+	},
+	"v-default-fields": [
+		"name",
+		"telephone",
+		"id",
+		"address",
+		"email"
+	],
+	"required": [
+		"name",
+		"telephone"
+	],
+	"v-indexed": [
+		"name",
+		"telephone",
+		"email"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"name",
+			"telephone",
+			"id",
+			"address",
+			"email"
+		],
+		"publicWrite": [
+			"name",
+			"telephone",
+			"address",
+			"email"
+		],
+		"publicFilter": [
+			"name",
+			"telephone",
+			"id",
+			"email"
+		]
+	}
+}
+
+```
+</details>
+
+
+### Organization Assignment
+
+Schema for `OrgAssignement` master data entity 
+
+<details><summary>OrgAssignment Schema</summary>
+
+``` 
+
+Data Entity Name: OrgAssignment
+Schema Name: organization-assignment-schema-v1
+
+{
+	"properties": {
+		"personaId": {
+			"type": "string",
+			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1"
+		},
+		"businessOrganizationId": {
+			"type": "string",
+			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
+		},
+		"roleId": {
+			"type": "string",
+			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1"
+		},
+		"status": {
+			"type": "string"
+		}
+	},
+	"v-default-fields": [
+		"personaId",
+		"id",
+		"businessOrganizationId",
+		"roleId",
+		"status"
+	],
+	"required": [
+		"personaId",
+		"businessOrganizationId",
+		"roleId",
+		"status"
+	],
+	"v-indexed": [
+		"personaId",
+		"businessOrganizationId",
+		"roleId"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"personaId",
+			"personaId_linked",
+			"id",
+			"businessOrganizationId",
+			"businessOrganizationId_linked",
+			"roleId",
+			"roleId_linked",
+			"status"
+		],
+		"publicWrite": [
+			"id",
+			"personaId",
+			"businessOrganizationId",
+			"roleId",
+			"status"
+		],
+		"publicFilter": [
+			"personaId",
+			"id",
+			"businessOrganizationId",
+			"roleId",
+			"status"
+		]
+	}
+}
+
+```
+</details>
+
+

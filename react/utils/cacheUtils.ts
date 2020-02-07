@@ -6,6 +6,7 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_PENDING
 } from './const'
 
 export const updateCacheAddUser = (
@@ -49,7 +50,7 @@ export const updateCacheAddUser = (
     },
     {
       key: 'status',
-      value: 'PENDING',
+      value: ASSIGNMENT_STATUS_PENDING,
     },
     { key: 'businessOrganizationId_linked', value: org },
     {

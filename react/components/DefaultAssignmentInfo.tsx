@@ -5,6 +5,7 @@ import { Button } from 'vtex.styleguide'
 
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
+import { ASSIGNMENT_STATUS_DECLINED } from '../utils/const'
 
 interface Props {
   personaId: string
@@ -85,7 +86,7 @@ const DefaultAssignmentInfo = ({
 
   const confirmLeaveOrganization = () => {
     setLeaveOrgConfirmationLoading(true)
-    updateAssignmentStatus(sharedOrgAssignment.id, 'DECLINE')
+    updateAssignmentStatus(sharedOrgAssignment.id, ASSIGNMENT_STATUS_DECLINED)
       .then(() => {
         setLeaveOrgConfirmationLoading(false)
         setIsLeaveOrgConfirmationOpen(false)

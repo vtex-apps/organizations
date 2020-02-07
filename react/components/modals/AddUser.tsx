@@ -14,6 +14,7 @@ import {
   PERSONA_SCHEMA,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_PENDING
 } from '../../utils/const'
 
 interface Props {
@@ -236,7 +237,7 @@ const AddUser = ({
       },
       {
         key: 'status',
-        value: 'PENDING',
+        value: ASSIGNMENT_STATUS_PENDING,
       },
     ]
 

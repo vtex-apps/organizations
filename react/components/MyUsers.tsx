@@ -24,6 +24,9 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
+  ASSIGNMENT_STATUS_DECLINED,
+  ASSIGNMENT_STATUS_PENDING
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
@@ -106,11 +109,11 @@ const MyUsers = ({
           id: 'store/my-users.my-user.table-title.status',
         }),
         cellRenderer: ({ cellData }: any) => {
-          if (cellData === 'APPROVED') {
+          if (cellData === ASSIGNMENT_STATUS_APPROVED) {
             return 'Active'
-          } else if (cellData === 'DECLINED') {
+          } else if (cellData === ASSIGNMENT_STATUS_DECLINED) {
             return 'Inactive'
-          } else if (cellData === 'PENDING') {
+          } else if (cellData === ASSIGNMENT_STATUS_PENDING) {
             return 'Pending'
           }
           return ''
@@ -150,7 +153,7 @@ const MyUsers = ({
           return defaultUserAssignment &&
             cellData !== defaultUserAssignment.id &&
             assignment &&
-            assignment.status === 'DECLINED' ? (
+            assignment.status === ASSIGNMENT_STATUS_DECLINED ? (
             <Button
               variation="tertiary"
               size="small"
@@ -233,7 +236,7 @@ const MyUsers = ({
   const confirmDelete = () => {
     setDeleteConfirmationLoading(true)
     const doDelete =
-      sharedOrgAssignment.status === 'APPROVED'
+      sharedOrgAssignment.status === ASSIGNMENT_STATUS_APPROVED
         ? deleteAssignmentWithUser
         : deleteOrgAssignment
     doDelete(sharedOrgAssignment).then(() => {
@@ -266,7 +269,7 @@ const MyUsers = ({
         document: {
           fields: [
             { key: 'id', value: assignmentId },
-            { key: 'status', value: 'PENDING' },
+            { key: 'status', value: ASSIGNMENT_STATUS_PENDING },
           ],
         },
         schema: ORG_ASSIGNMENT_SCHEMA,

@@ -34,6 +34,8 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
+  ASSIGNMENT_STATUS_PENDING
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
@@ -117,7 +119,7 @@ const MyOrganization = ({
       : []
 
   const pendingAssignments: OrganizationAssignment[] = filter(
-    propEq('status', 'PENDING'),
+    propEq('status', ASSIGNMENT_STATUS_PENDING),
     userAssignments
   )
   const defaultAssignment: OrganizationAssignment = find(
@@ -159,7 +161,7 @@ const MyOrganization = ({
     })
       .then(() => {
         const updatedOrgId: string =
-          status === 'APPROVED'
+          status === ASSIGNMENT_STATUS_APPROVED
             ? pathOr(
                 '',
                 ['businessOrganizationId'],
@@ -167,7 +169,7 @@ const MyOrganization = ({
               )
             : ''
         const orgFields: any =
-          status === 'APPROVED'
+          status === ASSIGNMENT_STATUS_APPROVED
             ? pathOr(
                 [],
                 ['businessOrganizationId_linked'],

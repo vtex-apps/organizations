@@ -25,6 +25,7 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   BUSINESS_ORGANIZATION,
   BUSINESS_ORGANIZATION_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
@@ -174,7 +175,7 @@ const AddOrganization = ({
       { key: 'personaId', value: personaId },
       { key: 'businessOrganizationId', value: organizationId },
       { key: 'roleId', value: roleId },
-      { key: 'status', value: 'APPROVED' },
+      { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
     ]
   }
 

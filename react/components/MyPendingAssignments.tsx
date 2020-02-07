@@ -5,7 +5,7 @@ import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
-
+import { ASSIGNMENT_STATUS_APPROVED, ASSIGNMENT_STATUS_DECLINED} from '../utils/const'
 interface Props {
   personaId: string
   assignments: OrganizationAssignment[]
@@ -41,7 +41,7 @@ const MyPendingAssignments = ({
     if (defaultAssignment) {
       setIsApproveWarningOpen(true)
     } else {
-      updateAssignmentStatus(assignmentId, 'APPROVED')
+      updateAssignmentStatus(assignmentId, ASSIGNMENT_STATUS_APPROVED)
         .then((data: any) => {
           console.log(data)
           const updatedOrgId: string = pathOr(
@@ -73,7 +73,7 @@ const MyPendingAssignments = ({
 
   const confirmDeclineOrgAssignment = () => {
     setDeclineAssignmentLoading(true)
-    updateAssignmentStatus(sharedAssignment.id, 'DECLINE')
+    updateAssignmentStatus(sharedAssignment.id, ASSIGNMENT_STATUS_DECLINED)
       .then(() => {
         setDeclineAssignmentLoading(false)
         setIsDeclineConfirmationOpen(false)

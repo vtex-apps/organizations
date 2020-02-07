@@ -22,3 +22,7 @@ export const ORG_ASSIGNMENT_SCHEMA = 'organization-assignment-schema-v1'
 export const BUSINESS_ORGANIZATION = 'BusinessOrganization'
 export const BUSINESS_ORGANIZATION_FIELDS = []
 export const BUSINESS_ORGANIZATION_SCHEMA = 'business-organization-schema-v1'
+
+export const ASSIGNMENT_STATUS_APPROVED = "APPROVED"
+export const ASSIGNMENT_STATUS_DECLINED = "DECLINED"
+export const ASSIGNMENT_STATUS_PENDING = "PENDING"

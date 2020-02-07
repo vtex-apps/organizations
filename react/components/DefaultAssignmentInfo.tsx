@@ -14,6 +14,7 @@ interface Props {
   updateAssignmentStatus: Function
   deleteOrgAssignment: Function
   infoUpdated: Function
+  showToast: Function
 }
 
 const DefaultAssignmentInfo = ({
@@ -24,6 +25,7 @@ const DefaultAssignmentInfo = ({
   updateAssignmentStatus,
   deleteOrgAssignment,
   infoUpdated,
+  showToast,
   intl,
 }: Props & InjectedIntlProps) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
@@ -83,13 +85,24 @@ const DefaultAssignmentInfo = ({
 
   const confirmLeaveOrganization = () => {
     setLeaveOrgConfirmationLoading(true)
-    updateAssignmentStatus(sharedOrgAssignment.id, 'DECLINE').then(() => {
-      setLeaveOrgConfirmationLoading(false)
-      setIsLeaveOrgConfirmationOpen(false)
-      setSharedOrgAssignment({} as OrganizationAssignment)
+    updateAssignmentStatus(sharedOrgAssignment.id, 'DECLINE')
+      .then(() => {
+        setLeaveOrgConfirmationLoading(false)
+        setIsLeaveOrgConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
 
-      infoUpdated(personaId, '')
-    })
+        infoUpdated(personaId, '')
+      })
+      .catch((message: string) => {
+        setLeaveOrgConfirmationLoading(false)
+        setIsLeaveOrgConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
+        showToast({
+          message: `Can't leave organization because "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
   const closeLeaveOrganization = () => {
     setIsLeaveOrgConfirmationOpen(false)
@@ -127,6 +140,16 @@ const DefaultAssignmentInfo = ({
       setSharedOrgAssignment({} as OrganizationAssignment)
 
       infoUpdated(personaId, '')
+    })
+    .catch((message: string) => {
+      setDeleteOrgConfirmationLoading(false)
+      setIsDeleteOrgConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
+      showToast({
+        message: `Can't leave organization because "${message}"`,
+        duration: 5000,
+        horizontalPosition: 'right',
+      })
     })
   }
 

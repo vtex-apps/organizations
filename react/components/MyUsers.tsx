@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
 import { Table, Button } from 'vtex.styleguide'
-import { pathOr, find, path, propEq } from 'ramda'
+import { pathOr, find, propEq } from 'ramda'
 import { injectIntl, InjectedIntlProps } from 'react-intl'
 
 import { documentSerializer } from '../utils/documentSerializer'
@@ -25,15 +25,18 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
 } from '../utils/const'
+import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
 interface Props {
   personaId: string
   organizationId: string
+  showToast: Function
 }
 
 const MyUsers = ({
   organizationId,
   personaId,
+  showToast,
   intl,
 }: Props & InjectedIntlProps) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
@@ -51,7 +54,6 @@ const MyUsers = ({
   const [deleteConfirmationLoading, setDeleteConfirmationLoading] = useState(
     false
   )
-  const [globalErrorMessage, setGlobalErrorMessage] = useState('')
 
   const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
     {} as OrganizationAssignment
@@ -194,31 +196,13 @@ const MyUsers = ({
     deleteAssignment: pathOr('', ['id'], assignment),
   }))
 
-  const handleGlobalError = () => {
-    return (e: Error) => {
-      setGlobalErrorMessage(path(
-        [
-          'graphQLErrors',
-          0,
-          'extensions',
-          'exception',
-          'response',
-          'data',
-          'Message',
-        ],
-        e
-      ) as string)
-      return Promise.reject()
-    }
-  }
-
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
       variables: {
         acronym: ORG_ASSIGNMENT,
         documentId: assignment.id,
       },
-    }).catch(handleGlobalError())
+    })
   }
 
   const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
@@ -237,7 +221,6 @@ const MyUsers = ({
           },
         })
       })
-      .catch(handleGlobalError())
   }
 
   // DELETE
@@ -257,6 +240,16 @@ const MyUsers = ({
       setDeleteConfirmationLoading(false)
       setIsDeleteConfirmationOpen(false)
       setSharedOrgAssignment({} as OrganizationAssignment)
+    }).catch((e: Error) => {
+      const message = getErrorMessage(e)
+      setDeleteConfirmationLoading(false)
+      setIsDeleteConfirmationOpen(false)
+      setSharedOrgAssignment({} as OrganizationAssignment)
+      showToast({
+        message: `Can't delete user ${message}`,
+        duration: 5000,
+        horizontalPosition: 'right',
+      })
     })
   }
 
@@ -278,7 +271,14 @@ const MyUsers = ({
         },
         schema: ORG_ASSIGNMENT_SCHEMA,
       },
-    }).catch(handleGlobalError())
+    }).catch((e: Error) => {
+      const message = getErrorMessage(e)
+      showToast({
+        message: `Can't re-invite, ${message}`,
+        duration: 5000,
+        horizontalPosition: 'right',
+      })
+    })
   }
 
   // EDIT
@@ -314,7 +314,6 @@ const MyUsers = ({
   return (
     <div className="flex flex-column">
       <div>
-        <div className="red">{globalErrorMessage}</div>
         <div className="mb5">
           <Table
             fullWidth
@@ -350,6 +349,7 @@ const MyUsers = ({
         onSave={saveEditUser}
         orgAssignment={sharedOrgAssignment}
         roles={roles}
+        showToast={showToast}
       />
       <AddUser
         roles={roles}
@@ -357,6 +357,7 @@ const MyUsers = ({
         isOpen={isAddNewUserOpen}
         onClose={addNewUserClosed}
         onSuccess={newUserAdded}
+        showToast={showToast}
         existingUsers={assignments.map((assignment: OrganizationAssignment) =>
           pathOr('', ['personaId_linked', 'email'], assignment)
         )}

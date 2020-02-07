@@ -6,12 +6,11 @@ import { useQuery } from 'react-apollo'
 import documentQuery from './graphql/documents.graphql'
 import profileQuery from './graphql/getProfile.graphql'
 
-import { EmptyState } from 'vtex.styleguide'
+import { EmptyState, ToastProvider } from 'vtex.styleguide'
 import MyOrganization from './components/MyOrganization'
 import { PERSONA_ACRONYM, PERSONA_FIELDS, PERSONA_SCHEMA } from './utils/const'
 
 const MyUsersPage = () => {
-
   const [persona, setPersonaId] = useState('')
   const [orgId, setOrgId] = useState('')
 
@@ -71,7 +70,7 @@ const MyUsersPage = () => {
       ? prop('id', businessOrganization)
       : ''
   const personaId =
-  personaFields && personaFields.length > 0
+    personaFields && personaFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
       : ''
 
@@ -80,30 +79,31 @@ const MyUsersPage = () => {
       ? profileData.profile.email
       : ''
 
-
   const updated = (newPersonaId: string, newOrgId: string) => {
-    if(newPersonaId && newPersonaId !== ''){
+    if (newPersonaId && newPersonaId !== '') {
       setPersonaId(newPersonaId)
     }
-    if(newOrgId && newOrgId !== ''){
+    if (newOrgId && newOrgId !== '') {
       setOrgId(newOrgId)
     }
   }
 
   return (
     <Fragment>
-      <Route
-        path="/users"
-        exact
-        component={() => (
-          <MyOrganization
-            personaId={personaId || persona}
-            organizationId={organizationId || orgId}
-            userEmail={profileEmail}
-            infoUpdated={updated}
-          />
-        )}
-      />
+      <ToastProvider positioning="window">
+        <Route
+          path="/users"
+          exact
+          component={() => (
+            <MyOrganization
+              personaId={personaId || persona}
+              organizationId={organizationId || orgId}
+              userEmail={profileEmail}
+              infoUpdated={updated}
+            />
+          )}
+        />
+      </ToastProvider>
     </Fragment>
   )
 }

@@ -1,17 +1,38 @@
-// export const handleGlobalError = () => {
-//     return (e: Error) => {
-//       setGlobalErrorMessage(path(
-//         [
-//           'graphQLErrors',
-//           0,
-//           'extensions',
-//           'exception',
-//           'response',
-//           'data',
-//           'Message',
-//         ],
-//         e
-//       ) as string)
-//       return Promise.reject()
-//     }
-//   }
+import { pathOr } from 'ramda'
+
+export const getErrorMessage = (e: any) => {
+  debugger
+  const message = pathOr(
+    '',
+    [
+      'graphQLErrors',
+      0,
+      'extensions',
+      'exception',
+      'response',
+      'data',
+      'Message',
+    ],
+    e
+  )
+  return message
+}
+
+export const handleGlobalError = () => {
+  return (e: Error) => {
+    var message: string = pathOr(
+      '',
+      [
+        'graphQLErrors',
+        0,
+        'extensions',
+        'exception',
+        'response',
+        'data',
+        'Message',
+      ],
+      e
+    )
+    return Promise.reject(message)
+  }
+}

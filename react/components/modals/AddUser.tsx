@@ -23,6 +23,7 @@ interface Props {
   existingUsers: string[]
   roles: Role[]
   organizationId: string
+  showToast: Function
 }
 
 interface State {
@@ -70,6 +71,7 @@ const AddUser = ({
   roles,
   organizationId,
   existingUsers,
+  showToast
 }: Props & InjectedIntlProps) => {
   const client = useApolloClient()
   const [createDocument] = useMutation(CREATE_DOCUMENT)
@@ -182,25 +184,26 @@ const AddUser = ({
 
   const handleGraphqlError = () => {
     return (e: Error) => {
+      const message = path(
+        [
+          'graphQLErrors',
+          0,
+          'extensions',
+          'exception',
+          'response',
+          'data',
+          'Message',
+        ],
+        e
+      ) as string
       dispatch({
         type: 'RESPONSE',
         args: {
           type: 'ERROR',
-          message: path(
-            [
-              'graphQLErrors',
-              0,
-              'extensions',
-              'exception',
-              'response',
-              'data',
-              'Message',
-            ],
-            e
-          ) as string,
+          message: message,
         },
       })
-      return Promise.reject()
+      return Promise.reject(message)
     }
   }
 
@@ -254,7 +257,6 @@ const AddUser = ({
             where: `email=${state.email}`,
           },
         })
-        .catch(handleGraphqlError())
         .then(({ data: personaData }: any) => {
           const personaFields =
             personaData && personaData.myDocuments
@@ -279,7 +281,6 @@ const AddUser = ({
             },
           })
         })
-        .catch(handleGraphqlError())
         .then((response: any) => {
           const persona = pathOr(
             pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
@@ -300,8 +301,8 @@ const AddUser = ({
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
-          }).catch(handleGraphqlError())
-        })
+          })
+        }).catch(handleGraphqlError())
         .then(() => {
           dispatch({
             type: 'RESPONSE',
@@ -324,6 +325,13 @@ const AddUser = ({
           })
 
           onSuccess()
+        })
+        .catch((message: string) => {
+          showToast({
+            message: `Can't create user because "${message}"`,
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
         })
     }
   }

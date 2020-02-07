@@ -12,6 +12,7 @@ interface Props {
   defaultAssignment: OrganizationAssignment
   updateAssignmentStatus: Function
   infoUpdated: Function
+  showToast: Function
 }
 
 const MyPendingAssignments = ({
@@ -20,6 +21,7 @@ const MyPendingAssignments = ({
   defaultAssignment,
   updateAssignmentStatus,
   infoUpdated,
+  showToast,
   intl,
 }: Props & InjectedIntlProps) => {
   const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
@@ -39,14 +41,23 @@ const MyPendingAssignments = ({
     if (defaultAssignment) {
       setIsApproveWarningOpen(true)
     } else {
-      updateAssignmentStatus(assignmentId, 'APPROVED').then(() => {
-        const updatedOrgId: string = pathOr(
-          '',
-          ['businessOrganizationId'],
-          find(propEq('id', assignmentId))(assignments)
-        )
-        infoUpdated(personaId, updatedOrgId)
-      })
+      updateAssignmentStatus(assignmentId, 'APPROVED')
+        .then((data: any) => {
+          console.log(data)
+          const updatedOrgId: string = pathOr(
+            '',
+            ['businessOrganizationId'],
+            find(propEq('id', assignmentId))(assignments)
+          )
+          infoUpdated(personaId, updatedOrgId)
+        })
+        .catch((message: string) => {
+          showToast({
+            message: `Can't decline this request because "${message}"`,
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
+        })
     }
   }
 
@@ -62,13 +73,24 @@ const MyPendingAssignments = ({
 
   const confirmDeclineOrgAssignment = () => {
     setDeclineAssignmentLoading(true)
-    updateAssignmentStatus(sharedAssignment.id, 'DECLINE').then(() => {
-      setDeclineAssignmentLoading(false)
-      setIsDeclineConfirmationOpen(false)
-      setSharedAssignment({} as OrganizationAssignment)
+    updateAssignmentStatus(sharedAssignment.id, 'DECLINE')
+      .then(() => {
+        setDeclineAssignmentLoading(false)
+        setIsDeclineConfirmationOpen(false)
+        setSharedAssignment({} as OrganizationAssignment)
 
-      infoUpdated(personaId, '')
-    })
+        infoUpdated(personaId, '')
+      })
+      .catch((message: string) => {
+        setSharedAssignment({} as OrganizationAssignment)
+        setIsDeclineConfirmationOpen(false)
+        setDeclineAssignmentLoading(false)
+        showToast({
+          message: `Can't decline this request because "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
   const closeDeclineOrgAssignment = () => {
     setIsDeclineConfirmationOpen(false)

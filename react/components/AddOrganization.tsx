@@ -7,7 +7,6 @@ import {
   reject,
   find,
   last,
-  path,
 } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
@@ -27,11 +26,13 @@ import {
   BUSINESS_ORGANIZATION,
   BUSINESS_ORGANIZATION_SCHEMA,
 } from '../utils/const'
+import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
 interface Props {
   userEmail: string
   personaId?: string
   updateOrgInfo: Function
+  showToast: Function
 }
 
 interface ErrorMessage {
@@ -56,6 +57,7 @@ const AddOrganization = ({
   personaId,
   intl,
   updateOrgInfo,
+  showToast,
 }: Props & InjectedIntlProps) => {
   const initialState = {
     errorMessages: [] as ErrorMessage[],
@@ -145,7 +147,6 @@ const AddOrganization = ({
   const [telephone, setTelephone] = useState('')
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
-  const [globalErrorMessage, setGlobalErrorMessage] = useState('')
 
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
@@ -188,24 +189,6 @@ const AddOrganization = ({
     return array
   }
 
-  const handleGlobalError = () => {
-    return (e: Error) => {
-      setGlobalErrorMessage(path(
-        [
-          'graphQLErrors',
-          0,
-          'extensions',
-          'exception',
-          'response',
-          'data',
-          'Message',
-        ],
-        e
-      ) as string)
-      return Promise.reject()
-    }
-  }
-
   const createOrganization = async (roleId: string) => {
     let orgId = ''
     let pid = personaId ? personaId : ''
@@ -232,7 +215,7 @@ const AddOrganization = ({
             document: { fields: getPersonaFields(orgId, personaId) },
             schema: 'persona-schema-v1',
           },
-        }).catch(handleGlobalError())
+        })
       })
       .then((personaResponse: any) => {
         pid = pathOr(
@@ -250,12 +233,20 @@ const AddOrganization = ({
           },
         })
       })
+      .catch(handleGlobalError())
       .then(() => {
         setName('')
         setTelephone('')
         setAddress('')
         setEmail('')
         updateOrgInfo(pid, orgId)
+      })
+      .catch((message: string) => {
+        showToast({
+          message: `Can't create organization because "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
       })
   }
 
@@ -280,9 +271,6 @@ const AddOrganization = ({
   return (
     <PageBlock>
       <div className="mb5">
-        <div>
-          <span className="red">{globalErrorMessage}</span>
-        </div>
         <Input
           placeholder={intl.formatMessage({
             id: 'store/my-users.input.placeholder.organizationName',

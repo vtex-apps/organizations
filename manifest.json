@@ -33,13 +33,6 @@
     {
       "name": "outbound-access",
       "attrs": {
-        "host": "{{account}}.vtexcommercestable.com.br",
-        "path": "/api/dataentities/cart/*"
-      }
-    },
-    {
-      "name": "outbound-access",
-      "attrs": {
         "host": "vtexid.vtex.com.br",
         "path": "/api/vtexid/pub/authenticated/*"
       }

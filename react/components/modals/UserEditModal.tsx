@@ -8,6 +8,7 @@ import { updateCacheEditUser } from '../../utils/cacheUtils'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
 
 import { ORG_ASSIGNMENT, ORG_ASSIGNMENT_SCHEMA } from '../../utils/const'
+import { getErrorMessage } from '../../utils/graphqlErrorHandler'
 
 interface Props {
   isOpen: boolean
@@ -15,6 +16,7 @@ interface Props {
   onSave: Function
   orgAssignment: OrganizationAssignment
   roles: Role[]
+  showToast: Function
 }
 
 const UserEditModal = ({
@@ -23,6 +25,7 @@ const UserEditModal = ({
   onSave,
   orgAssignment,
   roles,
+  showToast,
   intl,
 }: Props & InjectedIntlProps) => {
   const [roleId, setRoleId] = useState('')
@@ -39,13 +42,6 @@ const UserEditModal = ({
     setOrganizationId(pathOr('', ['businessOrganizationId'], orgAssignment))
   }, [orgAssignment])
 
-  const handleGlobalError = () => {
-    return (e: Error) => {
-      console.log(e)
-      return Promise.reject()
-    }
-  }
-
   const onSaveEdit = () => {
     updateUserDocument({
       variables: {
@@ -59,9 +55,16 @@ const UserEditModal = ({
         schema: ORG_ASSIGNMENT_SCHEMA,
       },
     })
-      .catch(handleGlobalError())
       .then(() => {
         onSave()
+      })
+      .catch((e: Error) => {
+        const message = getErrorMessage(e)
+        showToast({
+          message: `Can't edit user because "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
       })
   }
 

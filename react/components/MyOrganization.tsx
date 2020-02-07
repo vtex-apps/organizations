@@ -1,9 +1,15 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
-import { EmptyState, PageBlock, PageHeader, Layout } from 'vtex.styleguide'
+import {
+  EmptyState,
+  PageBlock,
+  PageHeader,
+  Layout,
+  ToastConsumer,
+} from 'vtex.styleguide'
 import { injectIntl, InjectedIntlProps } from 'react-intl'
 
-import { find, propEq, filter, path, pathOr } from 'ramda'
+import { find, propEq, filter, pathOr } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
 import MyPendingAssignments from './MyPendingAssignments'
@@ -29,6 +35,7 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
 } from '../utils/const'
+import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
 interface Props {
   userEmail: string
@@ -48,8 +55,6 @@ const MyOrganization = ({
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
   const [updateOrgAssignmentStatus] = useMutation(UPDATE_DOCUMENT)
   const [updatePersonaOrgId] = useMutation(UPDATE_DOCUMENT)
-
-  const [globalErrorMessage, setGlobalErrorMessage] = useState('')
 
   const assignmentFilter =
     `(personaId=${personaId}` +
@@ -128,24 +133,6 @@ const MyOrganization = ({
       ? find(propEq('id', defaultAssignment.roleId))(roles)
       : {}
 
-  const handleGlobalError = () => {
-    return (e: Error) => {
-      setGlobalErrorMessage(path(
-        [
-          'graphQLErrors',
-          0,
-          'extensions',
-          'exception',
-          'response',
-          'data',
-          'Message',
-        ],
-        e
-      ) as string)
-      return Promise.reject()
-    }
-  }
-
   const updateAssignmentStatus = async (
     assignmentId: string,
     status: string
@@ -170,7 +157,6 @@ const MyOrganization = ({
           personaId
         ),
     })
-      .catch(handleGlobalError())
       .then(() => {
         const updatedOrgId: string =
           status === 'APPROVED'
@@ -228,7 +214,6 @@ const MyOrganization = ({
       update: (cache: any, { data }: any) =>
         updateCacheDeleteAssignment(cache, data, assignmentId),
     })
-      .catch(handleGlobalError())
       .then(() => {
         const personaEmail: any = pathOr(
           '',
@@ -261,7 +246,17 @@ const MyOrganization = ({
   }
 
   if (personaId == '') {
-    return <AddOrganization userEmail={userEmail} updateOrgInfo={infoUpdated} />
+    return (
+      <ToastConsumer>
+        {({ showToast }: any) => (
+          <AddOrganization
+            userEmail={userEmail}
+            updateOrgInfo={infoUpdated}
+            showToast={showToast}
+          />
+        )}
+      </ToastConsumer>
+    )
   }
 
   return (
@@ -270,57 +265,66 @@ const MyOrganization = ({
       pageHeader={
         <PageHeader title="Organization" linkLabel="Return"></PageHeader>
       }>
-      <PageBlock>
-        <div className="red">{globalErrorMessage}</div>
-        <MyPendingAssignments
-          personaId={personaId}
-          assignments={pendingAssignments}
-          defaultAssignment={defaultAssignment}
-          updateAssignmentStatus={updateAssignmentStatus}
-          infoUpdated={infoUpdated}
-        />
-        {!defaultAssignment && (
-          <div className="mb5 mt5">
-            <h2 className="">
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.create-new-organization',
-              })}
-            </h2>
-            <AddOrganization
-              userEmail={userEmail}
-              updateOrgInfo={infoUpdated}
+      <ToastConsumer>
+        {({ showToast }: any) => (
+          <PageBlock>
+            <MyPendingAssignments
               personaId={personaId}
-            />
-          </div>
-        )}
-        {defaultAssignment && (
-          <div>
-            <DefaultAssignmentInfo
-              personaId={personaId}
+              assignments={pendingAssignments}
               defaultAssignment={defaultAssignment}
-              assignments={organizationAssignments}
-              userRole={userRole}
               updateAssignmentStatus={updateAssignmentStatus}
-              deleteOrgAssignment={deleteOrgAssignment}
               infoUpdated={infoUpdated}
+              showToast={showToast}
             />
-
-            {userRole && userRole.name && userRole.name === 'manager' && (
-              <div className="flex flex-column mb5 mt5">
+            {!defaultAssignment && (
+              <div className="mb5 mt5">
                 <h2 className="">
                   {intl.formatMessage({
-                    id: 'store/my-users.my-organization.users-in-organization',
+                    id:
+                      'store/my-users.my-organization.create-new-organization',
                   })}
                 </h2>
-                <MyUsers
-                  organizationId={organizationId}
+                <AddOrganization
+                  userEmail={userEmail}
+                  updateOrgInfo={infoUpdated}
                   personaId={personaId}
+                  showToast={showToast}
                 />
               </div>
             )}
-          </div>
+            {defaultAssignment && (
+              <div>
+                <DefaultAssignmentInfo
+                  personaId={personaId}
+                  defaultAssignment={defaultAssignment}
+                  assignments={organizationAssignments}
+                  userRole={userRole}
+                  updateAssignmentStatus={updateAssignmentStatus}
+                  deleteOrgAssignment={deleteOrgAssignment}
+                  infoUpdated={infoUpdated}
+                  showToast={showToast}
+                />
+
+                {userRole && userRole.name && userRole.name === 'manager' && (
+                  <div className="flex flex-column mb5 mt5">
+                    <h2 className="">
+                      {intl.formatMessage({
+                        id:
+                          'store/my-users.my-organization.users-in-organization',
+                      })}
+                    </h2>
+                    <MyUsers
+                      organizationId={organizationId}
+                      personaId={personaId}
+                      showToast={showToast}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </PageBlock>
         )}
-      </PageBlock>
+      </ToastConsumer>
     </Layout>
   )
 }

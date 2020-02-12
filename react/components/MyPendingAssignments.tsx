@@ -53,7 +53,7 @@ const MyPendingAssignments = ({
         })
         .catch((message: string) => {
           showToast({
-            message: `Can't decline this request because "${message}"`,
+            message: `Can't approve this request because "${message}"`,
             duration: 5000,
             horizontalPosition: 'right',
           })
@@ -104,7 +104,7 @@ const MyPendingAssignments = ({
           id: 'store/my-users.my-organization.pending-requests',
         })}
       </h2>
-      {assignments.map(x => (
+      {assignments.map((x: OrganizationAssignment) => (
         <div className="flex flex-row mb3 mt3 ba b--light-gray pa2 pl3">
           <div className="mt3 w-75">
             {intl.formatMessage({

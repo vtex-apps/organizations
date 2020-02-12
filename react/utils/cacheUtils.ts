@@ -150,11 +150,14 @@ export const updateCacheCreatePersona = (
   email: string
 ) => {
   const id = pathOr('', ['createMyDocument', 'cacheId'], data)
+  const response: any = cache.readQuery(personaArgs(email))
   const persona = {
     id: id,
     fields: [{ key: 'id', value: id }, { key: 'email', value: email }],
   }
-  cache.writeQuery(personaArgs(email), { myDocuments: [persona] })
+  response.myDocuments = [persona]
+
+  cache.writeQuery(personaArgs(email), response)
 }
 
 export const updateCacheOrgAssignmentStatus = (

@@ -274,6 +274,13 @@ const MyUsers = ({
         },
         schema: ORG_ASSIGNMENT_SCHEMA,
       },
+    }).then(() => {
+      showToast({
+        message: `Re-invitation sent`,
+        duration: 5000,
+        horizontalPosition: 'right',
+      })
+      setSharedOrgAssignment({} as OrganizationAssignment)
     }).catch((e: Error) => {
       const message = getErrorMessage(e)
       showToast({

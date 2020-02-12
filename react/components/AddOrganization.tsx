@@ -201,7 +201,6 @@ const AddOrganization = ({
         schema: BUSINESS_ORGANIZATION_SCHEMA,
       },
     })
-      .catch(handleGlobalError())
       .then((organizationResponse: any) => {
         orgId = pathOr(
           '',

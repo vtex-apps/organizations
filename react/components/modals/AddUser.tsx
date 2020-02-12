@@ -265,7 +265,7 @@ const AddUser = ({
               ? pathOr([], ['fields'], last(personaData.myDocuments))
               : []
           const personaId =
-            personaFields.length > 0
+          personaFields && personaFields.length > 0
               ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
               : ''
           return Promise.resolve({ personaId })

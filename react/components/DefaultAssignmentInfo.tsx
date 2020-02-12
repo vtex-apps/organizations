@@ -71,7 +71,7 @@ const DefaultAssignmentInfo = ({
     )
     if (
       userRole.name !== 'manager' ||
-      assignmentsExceptMe.length == 0 ||
+      assignmentsExceptMe && assignmentsExceptMe.length == 0 ||
       assignmentsWithManagerRole.length > 0
     ) {
       setSharedOrgAssignment(assignment)

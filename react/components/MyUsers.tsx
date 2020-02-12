@@ -64,6 +64,7 @@ const MyUsers = ({
   )
 
   const [isUserEditOpen, setIsUserEditOpen] = useState(false)
+  console.log(isUserEditOpen)
 
   const { data: roleData } = useQuery(documentQuery, {
     variables: {

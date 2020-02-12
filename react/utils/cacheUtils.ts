@@ -6,7 +6,7 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_PENDING
+  ASSIGNMENT_STATUS_PENDING,
 } from './const'
 
 export const updateCacheAddUser = (
@@ -18,66 +18,70 @@ export const updateCacheAddUser = (
   email: string,
   roleId: string
 ) => {
-  const response: any = cache.readQuery(userListArgs(organizationId))
+  try {
+    const response: any = cache.readQuery(userListArgs(organizationId))
 
-  const org = pathOr(
-    '',
-    ['value'],
-    find(
-      propEq('key', 'businessOrganizationId_linked'),
-      pathOr([], ['myDocuments', 0, 'fields'], response)
+    const org = pathOr(
+      '',
+      ['value'],
+      find(
+        propEq('key', 'businessOrganizationId_linked'),
+        pathOr([], ['myDocuments', 0, 'fields'], response)
+      )
     )
-  )
-  const selectedRole = find(propEq('value', roleId), roles)
-  const id = pathOr(
-    pathOr('', ['updateMyDocument', 'cacheId'], data),
-    ['createMyDocument', 'cacheId'],
-    data
-  )
-  const assignmentFields = [
-    { key: 'id', value: id },
-    {
-      key: 'businessOrganizationId',
-      value: organizationId,
-    },
-    {
-      key: 'personaId',
-      value: personaId,
-    },
-    {
-      key: 'roleId',
-      value: roleId,
-    },
-    {
-      key: 'status',
-      value: ASSIGNMENT_STATUS_PENDING,
-    },
-    { key: 'businessOrganizationId_linked', value: org },
-    {
-      key: 'roleId_linked',
-      value: selectedRole
-        ? JSON.stringify({
-            name: selectedRole.name,
-            label: selectedRole.label,
-            id: selectedRole.value,
-          })
-        : '',
-    },
-    {
-      key: 'personaId_linked',
-      value: JSON.stringify({
-        id: personaId,
-        email: email,
-      }),
-    },
-  ]
+    const selectedRole = find(propEq('value', roleId), roles)
+    const id = pathOr(
+      pathOr('', ['updateMyDocument', 'cacheId'], data),
+      ['createMyDocument', 'cacheId'],
+      data
+    )
+    const assignmentFields = [
+      { key: 'id', value: id },
+      {
+        key: 'businessOrganizationId',
+        value: organizationId,
+      },
+      {
+        key: 'personaId',
+        value: personaId,
+      },
+      {
+        key: 'roleId',
+        value: roleId,
+      },
+      {
+        key: 'status',
+        value: ASSIGNMENT_STATUS_PENDING,
+      },
+      { key: 'businessOrganizationId_linked', value: org },
+      {
+        key: 'roleId_linked',
+        value: selectedRole
+          ? JSON.stringify({
+              name: selectedRole.name,
+              label: selectedRole.label,
+              id: selectedRole.value,
+            })
+          : '',
+      },
+      {
+        key: 'personaId_linked',
+        value: JSON.stringify({
+          id: personaId,
+          email: email,
+        }),
+      },
+    ]
 
-  response.myDocuments = [
-    ...response.myDocuments,
-    { id: id, fields: assignmentFields },
-  ]
+    response.myDocuments = [
+      ...response.myDocuments,
+      { id: id, fields: assignmentFields },
+    ]
 
-  cache.writeQuery(userListArgs(organizationId), response)
+    cache.writeQuery(userListArgs(organizationId), response)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const updateCacheEditUser = (
@@ -87,47 +91,51 @@ export const updateCacheEditUser = (
   organizationId: string,
   roleId: string
 ) => {
-  const response: any = cache.readQuery(userListArgs(organizationId))
-  const selectedRole = find(propEq('value', roleId), roles)
-  const id = pathOr(
-    pathOr('', ['createMyDocument', 'cacheId'], data),
-    ['updateMyDocument', 'cacheId'],
-    data
-  )
+  try {
+    const response: any = cache.readQuery(userListArgs(organizationId))
+    const selectedRole = find(propEq('value', roleId), roles)
+    const id = pathOr(
+      pathOr('', ['createMyDocument', 'cacheId'], data),
+      ['updateMyDocument', 'cacheId'],
+      data
+    )
 
-  const fields = pathOr(
-    [],
-    ['fields'],
-    find(propEq('id', id), pathOr([], ['myDocuments'], response))
-  )
-  const fieldsExceptRoleAndRoleId_linked = reject(
-    propEq('key', 'roleId'),
-    reject(propEq('key', 'roleId_linked'), fields)
-  )
+    const fields = pathOr(
+      [],
+      ['fields'],
+      find(propEq('id', id), pathOr([], ['myDocuments'], response))
+    )
+    const fieldsExceptRoleAndRoleId_linked = reject(
+      propEq('key', 'roleId'),
+      reject(propEq('key', 'roleId_linked'), fields)
+    )
 
-  fieldsExceptRoleAndRoleId_linked.push({
-    key: 'roleId_linked',
-    value: selectedRole
-      ? JSON.stringify({
-          name: selectedRole.name,
-          label: selectedRole.label,
-          id: selectedRole.value,
-        })
-      : '',
-  })
-  fieldsExceptRoleAndRoleId_linked.push({
-    key: 'roleId',
-    value: roleId,
-  })
+    fieldsExceptRoleAndRoleId_linked.push({
+      key: 'roleId_linked',
+      value: selectedRole
+        ? JSON.stringify({
+            name: selectedRole.name,
+            label: selectedRole.label,
+            id: selectedRole.value,
+          })
+        : '',
+    })
+    fieldsExceptRoleAndRoleId_linked.push({
+      key: 'roleId',
+      value: roleId,
+    })
 
-  const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
-    if (x.id === id) {
-      x.fields = fieldsExceptRoleAndRoleId_linked
-    }
-    return x
-  })
+    const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
+      if (x.id === id) {
+        x.fields = fieldsExceptRoleAndRoleId_linked
+      }
+      return x
+    })
 
-  cache.writeQuery(userListArgs(organizationId), newData)
+    cache.writeQuery(userListArgs(organizationId), newData)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const updateCacheDeleteUser = (
@@ -135,13 +143,17 @@ export const updateCacheDeleteUser = (
   data: any,
   organizationId: string
 ) => {
-  debugger
-  const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
-  const response: any = cache.readQuery(userListArgs(organizationId))
+  try {
+    debugger
+    const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
+    const response: any = cache.readQuery(userListArgs(organizationId))
 
-  response.myDocuments = reject(propEq('id', id), response.myDocuments)
+    response.myDocuments = reject(propEq('id', id), response.myDocuments)
 
-  cache.writeQuery(userListArgs(organizationId), response)
+    cache.writeQuery(userListArgs(organizationId), response)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const updateCacheCreatePersona = (
@@ -149,15 +161,19 @@ export const updateCacheCreatePersona = (
   data: any,
   email: string
 ) => {
-  const id = pathOr('', ['createMyDocument', 'cacheId'], data)
-  const response: any = cache.readQuery(personaArgs(email))
-  const persona = {
-    id: id,
-    fields: [{ key: 'id', value: id }, { key: 'email', value: email }],
-  }
-  response.myDocuments = [persona]
+  try {
+    const id = pathOr('', ['createMyDocument', 'cacheId'], data)
+    const response: any = cache.readQuery(personaArgs(email))
+    const persona = {
+      id: id,
+      fields: [{ key: 'id', value: id }, { key: 'email', value: email }],
+    }
+    response.myDocuments = [persona]
 
-  cache.writeQuery(personaArgs(email), response)
+    cache.writeQuery(personaArgs(email), response)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const updateCacheOrgAssignmentStatus = (
@@ -167,28 +183,35 @@ export const updateCacheOrgAssignmentStatus = (
   organizationId: string,
   personaId?: string
 ) => {
-  const response = cache.readQuery(
-    organizationAssignmentArgs(personaId ? personaId : '', organizationId)
-  )
-  const assignment = find(propEq('id', assignmentId), response.myDocuments)
-  const assignmentFields = reject(
-    propEq('key', 'status'),
-    pathOr([], ['fields'], assignment)
-  )
+  try {
+    const response = cache.readQuery(
+      organizationAssignmentArgs(personaId ? personaId : '', organizationId)
+    )
+    const assignment = find(propEq('id', assignmentId), response.myDocuments)
+    const assignmentFields = reject(
+      propEq('key', 'status'),
+      pathOr([], ['fields'], assignment)
+    )
 
-  response.myDocuments = reject(propEq('id', assignmentId), response.myDocuments)
-  response.myDocuments = [
-    ...response.myDocuments,
-    {
-      id: assignment.id,
-      fields: [...assignmentFields, { kay: 'status', value: status }],
-    },
-  ]
+    response.myDocuments = reject(
+      propEq('id', assignmentId),
+      response.myDocuments
+    )
+    response.myDocuments = [
+      ...response.myDocuments,
+      {
+        id: assignment.id,
+        fields: [...assignmentFields, { key: 'status', value: status }],
+      },
+    ]
 
-  cache.writeQuery(
-    organizationAssignmentArgs(personaId ? personaId : '', organizationId),
-    response
-  )
+    cache.writeQuery(
+      organizationAssignmentArgs(personaId ? personaId : '', organizationId),
+      response
+    )
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const updateCachePersonaOrgId = (
@@ -197,18 +220,24 @@ export const updateCachePersonaOrgId = (
   email: string,
   personaId: string
 ) => {
-  const response = cache.readQuery(personaArgs(email))
-  response.myDocuments = reject(propEq('id', personaId), response.myDocuments)
+  try {
+    debugger
+    const response = cache.readQuery(personaArgs(email))
+    response.myDocuments = reject(propEq('id', personaId), response.myDocuments)
 
-  const persona = {
-    id: personaId,
-    fields: [
-      { key: 'id', value: personaId },
-      { key: 'email', value: email },
-      { key: 'businessOrganizationId_linked', value: orgFields },
-    ],
+    const persona = {
+      id: personaId,
+      fields: [
+        { key: 'id', value: personaId },
+        { key: 'email', value: email },
+        { key: 'businessOrganizationId_linked', value: orgFields },
+      ],
+    }
+    response.myDocuments.push(persona)
+    cache.writeQuery(personaArgs(email), response)
+  } catch (e) {
+    console.log(e)
   }
-  cache.writeQuery(personaArgs(email), { myDocuments: [persona] })
 }
 
 export const updateCacheDeleteAssignment = (
@@ -217,14 +246,21 @@ export const updateCacheDeleteAssignment = (
   organizationId: string,
   personaId?: string
 ) => {
-  const response = cache.readQuery(
-    organizationAssignmentArgs(personaId ? personaId : '', organizationId)
-  )
-  response.myDocuments = reject(propEq('id', assignmentId), response.myDocuments)
-  cache.writeQuery(
-    organizationAssignmentArgs(personaId ? personaId : '', organizationId),
-    response
-  )
+  try {
+    const response = cache.readQuery(
+      organizationAssignmentArgs(personaId ? personaId : '', organizationId)
+    )
+    response.myDocuments = reject(
+      propEq('id', assignmentId),
+      response.myDocuments
+    )
+    cache.writeQuery(
+      organizationAssignmentArgs(personaId ? personaId : '', organizationId),
+      response
+    )
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 const userListArgs = (orgId: string) => {

@@ -9,7 +9,7 @@ import {
 } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
 
-import { find, propEq, filter, pathOr } from 'ramda'
+import { find, propEq, filter, pathOr, reject } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
 import MyPendingAssignments from './MyPendingAssignments'
@@ -35,7 +35,8 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_PENDING
+  ASSIGNMENT_STATUS_PENDING,
+  ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
@@ -125,7 +126,7 @@ const MyOrganization = ({
   )
   const defaultAssignment: OrganizationAssignment = find(
     propEq('businessOrganizationId', organizationId)
-  )(userAssignments)
+  )(reject(propEq('status', ASSIGNMENT_STATUS_DECLINED), userAssignments))
 
   const roles: Role[] = rolesData
     ? documentSerializer(rolesData.myDocuments)
@@ -172,21 +173,19 @@ const MyOrganization = ({
         const orgFields: any =
           status === ASSIGNMENT_STATUS_APPROVED
             ? pathOr(
-                [],
+                '{}',
                 ['businessOrganizationId_linked'],
                 find(propEq('id', assignmentId))(orgAssignments)
               )
-            : []
-        const personaEmail: any = pathOr(
+            : '{}'
+        debugger
+        const personaEmail = pathOr(
           '',
-          ['value'],
-          find(
-            propEq('key', 'email'),
-            pathOr(
-              [],
-              ['personaId_linked'],
-              find(propEq('id', assignmentId))(orgAssignments)
-            )
+          ['email'],
+          pathOr(
+            {},
+            ['personaId_linked'],
+            find(propEq('id', assignmentId))(orgAssignments)
           )
         )
 
@@ -218,18 +217,16 @@ const MyOrganization = ({
         updateCacheDeleteAssignment(cache, data, assignmentId),
     })
       .then(() => {
-        const personaEmail: any = pathOr(
+        const personaEmail = pathOr(
           '',
-          ['value'],
-          find(
-            propEq('key', 'email'),
-            pathOr(
-              [],
-              ['personaId_linked'],
-              find(propEq('id', assignmentId))(orgAssignments)
-            )
+          ['email'],
+          pathOr(
+            {},
+            ['personaId_linked'],
+            find(propEq('id', assignmentId))(orgAssignments)
           )
         )
+
         return updateDocument({
           variables: {
             acronym: PERSONA_ACRONYM,
@@ -242,7 +239,7 @@ const MyOrganization = ({
             schema: PERSONA_SCHEMA,
           },
           update: (cache: any) =>
-            updateCachePersonaOrgId(cache, [], personaEmail, personaId),
+            updateCachePersonaOrgId(cache, '{}', personaEmail, personaId),
         })
       })
       .catch(handleGlobalError())

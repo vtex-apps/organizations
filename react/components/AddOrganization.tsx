@@ -264,8 +264,7 @@ const AddOrganization = ({
     ? pathOr([], ['fields'], last(roleData.myDocuments))
     : []
 
-  const roleId =
-    roleFields.length > 0
+  const roleId = roleFields && roleFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), roleFields))
       : ''
 

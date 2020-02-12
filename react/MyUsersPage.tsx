@@ -56,7 +56,12 @@ const MyUsersPage = () => {
   }
 
   const personaFields = pathOr([], ['fields'], last(personaData.myDocuments))
-
+  const a = pathOr(
+    '{}',
+    ['value'],
+    find(propEq('key', 'businessOrganizationId_linked'), personaFields)
+  )
+  console.log(a)
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(
       '{}',
@@ -65,7 +70,7 @@ const MyUsersPage = () => {
     )
   )
 
-  const organizationId =
+  let organizationId =
     businessOrganization && hasPath(['id'], businessOrganization)
       ? prop('id', businessOrganization)
       : ''
@@ -80,12 +85,13 @@ const MyUsersPage = () => {
       : ''
 
   const updated = (newPersonaId: string, newOrgId: string) => {
-    if (newPersonaId && newPersonaId !== '') {
+    //if (newPersonaId) {
       setPersonaId(newPersonaId)
-    }
-    if (newOrgId && newOrgId !== '') {
+    //}
+    //if (newOrgId) {
       setOrgId(newOrgId)
-    }
+      organizationId=newOrgId
+    //}
   }
 
   return (
@@ -96,8 +102,8 @@ const MyUsersPage = () => {
           exact
           component={() => (
             <MyOrganization
-              personaId={personaId || persona}
-              organizationId={organizationId || orgId}
+              personaId={persona !== ''? persona: personaId}
+              organizationId={orgId !== ''? orgId: organizationId}
               userEmail={profileEmail}
               infoUpdated={updated}
             />

@@ -22,6 +22,7 @@
   "registries": [
     "smartcheckout"
   ],
+  "credentialType": "absolute",
   "policies": [
     {
       "name": "outbound-access",

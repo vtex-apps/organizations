@@ -22,6 +22,8 @@ export class MasterData extends ExternalClient {
         ...(ctx.storeUserAuthToken
           ? { VtexIdclientAutCookie: ctx.storeUserAuthToken }
           : null),
+          ...{'Proxy-Authorization': ctx.authToken},
+          ...{'VtexIdClientAutCookie': ctx.authToken}
       },
     })
   }

@@ -1,8 +1,8 @@
 {
   "vendor": "vtex",
-  "name": "my-users",
+  "name": "my-organization",
   "version": "0.0.0",
-  "title": "VTEX My Users",
+  "title": "VTEX My Organization",
   "description": "",
   "builders": {
     "react": "3.x",

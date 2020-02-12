@@ -10,7 +10,7 @@ import {
 } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
@@ -34,6 +34,7 @@ interface Props {
   personaId?: string
   updateOrgInfo: Function
   showToast: Function
+  intl: any
 }
 
 interface ErrorMessage {
@@ -59,7 +60,7 @@ const AddOrganization = ({
   intl,
   updateOrgInfo,
   showToast,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const initialState = {
     errorMessages: [] as ErrorMessage[],
   }

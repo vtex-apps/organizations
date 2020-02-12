@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 import { reject, filter, propEq, pathOr } from 'ramda'
 import { Button } from 'vtex.styleguide'
 
@@ -16,6 +16,7 @@ interface Props {
   deleteOrgAssignment: Function
   infoUpdated: Function
   showToast: Function
+  intl: any
 }
 
 const DefaultAssignmentInfo = ({
@@ -28,7 +29,7 @@ const DefaultAssignmentInfo = ({
   infoUpdated,
   showToast,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
     {} as OrganizationAssignment

@@ -7,7 +7,7 @@ import {
   Layout,
   ToastConsumer,
 } from 'vtex.styleguide'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 import { find, propEq, filter, pathOr } from 'ramda'
 import MyUsers from './MyUsers'
@@ -44,6 +44,7 @@ interface Props {
   organizationId: string
   personaId: string
   infoUpdated: Function
+  intl: any
 }
 
 const MyOrganization = ({
@@ -52,7 +53,7 @@ const MyOrganization = ({
   personaId,
   infoUpdated,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
   const [updateOrgAssignmentStatus] = useMutation(UPDATE_DOCUMENT)

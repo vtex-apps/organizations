@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Button, Dropdown } from 'vtex.styleguide'
 import { useMutation } from 'react-apollo'
 import { pathOr } from 'ramda'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 import { updateCacheEditUser } from '../../utils/cacheUtils'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
@@ -17,6 +17,7 @@ interface Props {
   orgAssignment: OrganizationAssignment
   roles: Role[]
   showToast: Function
+  intl: any
 }
 
 const UserEditModal = ({
@@ -27,7 +28,7 @@ const UserEditModal = ({
   roles,
   showToast,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const [roleId, setRoleId] = useState('')
   const [assignmentId, setAssignmentId] = useState('')
   const [organizationId, setOrganizationId] = useState('')

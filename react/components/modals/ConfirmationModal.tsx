@@ -1,7 +1,7 @@
 import React from 'react'
 import { ModalDialog } from 'vtex.styleguide'
 import { pathOr } from 'ramda'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 interface Props {
   isOpen: boolean
@@ -11,6 +11,7 @@ interface Props {
   assignment: OrganizationAssignment
   confirmAction: string
   message: string
+  intl: any
 }
 
 const ConfirmationModal = ({
@@ -22,7 +23,7 @@ const ConfirmationModal = ({
   confirmAction,
   message,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   return (
     <ModalDialog
       centered

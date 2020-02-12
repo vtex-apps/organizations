@@ -1,6 +1,6 @@
 import React, { SyntheticEvent, useReducer } from 'react'
 import { isEmpty, path, pathOr, find, propEq, last, contains } from 'ramda'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 import { Modal, Button, Dropdown, Input } from 'vtex.styleguide'
 import { useMutation, useApolloClient } from 'react-apollo'
 
@@ -25,6 +25,7 @@ interface Props {
   roles: Role[]
   organizationId: string
   showToast: Function
+  intl: any
 }
 
 interface State {
@@ -73,7 +74,7 @@ const AddUser = ({
   organizationId,
   existingUsers,
   showToast
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const client = useApolloClient()
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)

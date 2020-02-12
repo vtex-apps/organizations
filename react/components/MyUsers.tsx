@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
 import { Table, Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -34,6 +34,7 @@ interface Props {
   personaId: string
   organizationId: string
   showToast: Function
+  intl: any
 }
 
 const MyUsers = ({
@@ -41,7 +42,7 @@ const MyUsers = ({
   personaId,
   showToast,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>

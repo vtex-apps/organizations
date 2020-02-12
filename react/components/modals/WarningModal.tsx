@@ -1,7 +1,7 @@
 import React from 'react'
 import { Modal, Button } from 'vtex.styleguide'
 import { pathOr } from 'ramda'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 interface Props {
   isOpen: boolean
@@ -11,6 +11,7 @@ interface Props {
   title: string
   messageLine1?: string
   messageLine2?: string
+  intl: any
 }
 
 const WarningModal = ({
@@ -22,7 +23,7 @@ const WarningModal = ({
   messageLine1,
   messageLine2,
   intl
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   return (
     <Modal
       isOpen={isOpen}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { pathOr, find, propEq } from 'ramda'
 import { Button } from 'vtex.styleguide'
-import { injectIntl, InjectedIntlProps } from 'react-intl'
+import { injectIntl } from 'react-intl'
 
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
@@ -13,6 +13,7 @@ interface Props {
   updateAssignmentStatus: Function
   infoUpdated: Function
   showToast: Function
+  intl: any
 }
 
 const MyPendingAssignments = ({
@@ -23,7 +24,7 @@ const MyPendingAssignments = ({
   infoUpdated,
   showToast,
   intl,
-}: Props & InjectedIntlProps) => {
+}: Props) => {
   const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
   const [isDeclineConfirmationOpen, setIsDeclineConfirmationOpen] = useState(
     false

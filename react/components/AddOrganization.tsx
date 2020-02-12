@@ -244,7 +244,7 @@ const AddOrganization = ({
       })
       .catch((message: string) => {
         showToast({
-          message: `Can't create organization because "${message}"`,
+          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.create.error'})} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })

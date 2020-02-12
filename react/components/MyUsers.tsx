@@ -251,7 +251,7 @@ const MyUsers = ({
       setIsDeleteConfirmationOpen(false)
       setSharedOrgAssignment({} as OrganizationAssignment)
       showToast({
-        message: `Can't delete user ${message}`,
+        message: `${intl.formatMessage({id: 'store/my-users.toast.user.delete.error'})} ${message}`,
         duration: 5000,
         horizontalPosition: 'right',
       })
@@ -278,7 +278,7 @@ const MyUsers = ({
       },
     }).then(() => {
       showToast({
-        message: `Re-invitation sent`,
+        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.sent'})} `,
         duration: 5000,
         horizontalPosition: 'right',
       })
@@ -286,7 +286,7 @@ const MyUsers = ({
     }).catch((e: Error) => {
       const message = getErrorMessage(e)
       showToast({
-        message: `Can't re-invite, ${message}`,
+        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.error'})} ${message}`,
         duration: 5000,
         horizontalPosition: 'right',
       })

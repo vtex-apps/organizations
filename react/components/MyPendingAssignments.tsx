@@ -54,7 +54,7 @@ const MyPendingAssignments = ({
         })
         .catch((message: string) => {
           showToast({
-            message: `Can't approve this request because "${message}"`,
+            message: `${intl.formatMessage({id: 'store/my-users.toast.organization.approve.error'})} "${message}"`,
             duration: 5000,
             horizontalPosition: 'right',
           })
@@ -87,7 +87,7 @@ const MyPendingAssignments = ({
         setIsDeclineConfirmationOpen(false)
         setDeclineAssignmentLoading(false)
         showToast({
-          message: `Can't decline this request because "${message}"`,
+          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.decline.error'})}  "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })

@@ -100,7 +100,7 @@ const DefaultAssignmentInfo = ({
         setIsLeaveOrgConfirmationOpen(false)
         setSharedOrgAssignment({} as OrganizationAssignment)
         showToast({
-          message: `Can't leave organization because "${message}"`,
+          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.leave.error'})}"${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })
@@ -148,7 +148,7 @@ const DefaultAssignmentInfo = ({
       setIsDeleteOrgConfirmationOpen(false)
       setSharedOrgAssignment({} as OrganizationAssignment)
       showToast({
-        message: `Can't leave organization because "${message}"`,
+        message: `${intl.formatMessage({id: 'store/my-users.toast.organization.delete.error'})} "${message}"`,
         duration: 5000,
         horizontalPosition: 'right',
       })

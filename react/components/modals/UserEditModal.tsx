@@ -62,7 +62,7 @@ const UserEditModal = ({
       .catch((e: Error) => {
         const message = getErrorMessage(e)
         showToast({
-          message: `Can't edit user because "${message}"`,
+          message: `${intl.formatMessage({id: 'store/my-users.toast.user.edit.error'})} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })

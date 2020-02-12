@@ -330,7 +330,7 @@ const AddUser = ({
         })
         .catch((message: string) => {
           showToast({
-            message: `Can't create user because "${message}"`,
+            message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
             duration: 5000,
             horizontalPosition: 'right',
           })

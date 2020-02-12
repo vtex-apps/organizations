@@ -59,5 +59,15 @@
   "store/my-users.my-user.table-title.delete": "Excluir",
   "store/my-users.my-user.table.button.add-new": "Adicionar novo",
   "store/my-users.my-user.delete-confirmation-action": "Excluir",
-  "store/my-users.my-user.delete-confirmation-message": "Deseja excluir o usuário:"
+  "store/my-users.my-user.delete-confirmation-message": "Deseja excluir o usuário:",
+  "store/my-users.toast.organization.create.error": "Can't create organization because",
+  "store/my-users.toast.organization.leave.error": "Can't leave organization because",
+  "store/my-users.toast.organization.delete.error": "Can't delete organization because",
+  "store/my-users.toast.user.create.error": "Can't create user because",
+  "store/my-users.toast.user.edit.error": "Can't create user because",
+  "store/my-users.toast.organization.approve.error": "Can't approve this organization request because",
+  "store/my-users.toast.organization.decline.error": "Can't decline this organization request because",
+  "store/my-users.toast.user.delete.error": "Can't create delete because",
+  "store/my-users.toast.user.reinvitation.sent": "Re invitation sent",
+  "store/my-users.toast.user.reinvitation.error": "Re invitation failed, "
 }

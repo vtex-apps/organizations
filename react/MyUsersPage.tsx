@@ -1,13 +1,19 @@
-import React, { Fragment } from 'react'
+import React, { Fragment, useState } from 'react'
 import { last, find, prop, propEq, pathOr, hasPath } from 'ramda'
 import { Route } from 'react-router-dom'
 import { useQuery } from 'react-apollo'
+
 import documentQuery from './graphql/documents.graphql'
 import profileQuery from './graphql/getProfile.graphql'
-import { EmptyState } from 'vtex.styleguide'
+
+import { EmptyState, ToastProvider } from 'vtex.styleguide'
 import MyOrganization from './components/MyOrganization'
+import { PERSONA_ACRONYM, PERSONA_FIELDS, PERSONA_SCHEMA } from './utils/const'
 
 const MyUsersPage = () => {
+  const [persona, setPersonaId] = useState('')
+  const [orgId, setOrgId] = useState('')
+
   const {
     loading: profileLoading,
     error: profileError,
@@ -17,7 +23,7 @@ const MyUsersPage = () => {
   const {
     loading: personaLoading,
     error: personaError,
-    data: persona,
+    data: personaData,
   } = useQuery(documentQuery, {
     skip:
       !profileData ||
@@ -25,12 +31,12 @@ const MyUsersPage = () => {
       profileData.profile == null ||
       !profileData.profile.email,
     variables: {
-      acronym: 'Persona',
-      fields: ['id', 'clientId', 'businessOrganizationId_linked'],
+      acronym: PERSONA_ACRONYM,
+      fields: PERSONA_FIELDS,
       where: `(email=${
         profileData && profileData.profile ? profileData.profile.email : ''
       })`,
-      schema: 'persona-schema-v1',
+      schema: PERSONA_SCHEMA,
     },
   })
 
@@ -49,8 +55,13 @@ const MyUsersPage = () => {
     )
   }
 
-  const personaFields = pathOr([], ['fields'], last(persona.documents))
-
+  const personaFields = pathOr([], ['fields'], last(personaData.myDocuments))
+  const a = pathOr(
+    '{}',
+    ['value'],
+    find(propEq('key', 'businessOrganizationId_linked'), personaFields)
+  )
+  console.log(a)
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(
       '{}',
@@ -59,12 +70,12 @@ const MyUsersPage = () => {
     )
   )
 
-  const organizationId =
+  let organizationId =
     businessOrganization && hasPath(['id'], businessOrganization)
       ? prop('id', businessOrganization)
       : ''
   const personaId =
-    personaFields.length > 0
+    personaFields && personaFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
       : ''
 
@@ -73,19 +84,32 @@ const MyUsersPage = () => {
       ? profileData.profile.email
       : ''
 
+  const updated = (newPersonaId: string, newOrgId: string) => {
+    //if (newPersonaId) {
+      setPersonaId(newPersonaId)
+    //}
+    //if (newOrgId) {
+      setOrgId(newOrgId)
+      organizationId=newOrgId
+    //}
+  }
+
   return (
     <Fragment>
-      <Route
-        path="/users"
-        exact
-        component={() => (
-          <MyOrganization
-            personaId={personaId}
-            organizationId={organizationId}
-            userEmail={profileEmail}
-          />
-        )}
-      />
+      <ToastProvider positioning="window">
+        <Route
+          path="/users"
+          exact
+          component={() => (
+            <MyOrganization
+              personaId={persona !== ''? persona: personaId}
+              organizationId={orgId !== ''? orgId: organizationId}
+              userEmail={profileEmail}
+              infoUpdated={updated}
+            />
+          )}
+        />
+      </ToastProvider>
     </Fragment>
   )
 }

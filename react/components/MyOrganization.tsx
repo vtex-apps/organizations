@@ -1,45 +1,104 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment } from 'react'
 import { useQuery, useMutation } from 'react-apollo'
-import documentQuery from '../graphql/documents.graphql'
 import {
   EmptyState,
   PageBlock,
   PageHeader,
   Layout,
-  Button,
+  ToastConsumer,
 } from 'vtex.styleguide'
-import { last, find, propEq, pathOr } from 'ramda'
+import { injectIntl } from 'react-intl'
+
+import { find, propEq, filter, pathOr, reject } from 'ramda'
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
+import MyPendingAssignments from './MyPendingAssignments'
+import DefaultAssignmentInfo from './DefaultAssignmentInfo'
+
+import DOCUMENTS from '../graphql/documents.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
+
+import { documentSerializer } from '../utils/documentSerializer'
+import {
+  updateCacheOrgAssignmentStatus,
+  updateCachePersonaOrgId,
+  updateCacheDeleteAssignment,
+} from '../utils/cacheUtils'
+import {
+  PERSONA_ACRONYM,
+  PERSONA_SCHEMA,
+  BUSINESS_ROLE,
+  BUSINESS_ROLE_FIELDS,
+  BUSINESS_ROLE_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_FIELDS,
+  ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
+  ASSIGNMENT_STATUS_PENDING,
+  ASSIGNMENT_STATUS_DECLINED,
+} from '../utils/const'
+import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
 interface Props {
   userEmail: string
   organizationId: string
   personaId: string
+  infoUpdated: Function
+  intl: any
 }
 
-const MyOrganization = (props: Props) => {
+const MyOrganization = ({
+  userEmail,
+  organizationId,
+  personaId,
+  infoUpdated,
+  intl,
+}: Props) => {
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [deleteDocument] = useMutation(DELETE_DOCUMENT)
+  const [updateOrgAssignmentStatus] = useMutation(UPDATE_DOCUMENT)
+  const [updatePersonaOrgId] = useMutation(UPDATE_DOCUMENT)
 
-  const [redirectTo, setRedirectTo] = useState('')
-  const [orgId, setOrgId] = useState(props.organizationId)
-  const [updateOrganizationAssignment] = useMutation(UPDATE_DOCUMENT)
+  const assignmentFilter =
+    `(personaId=${personaId}` +
+    (organizationId !== ''
+      ? ` OR businessOrganizationId=${organizationId})`
+      : ')')
 
   const {
     loading: orgAssignmentLoading,
     error: orgAssignmentError,
     data: orgAssignmentData,
-  } = useQuery(documentQuery, {
-    skip: props.organizationId === '' || props.personaId === '',
+  } = useQuery(DOCUMENTS, {
+    skip: personaId === '',
     variables: {
-      acronym: 'OrgAssignment',
-      schema: 'organization-assignment-schema-v1',
-      fields: ['id', 'status'],
-      where: `(businessOrganizationId=${orgId} AND personaId=${props.personaId})`,
+      acronym: ORG_ASSIGNMENT,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: assignmentFilter,
     },
   })
 
-  if (orgAssignmentLoading || orgAssignmentError) {
+  const {
+    loading: rolesLoading,
+    error: rolesError,
+    data: rolesData,
+  } = useQuery(DOCUMENTS, {
+    skip: personaId === '',
+    variables: {
+      acronym: BUSINESS_ROLE,
+      schema: BUSINESS_ROLE_SCHEMA,
+      fields: BUSINESS_ROLE_FIELDS,
+    },
+  })
+
+  if (
+    orgAssignmentLoading ||
+    orgAssignmentError ||
+    rolesLoading ||
+    rolesError
+  ) {
     return (
       <Fragment>
         <EmptyState title={'Loading2...'} />
@@ -47,61 +106,156 @@ const MyOrganization = (props: Props) => {
     )
   }
 
-  const orgAssignmentFields = orgAssignmentData
-    ? pathOr([], ['fields'], last(orgAssignmentData.documents))
+  const orgAssignments: OrganizationAssignment[] = orgAssignmentData
+    ? documentSerializer(orgAssignmentData.myDocuments)
     : []
 
-  const orgAssignmentId = pathOr(
-    '',
-    ['value'],
-    find(propEq('key', 'id'), orgAssignmentFields)
-  )
+  const userAssignments =
+    orgAssignments && personaId
+      ? filter(propEq('personaId', personaId), orgAssignments)
+      : []
 
-  const organizationStatus: string = pathOr(
-    '',
-    ['value'],
-    find(propEq('key', 'status'), orgAssignmentFields)
-  )
+  const organizationAssignments =
+    orgAssignments && organizationId !== ''
+      ? filter(propEq('businessOrganizationId', organizationId), orgAssignments)
+      : []
 
-  const redirectToUsers = (newOrganizationId: string) => {
-    setOrgId(newOrganizationId)
-    setRedirectTo('USERS')
-    debugger
-  }
+  const pendingAssignments: OrganizationAssignment[] = filter(
+    propEq('status', ASSIGNMENT_STATUS_PENDING),
+    userAssignments
+  )
+  const defaultAssignment: OrganizationAssignment = find(
+    propEq('businessOrganizationId', organizationId)
+  )(reject(propEq('status', ASSIGNMENT_STATUS_DECLINED), userAssignments))
+
+  const roles: Role[] = rolesData
+    ? documentSerializer(rolesData.myDocuments)
+    : []
+
+  const userRole =
+    defaultAssignment && defaultAssignment.roleId
+      ? find(propEq('id', defaultAssignment.roleId))(roles)
+      : {}
 
   const updateAssignmentStatus = async (
     assignmentId: string,
     status: string
   ) => {
-
-    await updateOrganizationAssignment({
+    return updateOrgAssignmentStatus({
       variables: {
-        acronym: 'OrgAssignment',
+        acronym: ORG_ASSIGNMENT,
         document: {
           fields: [
             { key: 'id', value: assignmentId },
-            { key: 'status', value: status }
+            { key: 'status', value: status },
           ],
         },
-        schema: 'organization-assignment-schema-v1',
+        schema: ORG_ASSIGNMENT_SCHEMA,
       },
+      update: (cache: any) =>
+        updateCacheOrgAssignmentStatus(
+          cache,
+          assignmentId,
+          status,
+          organizationId,
+          personaId
+        ),
     })
+      .then(() => {
+        const updatedOrgId: string =
+          status === ASSIGNMENT_STATUS_APPROVED
+            ? pathOr(
+                '',
+                ['businessOrganizationId'],
+                find(propEq('id', assignmentId))(orgAssignments)
+              )
+            : ''
+        const orgFields: any =
+          status === ASSIGNMENT_STATUS_APPROVED
+            ? pathOr(
+                '{}',
+                ['businessOrganizationId_linked'],
+                find(propEq('id', assignmentId))(orgAssignments)
+              )
+            : '{}'
+        debugger
+        const personaEmail = pathOr(
+          '',
+          ['email'],
+          pathOr(
+            {},
+            ['personaId_linked'],
+            find(propEq('id', assignmentId))(orgAssignments)
+          )
+        )
 
-    setRedirectTo(status === 'APPROVED' ? 'USERS' : 'CREATE_ORGANIZATION')
+        return updatePersonaOrgId({
+          variables: {
+            acronym: PERSONA_ACRONYM,
+            document: {
+              fields: [
+                { key: 'id', value: personaId },
+                { key: 'businessOrganizationId', value: updatedOrgId },
+              ],
+            },
+            schema: PERSONA_SCHEMA,
+          },
+          update: (cache: any) =>
+            updateCachePersonaOrgId(cache, orgFields, personaEmail, personaId),
+        })
+      })
+      .catch(handleGlobalError())
   }
 
-  if (organizationStatus === 'APPROVED' || redirectTo == 'USERS') {
-    return <MyUsers organizationId={orgId} />
-  } else if (
-    props.personaId == '' ||
-    orgId == '' ||
-    redirectTo === 'CREATE_ORGANIZATION'
-  ) {
+  const deleteOrgAssignment = (assignmentId: string) => {
+    return deleteDocument({
+      variables: {
+        acronym: ORG_ASSIGNMENT,
+        documentId: assignmentId,
+      },
+      update: (cache: any, { data }: any) =>
+        updateCacheDeleteAssignment(cache, data, assignmentId),
+    })
+      .then(() => {
+        const personaEmail = pathOr(
+          '',
+          ['email'],
+          pathOr(
+            {},
+            ['personaId_linked'],
+            find(propEq('id', assignmentId))(orgAssignments)
+          )
+        )
+
+        return updateDocument({
+          variables: {
+            acronym: PERSONA_ACRONYM,
+            document: {
+              fields: [
+                { key: 'id', value: personaId },
+                { key: 'businessOrganizationId', value: '' },
+              ],
+            },
+            schema: PERSONA_SCHEMA,
+          },
+          update: (cache: any) =>
+            updateCachePersonaOrgId(cache, '{}', personaEmail, personaId),
+        })
+      })
+      .catch(handleGlobalError())
+  }
+
+  if (personaId == '') {
     return (
-      <AddOrganization
-        userEmail={props.userEmail}
-        redirectToUsers={redirectToUsers}
-      />
+      <ToastConsumer>
+        {({ showToast }: any) => (
+          <AddOrganization
+            userEmail={userEmail}
+            updateOrgInfo={infoUpdated}
+            showToast={showToast}
+          />
+        )}
+      </ToastConsumer>
     )
   }
 
@@ -111,27 +265,68 @@ const MyOrganization = (props: Props) => {
       pageHeader={
         <PageHeader title="Organization" linkLabel="Return"></PageHeader>
       }>
-      <PageBlock>
-        <div className="flex flex-column mb5">
-          <div className="mb5">Approve or decline organization request</div>
-          <div className="flex flex-row">
-            <span className="mr2">
-              <Button
-                onClick={() => updateAssignmentStatus(orgAssignmentId, 'APPROVED')}>
-                Approve
-              </Button>
-            </span>
-            <span className="ml2">
-              <Button
-                onClick={() => updateAssignmentStatus(orgAssignmentId, 'DECLINED')}>
-                Decline
-              </Button>
-            </span>
-          </div>
-        </div>
-      </PageBlock>
+      <ToastConsumer>
+        {({ showToast }: any) => (
+          <PageBlock>
+            <MyPendingAssignments
+              personaId={personaId}
+              assignments={pendingAssignments}
+              defaultAssignment={defaultAssignment}
+              updateAssignmentStatus={updateAssignmentStatus}
+              infoUpdated={infoUpdated}
+              showToast={showToast}
+            />
+            {!defaultAssignment && (
+              <div className="mb5 mt5">
+                <h2 className="">
+                  {intl.formatMessage({
+                    id:
+                      'store/my-users.my-organization.create-new-organization',
+                  })}
+                </h2>
+                <AddOrganization
+                  userEmail={userEmail}
+                  updateOrgInfo={infoUpdated}
+                  personaId={personaId}
+                  showToast={showToast}
+                />
+              </div>
+            )}
+            {defaultAssignment && (
+              <div>
+                <DefaultAssignmentInfo
+                  personaId={personaId}
+                  defaultAssignment={defaultAssignment}
+                  assignments={organizationAssignments}
+                  userRole={userRole}
+                  updateAssignmentStatus={updateAssignmentStatus}
+                  deleteOrgAssignment={deleteOrgAssignment}
+                  infoUpdated={infoUpdated}
+                  showToast={showToast}
+                />
+
+                {userRole && userRole.name && userRole.name === 'manager' && (
+                  <div className="flex flex-column mb5 mt5">
+                    <h2 className="">
+                      {intl.formatMessage({
+                        id:
+                          'store/my-users.my-organization.users-in-organization',
+                      })}
+                    </h2>
+                    <MyUsers
+                      organizationId={organizationId}
+                      personaId={personaId}
+                      showToast={showToast}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </PageBlock>
+        )}
+      </ToastConsumer>
     </Layout>
   )
 }
 
-export default MyOrganization
+export default injectIntl(MyOrganization)

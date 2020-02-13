@@ -3,7 +3,7 @@ mutation createDocument(
   $document: DocumentInput
   $schema: String
 ) {
-  createDocument(acronym: $acronym, document: $document, schema: $schema) {
+  createMyDocument(acronym: $acronym, document: $document, schema: $schema) {
     id
     cacheId
   }

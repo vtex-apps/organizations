@@ -1,13 +1,40 @@
 import React, { useState, useReducer } from 'react'
-import { pathOr, isEmpty, filter, propEq, reject, find, last } from 'ramda'
-import { Layout, PageHeader, PageBlock, Input, Button } from 'vtex.styleguide'
+import {
+  pathOr,
+  isEmpty,
+  filter,
+  propEq,
+  reject,
+  find,
+  last,
+} from 'ramda'
+import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
+import { injectIntl } from 'react-intl'
+
 import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+
+import { updateCacheCreatePersona } from '../utils/cacheUtils'
+import {
+  BUSINESS_ROLE,
+  BUSINESS_ROLE_FIELDS,
+  BUSINESS_ROLE_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_SCHEMA,
+  BUSINESS_ORGANIZATION,
+  BUSINESS_ORGANIZATION_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
+} from '../utils/const'
+import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
 interface Props {
   userEmail: string
-  redirectToUsers: Function
+  personaId?: string
+  updateOrgInfo: Function
+  showToast: Function
+  intl: any
 }
 
 interface ErrorMessage {
@@ -27,7 +54,13 @@ type Actions =
   | Action<'TELEPHONE_ERROR', { args: { telephone: string } }>
   | Action<'EMAIL_ERROR', { args: { email: string } }>
 
-const AddOrganization = (props: Props) => {
+const AddOrganization = ({
+  userEmail,
+  personaId,
+  intl,
+  updateOrgInfo,
+  showToast,
+}: Props) => {
   const initialState = {
     errorMessages: [] as ErrorMessage[],
   }
@@ -117,9 +150,13 @@ const AddOrganization = (props: Props) => {
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
 
-  const [addOrganization] = useMutation(CREATE_DOCUMENT)
-  const [addOrganizationAssignment] = useMutation(CREATE_DOCUMENT)
-  const [addPersona] = useMutation(CREATE_DOCUMENT)
+  const [createDocument] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+
+  const [addPersona] = useMutation(CREATE_DOCUMENT, {
+    update: (cache: any, { data }: any) =>
+      updateCacheCreatePersona(cache, data, userEmail),
+  })
 
   const getOrganizationFields = () => {
     return [
@@ -130,212 +167,219 @@ const AddOrganization = (props: Props) => {
     ]
   }
 
-  const getOrganizationAssignmentFields = (organizationId: string, personaId: string, roleId: string) => {
+  const getOrganizationAssignmentFields = (
+    organizationId: string,
+    personaId: string,
+    roleId: string
+  ) => {
     return [
       { key: 'personaId', value: personaId },
       { key: 'businessOrganizationId', value: organizationId },
       { key: 'roleId', value: roleId },
-      { key: 'status', value: 'APPROVED' },
+      { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
     ]
   }
 
-  const getPersonaFields = (clientId: string, organizationId: string) => {
-    return [
-      { key: 'clientId', value: clientId },
-      { key: 'email', value: props.userEmail },
+  const getPersonaFields = (organizationId: string, personaId?: string) => {
+    let array = [
+      { key: 'email', value: userEmail },
       { key: 'businessOrganizationId', value: organizationId },
     ]
+    if (personaId !== undefined) {
+      array.push({ key: 'id', value: personaId })
+    }
+    return array
   }
 
-  const createOrganization = async (roleId: string, clientId: string) => {
-    const organizationResponse = await addOrganization({
+  const createOrganization = async (roleId: string) => {
+    let orgId = ''
+    let pid = personaId ? personaId : ''
+
+    createDocument({
       variables: {
-        acronym: 'BusinessOrganization',
+        acronym: BUSINESS_ORGANIZATION,
         document: { fields: getOrganizationFields() },
-        schema: 'business-organization-schema-v1',
+        schema: BUSINESS_ORGANIZATION_SCHEMA,
       },
     })
+      .then((organizationResponse: any) => {
+        orgId = pathOr(
+          '',
+          ['data', 'createMyDocument', 'cacheId'],
+          organizationResponse
+        )
+        const save = personaId !== undefined ? updateDocument : addPersona
 
-    const organizationId = pathOr(
-      '',
-      ['data', 'createDocument', 'cacheId'],
-      organizationResponse
-    )
-
-    // if (!organizationId || organizationId === '') {
-    //   return
-    // }
-
-    const personaResponse = await addPersona({
-      variables: {
-        acronym: 'Persona',
-        document: { fields: getPersonaFields(clientId, organizationId) },
-        schema: 'persona-schema-v1',
-      },
-    })
-
-    const personaId = pathOr(
-      '',
-      ['data', 'createDocument', 'cacheId'],
-      personaResponse
-    )
-
-    // if (!personaId || personaId === '') {
-    //   return
-    // }
-
-    await addOrganizationAssignment({
-      variables: {
-        acronym: 'OrgAssignment',
-        document: { fields: getOrganizationAssignmentFields(organizationId, personaId, roleId) },
-        schema: 'organization-assignment-schema-v1',
-      },
-    })
-
-    props.redirectToUsers(organizationId)
+        return save({
+          variables: {
+            acronym: 'Persona',
+            document: { fields: getPersonaFields(orgId, personaId) },
+            schema: 'persona-schema-v1',
+          },
+        })
+      })
+      .then((personaResponse: any) => {
+        pid = pathOr(
+          pathOr('', ['data', 'updateMyDocument', 'cacheId'], personaResponse),
+          ['data', 'createMyDocument', 'cacheId'],
+          personaResponse
+        )
+        createDocument({
+          variables: {
+            acronym: ORG_ASSIGNMENT,
+            document: {
+              fields: getOrganizationAssignmentFields(orgId, pid, roleId),
+            },
+            schema: ORG_ASSIGNMENT_SCHEMA,
+          },
+        })
+      })
+      .catch(handleGlobalError())
+      .then(() => {
+        setName('')
+        setTelephone('')
+        setAddress('')
+        setEmail('')
+        updateOrgInfo(pid, orgId)
+      })
+      .catch((message: string) => {
+        showToast({
+          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.create.error'})} "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
 
-  const {
-
-    data: clientData,
-  } = useQuery(GET_DOCUMENT, {
+  const { data: roleData } = useQuery(GET_DOCUMENT, {
     variables: {
-      acronym: 'CL',
-      fields: ['id'],
-      where: `(email=${props.userEmail})`,
+      acronym: BUSINESS_ROLE,
+      fields: BUSINESS_ROLE_FIELDS,
+      where: '(name=*manager*)',
+      schema: BUSINESS_ROLE_SCHEMA,
     },
   })
 
-  const { 
-    data: roleData 
-  } = useQuery(
-    GET_DOCUMENT,
-    {
-      variables: {
-        acronym: 'BusinessRole',
-        fields: ['id', 'name', 'label'],
-        where: '(name=*test-role*)', // TODO: add admin role
-        schema: 'business-role-schema-v1',
-      },
-    }
-  )
-
-   const roleFields = roleData
-    ? pathOr([], ['fields'], last(roleData.documents))
-    : []
-  const clientFields = clientData
-    ? pathOr([], ['fields'], last(clientData.documents))
+  const roleFields = roleData
+    ? pathOr([], ['fields'], last(roleData.myDocuments))
     : []
 
-  const roleId = roleFields.length > 0? pathOr('', ['value'], find(propEq('key', 'id'), roleFields)): ''
-  const clientId = clientFields.length > 0? pathOr('', ['value'], find(propEq('key', 'id'), clientFields)): ''
+  const roleId = roleFields && roleFields.length > 0
+      ? pathOr('', ['value'], find(propEq('key', 'id'), roleFields))
+      : ''
 
   return (
-    <Layout
-      fullWidth
-      pageHeader={
-        <PageHeader title="Create Organization" linkLabel="Return"></PageHeader>
-      }>
-      <PageBlock>
-        <div className="mb5">
-          <Input
-            placeholder="Organization name"
-            dataAttributes={{ 'hj-white-list': true }}
-            label="Name"
-            value={name}
-            error={pathOr(
-              false,
-              [0, 'isError'],
-              filter(propEq('name', 'NAME_ERROR'), state.errorMessages)
-            )}
-            errorMessage={pathOr(
-              '',
-              [0, 'message'],
-              filter(propEq('name', 'NAME_ERROR'), state.errorMessages)
-            )}
-            onChange={(e: any) => {
-              setName(e.target.value)
-              dispatch({ type: 'NAME_ERROR', args: { name: e.target.value } })
-            }}
-          />
-        </div>
-        <div className="mb5">
-          <Input
-            placeholder="Telephone"
-            dataAttributes={{ 'hj-white-list': true }}
-            label="Telephone"
-            value={telephone}
-            error={pathOr(
-              false,
-              [0, 'isError'],
-              filter(propEq('name', 'TELEPHONE_ERROR'), state.errorMessages)
-            )}
-            errorMessage={pathOr(
-              '',
-              [0, 'message'],
-              filter(propEq('name', 'TELEPHONE_ERROR'), state.errorMessages)
-            )}
-            onChange={(e: any) => {
-              setTelephone(e.target.value)
-              dispatch({
-                type: 'TELEPHONE_ERROR',
-                args: { telephone: e.target.value },
-              })
-            }}
-          />
-        </div>
-        <div className="mb5">
-          <Input
-            placeholder="Address"
-            dataAttributes={{ 'hj-white-list': true }}
-            label="Address"
-            value={address}
-            onChange={(e: any) => setAddress(e.target.value)}
-          />
-        </div>
-        <div className="mb5">
-          <Input
-            placeholder="Organization email"
-            dataAttributes={{ 'hj-white-list': true }}
-            label="Email"
-            value={email}
-            error={pathOr(
-              false,
-              [0, 'isError'],
-              filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
-            )}
-            errorMessage={pathOr(
-              '',
-              [0, 'message'],
-              filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
-            )}
-            onChange={(e: any) => {
-              setEmail(e.target.value)
-              dispatch({ type: 'EMAIL_ERROR', args: { email: e.target.value } })
-            }}
-          />
-        </div>
+    <PageBlock>
+      <div className="mb5">
+        <Input
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.organizationName',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.organizationName',
+          })}
+          value={name}
+          error={pathOr(
+            false,
+            [0, 'isError'],
+            filter(propEq('name', 'NAME_ERROR'), state.errorMessages)
+          )}
+          errorMessage={pathOr(
+            '',
+            [0, 'message'],
+            filter(propEq('name', 'NAME_ERROR'), state.errorMessages)
+          )}
+          onChange={(e: any) => {
+            setName(e.target.value)
+            dispatch({ type: 'NAME_ERROR', args: { name: e.target.value } })
+          }}
+        />
+      </div>
+      <div className="mb5">
+        <Input
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.telephone',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.telephone',
+          })}
+          value={telephone}
+          error={pathOr(
+            false,
+            [0, 'isError'],
+            filter(propEq('name', 'TELEPHONE_ERROR'), state.errorMessages)
+          )}
+          errorMessage={pathOr(
+            '',
+            [0, 'message'],
+            filter(propEq('name', 'TELEPHONE_ERROR'), state.errorMessages)
+          )}
+          onChange={(e: any) => {
+            setTelephone(e.target.value)
+            dispatch({
+              type: 'TELEPHONE_ERROR',
+              args: { telephone: e.target.value },
+            })
+          }}
+        />
+      </div>
+      <div className="mb5">
+        <Input
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.address',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.address',
+          })}
+          value={address}
+          onChange={(e: any) => setAddress(e.target.value)}
+        />
+      </div>
+      <div className="mb5">
+        <Input
+          placeholder={intl.formatMessage({
+            id: 'store/my-users.input.placeholder.email',
+          })}
+          label={intl.formatMessage({
+            id: 'store/my-users.input.label.email',
+          })}
+          value={email}
+          error={pathOr(
+            false,
+            [0, 'isError'],
+            filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
+          )}
+          errorMessage={pathOr(
+            '',
+            [0, 'message'],
+            filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
+          )}
+          onChange={(e: any) => {
+            setEmail(e.target.value)
+            dispatch({ type: 'EMAIL_ERROR', args: { email: e.target.value } })
+          }}
+        />
+      </div>
 
-        <div className="mb5">
-          <Button
-            variation="primary"
-            disabled={
-              name === '' ||
-              telephone === '' ||
-              (email !== '' &&
-                pathOr(
-                  true,
-                  [0, 'isError'],
-                  filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
-                ))
-            }
-            onClick={() => createOrganization(roleId, clientId)}>
-            Save
-          </Button>
-        </div>
-      </PageBlock>
-    </Layout>
+      <div className="mb5">
+        <Button
+          variation="primary"
+          disabled={
+            name === '' ||
+            telephone === '' ||
+            (email !== '' &&
+              pathOr(
+                true,
+                [0, 'isError'],
+                filter(propEq('name', 'EMAIL_ERROR'), state.errorMessages)
+              ))
+          }
+          onClick={() => createOrganization(roleId)}>
+          {intl.formatMessage({ id: 'store/my-users.button.save' })}
+        </Button>
+      </div>
+    </PageBlock>
   )
 }
 
-export default AddOrganization
+export default injectIntl(AddOrganization)

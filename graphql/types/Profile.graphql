@@ -1,0 +1,184 @@
+type Profile {
+  """
+  email is used as cacheId
+  """
+  cacheId: ID
+  """
+  DEPRECATED
+  """
+  id: ID @deprecated
+  """
+  User's first name
+  """
+  firstName: String
+  """
+  User's last name
+  """
+  lastName: String
+  """
+  User's profile picture (only fetched if saved as 'profilePicture')
+  """
+  profilePicture: String
+  """
+  User's email
+  """
+  email: String
+  """
+  Document identification. E.g. CPF, SSN, Driver License
+  """
+  document: String
+  """
+  DEPRECATED
+  """
+  phone: String @deprecated
+  """
+  User's ID
+  """
+  userId: ID
+  """
+  User's birth date
+  """
+  birthDate: String
+  """
+  User's gender (plain unvalidated string)
+  """
+  gender: String
+  """
+  User' personal phone
+  """
+  homePhone: String
+  """
+  User's business phone
+  """
+  businessPhone: String
+  """
+  Whether the user is a corporation or not
+  """
+  isCorporate: Boolean
+  """
+  DEPRECATED
+  """
+  tradeName: String @deprecated
+  """
+  User's company name
+  """
+  corporateName: String
+  """
+  User's company document (e.g. CNPJ)
+  """
+  corporateDocument: String
+  """
+  User's company state registration
+  """
+  stateRegistration: String
+  """
+  User's last password update time
+  """
+  passwordLastUpdate: String
+}
+
+
+
+"""
+Profile information that is receive in session
+"""
+type SessionProfile {
+  """
+  profile ID
+  """
+  id: ID
+  """
+  User first name
+  """
+  firstName: String
+  """
+  User last name
+  """
+  lastName: String
+  """
+  User email
+  """
+  email: String
+  """
+  Document identification. E.g. CPF, SSN, Driver License
+  """
+  document: String
+  """
+  User phone number
+  """
+  phone: String
+  """
+  Price tables
+  """
+  priceTables: [String]
+}
+
+input ProfileInput {
+  """
+  User's email
+  """
+  email: String!
+  """
+  User's first name
+  """
+  firstName: String
+  """
+  User's last name
+  """
+  lastName: String
+  """
+  Document identification. E.g. CPF, SSN, Driver License
+  """
+  document: String
+  """
+  DEPRECATED
+  """
+  phone: String @deprecated
+  """
+  User's birth date
+  """
+  birthDate: String
+  """
+  User's gender (plain unvalidated string)
+  """
+  gender: String
+  """
+  User' personal phone
+  """
+  homePhone: String
+  """
+  User's business phone
+  """
+  businessPhone: String
+  """
+  DEPRECATED
+  """
+  tradeName: String @deprecated
+  """
+  User's company corporate name
+  """
+  corporateName: String
+  """
+  User's company corporate document (e.g. CNPJ)
+  """
+  corporateDocument: String
+  """
+  User's company state registration
+  """
+  stateRegistration: String
+  """
+  Whether the user is a corporation or not
+  """
+  isCorporate: Boolean
+}
+
+type UserCondition {
+  condition: UserConditionType
+  allowed: Boolean @deprecated(reason: "Use condition field instead")
+}
+
+enum UserConditionType {
+  authorized
+  unauthorized
+  forbidden
+}

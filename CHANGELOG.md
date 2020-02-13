@@ -7,4 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Use `document-graphql` application to query master data 
+
+## [0.0.2] - 2020-02-13
+
+## [0.0.1] - 2020-02-13
+### Added
 - Added initial implementation
+

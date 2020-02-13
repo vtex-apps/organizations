@@ -1,7 +1,7 @@
 {
-  "vendor": "vtex",
+  "vendor": "biscoindqa",
   "name": "my-organization",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "title": "VTEX My Organization",
   "description": "",
   "builders": {

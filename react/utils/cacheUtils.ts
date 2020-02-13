@@ -144,7 +144,6 @@ export const updateCacheDeleteUser = (
   organizationId: string
 ) => {
   try {
-    debugger
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
     const response: any = cache.readQuery(userListArgs(organizationId))
 
@@ -221,7 +220,7 @@ export const updateCachePersonaOrgId = (
   personaId: string
 ) => {
   try {
-    debugger
+    
     const response = cache.readQuery(personaArgs(email))
     response.myDocuments = reject(propEq('id', personaId), response.myDocuments)
 

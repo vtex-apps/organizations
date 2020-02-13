@@ -1,7 +1,6 @@
 import { pathOr } from 'ramda'
 
 export const getErrorMessage = (e: any) => {
-  debugger
   const message = pathOr(
     '',
     [

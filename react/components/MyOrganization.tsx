@@ -172,13 +172,12 @@ const MyOrganization = ({
             : ''
         const orgFields: any =
           status === ASSIGNMENT_STATUS_APPROVED
-            ? pathOr(
-                '{}',
+            ? JSON.stringify(pathOr(
+                {},
                 ['businessOrganizationId_linked'],
                 find(propEq('id', assignmentId))(orgAssignments)
-              )
+              ))
             : '{}'
-        debugger
         const personaEmail = pathOr(
           '',
           ['email'],

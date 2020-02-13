@@ -56,12 +56,7 @@ const MyUsersPage = () => {
   }
 
   const personaFields = pathOr([], ['fields'], last(personaData.myDocuments))
-  const a = pathOr(
-    '{}',
-    ['value'],
-    find(propEq('key', 'businessOrganizationId_linked'), personaFields)
-  )
-  console.log(a)
+
   const businessOrganization: BusinessOrganization = JSON.parse(
     pathOr(
       '{}',

@@ -10,11 +10,72 @@ Install this app in your workspace
 vtex install vtex.my-organization
 ```
 
-## Master data tables and schemas
+> **_NOTE:_**  This application is not yet published under `vtex` vendor name, therefore you have to publish this app with your own vendor name or you have to `link` this app to your development workspace directly.
+>
+> ### Link application to development workspace
+> - clone the application to your working environment and checkout to the correct branch (i.e: `dev-master`)
+> - link this app to your workspace (`vtex link --verbose`)
+>
+> ### publish with your vendor name
+> - clone the application to your working environment and checkout to the correct branch (i.e: `dev-master`)
+> - go to `manufest.json` in your project's root directory and change `vendor` to your current vendor name (i.e: `"vendor": "biscoindqa"`)
+> - update the `version` in `manufest.json` if you have published the same version earlier
+> - install that published version to your workspace (`vtex install biscoindqa.my-organization`)
 
-You should have created these master data entities and schemas in order to use this application
+## Prerequisites
 
-> **_NOTE:_**  `BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
+In order to run this application following master data schemas should be created. 
+Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (developers.vtex.com/reference#master-data-api-v2-overview)
+
+These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas you can ignore this step
+
+<details><summary>BusinessPermission</summary>
+
+``` 
+
+Data Entity Name: BusinessPermission
+Schema Name: business-permission-schema-v1
+
+{
+	"properties": {
+		"name": {
+			"type": "string"
+		},
+		"label": {
+			"type": "string"
+		}
+	},
+	"v-default-fields": [
+		"name",
+		"label",
+		"id"
+	],
+	"required": [
+		"name"
+	],
+	"v-indexed": [
+		"name"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"name",
+			"label",
+			"id"
+		],
+		"publicWrite": [
+			"name",
+			"label"
+		],
+		"publicFilter": [
+			"name",
+			"id"
+		]
+	}
+}
+
+```
+</details>
 
 <details><summary>BusinessRole</summary>
 
@@ -273,4 +334,6 @@ Schema Name: organization-assignment-schema-v1
 ```
 </details>
 
+
+> **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
 

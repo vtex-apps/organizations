@@ -4,15 +4,10 @@ This application allows you to create organization and manage users under that o
 
 ## Usage
 
-Add this app to your theme dependencies:
+Install this app in your workspace
 
 ```js
-// manifest.json
-// ...
-  "dependencies": {
-    // ...
-    "vtex.my-organization": "0.x"
-  }
+vtex install vtex.my-organization
 ```
 
 ## Master data tables and schemas

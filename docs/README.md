@@ -11,7 +11,7 @@ Add this app to your theme dependencies:
 // ...
   "dependencies": {
     // ...
-    "vtex.my-users": "0.x"
+    "vtex.my-organization": "0.x"
   }
 ```
 

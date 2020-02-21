@@ -85,55 +85,52 @@ Data Entity Name: BusinessRole
 Schema Name: business-role-schema-v1
 
 {
-    "properties": {
-        "name": {
-            "type": "string"
-        },
-        "label": {
-            "type": "string"
-        },
-        "permissions": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/permission"
-            }
-        }
-    },
-    "definitions": {
-        "permission": {
-            "type": "string"
-        }
-    },
-    "v-default-fields": [
-        "name",
-        "label",
-        "id",
-        "permissions"
-    ],
-    "required": [
-        "name"
-    ],
-    "v-indexed": [
-        "name"
-    ],
-    "v-security": {
-        "allowGetAll": true,
-        "publicRead": [
-            "name",
-            "label",
-            "permissions",
-            "id"
-        ],
-        "publicWrite": [
-            "name",
-            "label",
-            "permissions"
-        ],
-        "publicFilter": [
-            "name",
-            "id"
-        ]
-    }
+	"properties": {
+		"name": {
+			"type": "string"
+		},
+		"label": {
+			"type": "string"
+		},
+		"permissions": {
+			"type": "string"
+		}
+	},
+	"definitions": {
+		"permission": {
+			"type": "string"
+		}
+	},
+	"v-default-fields": [
+		"name",
+		"label",
+		"id",
+		"permissions"
+	],
+	"required": [
+		"name"
+	],
+	"v-indexed": [
+		"name"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"name",
+			"label",
+			"permissions",
+			"id"
+		],
+		"publicWrite": [
+			"name",
+			"label",
+			"permissions"
+		],
+		"publicFilter": [
+			"name",
+			"id"
+		]
+	}
 }
 
 ```

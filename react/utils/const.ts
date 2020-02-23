@@ -1,5 +1,5 @@
 export const PERSONA_ACRONYM = 'Persona'
-export const PERSONA_FIELDS = ['id', 'businessOrganizationId_linked']
+export const PERSONA_FIELDS = ['id', 'businessOrganizationId']
 export const PERSONA_SCHEMA = 'persona-schema-v1'
 
 export const BUSINESS_ROLE = 'BusinessRole'

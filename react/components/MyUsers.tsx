@@ -73,6 +73,7 @@ const MyUsers = ({
     },
   })
   const { data: orgAssignments } = useQuery(documentQuery, {
+    skip: organizationId == '',
     variables: {
       acronym: ORG_ASSIGNMENT,
       fields: ORG_ASSIGNMENT_FIELDS,

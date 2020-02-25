@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
 import {
   PageBlock,
@@ -7,21 +7,20 @@ import {
   Alert,
   ToastConsumer,
   Button,
-  Spinner
+  Spinner,
 } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
-
 import { pathOr, find, propEq, filter, reject, equals } from 'ramda'
+
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
 import MyPendingAssignments from './MyPendingAssignments'
 import DefaultAssignmentInfo from './DefaultAssignmentInfo'
 
 import DOCUMENTS from '../graphql/documents.graphql'
-
-import { documentSerializer } from '../utils/documentSerializer'
 import profileQuery from '../graphql/getProfile.graphql'
 
+import { documentSerializer } from '../utils/documentSerializer'
 import {
   PERSONA_ACRONYM,
   PERSONA_SCHEMA,
@@ -56,14 +55,18 @@ const MyOrganization = ({ intl }: Props) => {
   const [showOrganizationReload, setShowOrganizationReload] = useState(false)
 
   const client = useApolloClient()
+  const did_email_set = useRef(false)
+  const did_first_load = useRef(false)
 
   const { data: profileData, loading: profileLoading } = useQuery(profileQuery)
 
   useEffect(() => {
     const abortController = new AbortController()
-    if (email !== '') {
+    if (did_email_set.current && !did_first_load.current) {
+      did_first_load.current = true
+
       setLoading(true)
-      reload().then((data: any) => {
+      load().then((data: any) => {
         updateState(data)
         setLoading(false)
       })
@@ -76,8 +79,11 @@ const MyOrganization = ({ intl }: Props) => {
 
   useEffect(() => {
     const abortController = new AbortController()
-
-    setEmail(pathOr('', ['profile', 'email'], profileData))
+    const email_d = pathOr('', ['profile', 'email'], profileData)
+    setEmail(email_d)
+    if (email_d !== '' && !did_first_load.current) {
+      did_email_set.current = true
+    }
     return () => {
       abortController.abort()
     }
@@ -91,14 +97,21 @@ const MyOrganization = ({ intl }: Props) => {
     setUserRole(data.userRole_d)
   }
 
+  // Compare props to reload - Leave Delete default organization
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
-    reload().then((data: any) => {
+    load().then((data: any) => {
+
+      const isValidPendingAssignments = find(propEq('businessOrganizationId', organizationId))(
+          pathOr([], ['pendingAssignments_d'], data)
+        ) === undefined
+
       if (
         data &&
         equals(data.personaId_d, personaId) &&
         equals(data.organizationId_d, '') &&
-        !equals(data.defaultAssignment_d, defaultOrgAssignment)
+        !equals(data.defaultAssignment_d, defaultOrgAssignment) &&
+        isValidPendingAssignments
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -108,14 +121,21 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
+  // Compare props to reload - Create order
   const infoUpdatedCreateOrganization = () => {
     setShowOrganizationReload(true)
-    reload().then((data: any) => {
+    load().then((data: any) => {
+      const isValidDefaultAssignment =
+        !equals(data.personaId_d, '') &&
+        find(propEq('personaId', data.personaId_d))(
+          pathOr([], ['orgAssignments_d'], data)
+        ) !== undefined
       if (
         data &&
         equals(data.personaId_d, personaId) &&
         !equals(data.organizationId_d, '') &&
-        !equals(data.defaultAssignment_d, {})
+        !equals(data.defaultAssignment_d, {}) &&
+        isValidDefaultAssignment
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -125,17 +145,26 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
+  // Compare props to reload - Approve Decline Pending organization
   const infoUpdatedPendingOrganizations = () => {
-    
     setShowOrganizationReload(true)
-    reload().then((data: any) => {
+    load().then((data: any) => {
       const pendingIds_before = pendingOrgAssignments.map(x => x.id).sort()
-      const pendingIds_after =  pathOr([], ['pendingAssignments_d'], data).map((x: any) => x.id).sort()
-
+      const pendingIds_after = pathOr([], ['pendingAssignments_d'], data)
+        .map((x: any) => x.id)
+        .sort()
+      const isValidDefaultAssignment =
+        equals(data.organizationId_d, '') ||
+        equals(data.organizationId_d, organizationId) ||
+        (!equals(data.personaId_d, '') &&
+        find(propEq('personaId', data.personaId_d))(
+          pathOr([], ['orgAssignments_d'], data)
+        ) !== undefined)
       if (
         data &&
         equals(data.personaId_d, personaId) &&
-        !equals(pendingIds_before, pendingIds_after)
+        !equals(pendingIds_before, pendingIds_after) && 
+        isValidDefaultAssignment
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -145,10 +174,12 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
-  const reload = () => {
+  // Load data
+  const load = () => {
     let personaId_d = ''
     let organizationId_d = ''
     let pendingAssignments_d = [] as OrganizationAssignment[]
+    let orgAssignments_d = [] as OrganizationAssignment[]
     let defaultAssignment_d = {} as OrganizationAssignment
     let userRole_d = {} as Role
 
@@ -204,7 +235,25 @@ const MyOrganization = ({ intl }: Props) => {
             ? defaultAssignment
             : ({} as OrganizationAssignment)
         }
-
+        return client
+          .query({
+            query: DOCUMENTS,
+            variables: {
+              acronym: ORG_ASSIGNMENT,
+              schema: ORG_ASSIGNMENT_SCHEMA,
+              fields: ORG_ASSIGNMENT_FIELDS,
+              where: `(businessOrganizationId=${organizationId_d} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+            },
+            fetchPolicy: 'no-cache',
+          })
+          .catch(() => {
+            return Promise.resolve({ myDocuments: [] })
+          })
+      })
+      .then(({ data }: any) => {
+        if (data) {
+          orgAssignments_d = documentSerializer(data ? data.myDocuments : [])
+        }
         return client.query({
           query: DOCUMENTS,
           variables: {
@@ -228,6 +277,7 @@ const MyOrganization = ({ intl }: Props) => {
           personaId_d,
           organizationId_d,
           pendingAssignments_d,
+          orgAssignments_d,
           defaultAssignment_d,
           userRole_d,
         })
@@ -238,7 +288,7 @@ const MyOrganization = ({ intl }: Props) => {
     setShowOrganizationReload(false)
   }
 
-  return loading || profileLoading? <Spinner />: (
+  return (
     <Layout
       fullWidth
       pageHeader={
@@ -247,78 +297,83 @@ const MyOrganization = ({ intl }: Props) => {
       <ToastConsumer>
         {({ showToast }: any) => (
           <PageBlock>
-            {showOrganizationReload && (
-              <div className="mb5">
-                <Alert type="warning" onClose={closeReloadMessage}>
-                  <div className="flex">
-                    {' '}
-                    <div className="flex flex-grow-1 justify-start">
-                      Reload message Reload messageReload messageReload
-                      messageReload messageReload messageReload messageReload
-                      messageReload messageReload messageReload messageReload
-                      message
-                    </div>
-                    <div className="flex flex-grow-1 justify-end">
-                      <Button
-                        variation="secondary"
-                        size="small"
-                        onClick={reload}
-                        isLoading={reloadStart}>
-                        Reload
-                      </Button>
-                    </div>
-                  </div>
-                </Alert>
-              </div>
-            )}
-
-            <MyPendingAssignments
-              personaId={personaId}
-              assignments={pendingOrgAssignments}
-              defaultAssignment={defaultOrgAssignment}
-              infoUpdated={infoUpdatedPendingOrganizations}
-              showToast={showToast}
-            />
-            {organizationId === '' && (
-              <div className="mb5 mt5">
-                <h2 className="">
-                  {intl.formatMessage({
-                    id:
-                      'store/my-users.my-organization.create-new-organization',
-                  })}
-                </h2>
-
-                <AddOrganization
-                  userEmail={email}
-                  personaId={personaId}
-                  updateOrgInfo={infoUpdatedCreateOrganization}
-                  showToast={showToast}
-                />
-              </div>
-            )}
-            {defaultOrgAssignment && defaultOrgAssignment.id && (
+            {loading || profileLoading ? (
+              <Spinner />
+            ) : (
               <div>
-                <DefaultAssignmentInfo
+                {showOrganizationReload && (
+                  <div className="mb5">
+                    <Alert type="warning" onClose={closeReloadMessage}>
+                      <div className="flex">
+                        {' '}
+                        <div className="flex flex-grow-1 justify-start">
+                          Reload message Reload messageReload messageReload
+                          messageReload messageReload messageReload
+                          messageReload messageReload messageReload
+                          messageReload messageReload message
+                        </div>
+                        <div className="flex flex-grow-1 justify-end">
+                          <Button
+                            variation="secondary"
+                            size="small"
+                            isLoading={reloadStart}>
+                            Reload
+                          </Button>
+                        </div>
+                      </div>
+                    </Alert>
+                  </div>
+                )}
+
+                <MyPendingAssignments
                   personaId={personaId}
+                  assignments={pendingOrgAssignments}
                   defaultAssignment={defaultOrgAssignment}
-                  userRole={userRole}
-                  infoUpdated={infoUpdatedDefaultAssignment}
+                  infoUpdated={infoUpdatedPendingOrganizations}
                   showToast={showToast}
                 />
-
-                {userRole && userRole.name && userRole.name === 'manager' && (
-                  <div className="flex flex-column mb5 mt5">
+                {organizationId === '' && (
+                  <div className="mb5 mt5">
                     <h2 className="">
                       {intl.formatMessage({
                         id:
-                          'store/my-users.my-organization.users-in-organization',
+                          'store/my-users.my-organization.create-new-organization',
                       })}
                     </h2>
-                    <MyUsers
-                      organizationId={organizationId}
+
+                    <AddOrganization
+                      userEmail={email}
                       personaId={personaId}
+                      updateOrgInfo={infoUpdatedCreateOrganization}
                       showToast={showToast}
                     />
+                  </div>
+                )}
+                {defaultOrgAssignment && defaultOrgAssignment.id && (
+                  <div>
+                    <DefaultAssignmentInfo
+                      personaId={personaId}
+                      defaultAssignment={defaultOrgAssignment}
+                      userRole={userRole}
+                      infoUpdated={infoUpdatedDefaultAssignment}
+                      showToast={showToast}
+                    />
+
+                    {userRole && userRole.name && userRole.name === 'manager' && (
+                      <div className="flex flex-column mb5 mt5">
+                        <h2 className="">
+                          {intl.formatMessage({
+                            id:
+                              'store/my-users.my-organization.users-in-organization',
+                          })}
+                        </h2>
+                        <MyUsers
+                          organizationId={organizationId}
+                          personaId={personaId}
+                          showToast={showToast}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -330,4 +385,4 @@ const MyOrganization = ({ intl }: Props) => {
   )
 }
 
-export default injectIntl(MyOrganization)
+export default React.memo(injectIntl(MyOrganization))

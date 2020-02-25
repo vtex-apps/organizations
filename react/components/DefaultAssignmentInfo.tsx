@@ -3,9 +3,16 @@ import { injectIntl } from 'react-intl'
 import { reject, filter, propEq, pathOr } from 'ramda'
 import { Button } from 'vtex.styleguide'
 import { useApolloClient, useMutation } from 'react-apollo'
+
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
-import { ASSIGNMENT_STATUS_DECLINED } from '../utils/const'
+
+import DOCUMENTS from '../graphql/documents.graphql'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
+
+import { getErrorMessage } from '../utils/graphqlErrorHandler'
+import { documentSerializer } from '../utils/documentSerializer'
 import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
@@ -14,13 +21,9 @@ import {
   ASSIGNMENT_STATUS_PENDING,
   PERSONA_ACRONYM,
   PERSONA_SCHEMA,
-  BUSINESS_ORGANIZATION
+  BUSINESS_ORGANIZATION,
+  ASSIGNMENT_STATUS_DECLINED
 } from '../utils/const'
-import DOCUMENTS from '../graphql/documents.graphql'
-import { getErrorMessage } from '../utils/graphqlErrorHandler'
-import { documentSerializer } from '../utils/documentSerializer'
-import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
-import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 
 interface Props {
   personaId: string

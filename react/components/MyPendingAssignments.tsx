@@ -39,7 +39,7 @@ const MyPendingAssignments = ({
 
   // APPROVE
   const approveOrganization = (assignmentId: string) => {
-    if (defaultAssignment) {
+    if (defaultAssignment && defaultAssignment.id) {
       setIsApproveWarningOpen(true)
     } else {
       updateAssignmentStatus(assignmentId, ASSIGNMENT_STATUS_APPROVED)

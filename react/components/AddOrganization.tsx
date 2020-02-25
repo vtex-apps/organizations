@@ -16,7 +16,6 @@ import CREATE_DOCUMENT from '../graphql/createDocument.graphql'
 import GET_DOCUMENT from '../graphql/documents.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 
-import { updateCacheCreatePersona } from '../utils/cacheUtils'
 import {
   BUSINESS_ROLE,
   BUSINESS_ROLE_FIELDS,
@@ -153,10 +152,7 @@ const AddOrganization = ({
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
 
-  const [addPersona] = useMutation(CREATE_DOCUMENT, {
-    update: (cache: any, { data }: any) =>
-      updateCacheCreatePersona(cache, data, userEmail),
-  })
+  const [addPersona] = useMutation(CREATE_DOCUMENT)
 
   const getOrganizationFields = () => {
     return [
@@ -208,7 +204,7 @@ const AddOrganization = ({
           ['data', 'createMyDocument', 'cacheId'],
           organizationResponse
         )
-        const save = personaId !== undefined ? updateDocument : addPersona
+        const save = personaId !== undefined && personaId !== '' ? updateDocument : addPersona
 
         return save({
           variables: {

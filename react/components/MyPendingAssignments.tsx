@@ -5,12 +5,24 @@ import { injectIntl } from 'react-intl'
 
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
-import { ASSIGNMENT_STATUS_APPROVED, ASSIGNMENT_STATUS_DECLINED} from '../utils/const'
+import {
+  PERSONA_ACRONYM,
+  PERSONA_SCHEMA,
+  ORG_ASSIGNMENT,
+  ORG_ASSIGNMENT_SCHEMA,
+  ASSIGNMENT_STATUS_APPROVED,
+  ASSIGNMENT_STATUS_DECLINED,
+} from '../utils/const'
+
+import { getErrorMessage } from '../utils/graphqlErrorHandler'
+
+import { useMutation } from 'react-apollo'
+import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+
 interface Props {
   personaId: string
   assignments: OrganizationAssignment[]
   defaultAssignment: OrganizationAssignment
-  updateAssignmentStatus: Function
   infoUpdated: Function
   showToast: Function
   intl: any
@@ -20,7 +32,6 @@ const MyPendingAssignments = ({
   personaId,
   assignments,
   defaultAssignment,
-  updateAssignmentStatus,
   infoUpdated,
   showToast,
   intl,
@@ -36,6 +47,22 @@ const MyPendingAssignments = ({
   const [sharedAssignment, setSharedAssignment] = useState(
     {} as OrganizationAssignment
   )
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+
+  const updateAssignmentStatus = (assignmentId: string, status: string) => {
+    return updateDocument({
+      variables: {
+        acronym: ORG_ASSIGNMENT,
+        document: {
+          fields: [
+            { key: 'id', value: assignmentId },
+            { key: 'status', value: status },
+          ],
+        },
+        schema: ORG_ASSIGNMENT_SCHEMA,
+      },
+    })
+  }
 
   // APPROVE
   const approveOrganization = (assignmentId: string) => {
@@ -43,6 +70,26 @@ const MyPendingAssignments = ({
       setIsApproveWarningOpen(true)
     } else {
       updateAssignmentStatus(assignmentId, ASSIGNMENT_STATUS_APPROVED)
+        .then(() => {
+          const updatedOrgId: string = pathOr(
+            '',
+            ['businessOrganizationId'],
+            find(propEq('id', assignmentId))(assignments)
+          )
+
+          return updateDocument({
+            variables: {
+              acronym: PERSONA_ACRONYM,
+              document: {
+                fields: [
+                  { key: 'id', value: personaId },
+                  { key: 'businessOrganizationId', value: updatedOrgId },
+                ],
+              },
+              schema: PERSONA_SCHEMA,
+            },
+          })
+        })
         .then((data: any) => {
           console.log(data)
           const updatedOrgId: string = pathOr(
@@ -52,9 +99,12 @@ const MyPendingAssignments = ({
           )
           infoUpdated(personaId, updatedOrgId)
         })
-        .catch((message: string) => {
+        .catch((e: any) => {
+          const message = getErrorMessage(e)
           showToast({
-            message: `${intl.formatMessage({id: 'store/my-users.toast.organization.approve.error'})} "${message}"`,
+            message: `${intl.formatMessage({
+              id: 'store/my-users.toast.organization.approve.error',
+            })} "${message}"`,
             duration: 5000,
             horizontalPosition: 'right',
           })
@@ -82,12 +132,15 @@ const MyPendingAssignments = ({
 
         infoUpdated(personaId, '')
       })
-      .catch((message: string) => {
+      .catch((e: any) => {
+        const message = getErrorMessage(e)
         setSharedAssignment({} as OrganizationAssignment)
         setIsDeclineConfirmationOpen(false)
         setDeclineAssignmentLoading(false)
         showToast({
-          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.decline.error'})}  "${message}"`,
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.organization.decline.error',
+          })}  "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })

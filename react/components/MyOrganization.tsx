@@ -1,13 +1,13 @@
-import React, { useEffect, useState, Fragment } from 'react' //Fragment
-import { useQuery, useApolloClient, useMutation } from 'react-apollo' //useMutation
+import React, { useEffect, useState } from 'react'
+import { useQuery, useApolloClient } from 'react-apollo'
 import {
-  EmptyState,
   PageBlock,
   PageHeader,
   Layout,
   Alert,
   ToastConsumer,
   Button,
+  Spinner
 } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
 
@@ -18,17 +18,8 @@ import MyPendingAssignments from './MyPendingAssignments'
 import DefaultAssignmentInfo from './DefaultAssignmentInfo'
 
 import DOCUMENTS from '../graphql/documents.graphql'
-import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
-import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 
 import { documentSerializer } from '../utils/documentSerializer'
-import {
-  updateCacheOrgAssignmentStatus,
-  updateCachePersonaOrgId,
-  updateCacheDeleteAssignment,
-} from '../utils/cacheUtils'
-
-// import documentQuery from './graphql/documents.graphql'
 import profileQuery from '../graphql/getProfile.graphql'
 
 import {
@@ -43,9 +34,7 @@ import {
   ASSIGNMENT_STATUS_APPROVED,
   ASSIGNMENT_STATUS_PENDING,
   PERSONA_FIELDS,
-  BUSINESS_ORGANIZATION,
 } from '../utils/const'
-import { handleGlobalError } from '../utils/graphqlErrorHandler'
 
 interface Props {
   intl: any
@@ -58,24 +47,15 @@ const MyOrganization = ({ intl }: Props) => {
   const [pendingOrgAssignments, setPendingOrgAssignments] = useState(
     [] as OrganizationAssignment[]
   )
-  const [orgAssignments, setOrgAssignments] = useState(
-    [] as OrganizationAssignment[]
-  )
-
   const [defaultOrgAssignment, setDefaultOrgAssignment] = useState(
     {} as OrganizationAssignment
   )
   const [userRole, setUserRole] = useState({} as Role)
-
   const [loading, setLoading] = useState(false)
   const [reloadStart, setReloadStart] = useState(false)
-
   const [showOrganizationReload, setShowOrganizationReload] = useState(false)
+
   const client = useApolloClient()
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
-  const [deleteDocument] = useMutation(DELETE_DOCUMENT)
-  const [updateOrgAssignmentStatus] = useMutation(UPDATE_DOCUMENT)
-  const [updatePersonaOrgId] = useMutation(UPDATE_DOCUMENT)
 
   const { data: profileData, loading: profileLoading } = useQuery(profileQuery)
 
@@ -108,7 +88,6 @@ const MyOrganization = ({ intl }: Props) => {
     setOrganizationId(data.organizationId_d)
     setPendingOrgAssignments(data.pendingAssignments_d)
     setDefaultOrgAssignment(data.defaultAssignment_d)
-    setOrgAssignments(data.orgAssignments_d)
     setUserRole(data.userRole_d)
   }
 
@@ -119,9 +98,7 @@ const MyOrganization = ({ intl }: Props) => {
         data &&
         equals(data.personaId_d, personaId) &&
         equals(data.organizationId_d, '') &&
-        equals(data.pendingAssignments_d, pendingOrgAssignments) && // Remove this
-        !equals(data.defaultAssignment_d, defaultOrgAssignment) &&
-        !equals(data.orgAssignments_d, orgAssignments)
+        !equals(data.defaultAssignment_d, defaultOrgAssignment)
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -138,8 +115,7 @@ const MyOrganization = ({ intl }: Props) => {
         data &&
         equals(data.personaId_d, personaId) &&
         !equals(data.organizationId_d, '') &&
-        !equals(data.defaultAssignment_d, {}) &&
-        !equals(data.orgAssignments_d, orgAssignments)
+        !equals(data.defaultAssignment_d, {})
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -150,15 +126,16 @@ const MyOrganization = ({ intl }: Props) => {
   }
 
   const infoUpdatedPendingOrganizations = () => {
+    
     setShowOrganizationReload(true)
     reload().then((data: any) => {
+      const pendingIds_before = pendingOrgAssignments.map(x => x.id).sort()
+      const pendingIds_after =  pathOr([], ['pendingAssignments_d'], data).map((x: any) => x.id).sort()
+
       if (
         data &&
         equals(data.personaId_d, personaId) &&
-        !equals(data.organizationId_d, '') &&
-        !equals(data.organizationId_d, organizationId) &&
-        data.defaultAssignment_d &&
-        data.defaultAssignment_d.id !== defaultOrgAssignment.id
+        !equals(pendingIds_before, pendingIds_after)
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -173,7 +150,6 @@ const MyOrganization = ({ intl }: Props) => {
     let organizationId_d = ''
     let pendingAssignments_d = [] as OrganizationAssignment[]
     let defaultAssignment_d = {} as OrganizationAssignment
-    let orgAssignments_d = [] as OrganizationAssignment[]
     let userRole_d = {} as Role
 
     setReloadStart(true)
@@ -229,26 +205,6 @@ const MyOrganization = ({ intl }: Props) => {
             : ({} as OrganizationAssignment)
         }
 
-        return client
-          .query({
-            query: DOCUMENTS,
-            variables: {
-              acronym: ORG_ASSIGNMENT,
-              schema: ORG_ASSIGNMENT_SCHEMA,
-              fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(businessOrganizationId=${organizationId_d} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
-            },
-            fetchPolicy: 'no-cache',
-          })
-          .catch(() => {
-            return Promise.resolve({ myDocuments: [] })
-          })
-      })
-      .then(({ data }: any) => {
-        if (data) {
-          const assignments = documentSerializer(data ? data.myDocuments : [])
-          orgAssignments_d = assignments
-        }
         return client.query({
           query: DOCUMENTS,
           variables: {
@@ -266,19 +222,6 @@ const MyOrganization = ({ intl }: Props) => {
           userRole_d =
             roleId !== '' ? find(propEq('id', roleId))(rolesList) : {}
 
-          // setPersonaId(personaId_d)
-          // setOrganizationId(organizationId_d)
-          // setPendingOrgAssignments(pendingAssignments_d)
-          // setDefaultOrgAssignment(defaultAssignment_d)
-          // setOrgAssignments(orgAssignments_d)
-          // setUserRole(userRole)
-
-          // personaId_d = ''
-          // organizationId_d = ''
-          // pendingAssignments_d = [] as OrganizationAssignment[]
-          // defaultAssignment_d = {} as OrganizationAssignment
-          // orgAssignments_d = [] as OrganizationAssignment[]
-
           setReloadStart(false)
         }
         return Promise.resolve({
@@ -286,7 +229,6 @@ const MyOrganization = ({ intl }: Props) => {
           organizationId_d,
           pendingAssignments_d,
           defaultAssignment_d,
-          orgAssignments_d,
           userRole_d,
         })
       })
@@ -296,155 +238,7 @@ const MyOrganization = ({ intl }: Props) => {
     setShowOrganizationReload(false)
   }
 
-  const updateAssignmentStatus = (assignmentId: string, status: string) => {
-    const allAssignments: OrganizationAssignment[] = [
-      ...pendingOrgAssignments,
-      ...orgAssignments,
-    ]
-    return updateOrgAssignmentStatus({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'status', value: status },
-          ],
-        },
-        schema: ORG_ASSIGNMENT_SCHEMA,
-      },
-      update: (cache: any) =>
-        updateCacheOrgAssignmentStatus(
-          cache,
-          assignmentId,
-          status,
-          organizationId,
-          personaId
-        ),
-    })
-      .then(() => {
-        const updatedOrgId: string =
-          status === ASSIGNMENT_STATUS_APPROVED
-            ? pathOr(
-                '',
-                ['businessOrganizationId'],
-                find(propEq('id', assignmentId))(allAssignments)
-              )
-            : ''
-        const orgFields: any =
-          status === ASSIGNMENT_STATUS_APPROVED
-            ? JSON.stringify(
-                pathOr(
-                  {},
-                  ['businessOrganizationId_linked'],
-                  find(propEq('id', assignmentId))(allAssignments)
-                )
-              )
-            : '{}'
-        const personaEmail = pathOr(
-          '',
-          ['email'],
-          pathOr(
-            {},
-            ['personaId_linked'],
-            find(propEq('id', assignmentId))(allAssignments)
-          )
-        )
-
-        return updatePersonaOrgId({
-          variables: {
-            acronym: PERSONA_ACRONYM,
-            document: {
-              fields: [
-                { key: 'id', value: personaId },
-                { key: 'businessOrganizationId', value: updatedOrgId },
-              ],
-            },
-            schema: PERSONA_SCHEMA,
-          },
-          update: (cache: any) =>
-            updateCachePersonaOrgId(cache, orgFields, personaEmail, personaId),
-        })
-      })
-      .catch(handleGlobalError())
-  }
-
-  const deleteOrgAssignment = (assignmentId: string) => {
-    const allAssignments: OrganizationAssignment[] = [
-      ...pendingOrgAssignments,
-      ...orgAssignments,
-    ]
-    return deleteDocument({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        documentId: assignmentId,
-      },
-      update: (cache: any, { data }: any) =>
-        updateCacheDeleteAssignment(cache, data, assignmentId),
-    })
-      .then(() => {
-        const orgId: string = pathOr(
-          '',
-          ['businessOrganizationId'],
-          find(propEq('id', assignmentId))(allAssignments)
-        )
-        return deleteDocument({
-          variables: {
-            acronym: BUSINESS_ORGANIZATION,
-            documentId: orgId,
-          },
-        })
-      })
-      .then(() => {
-        const personaEmail = pathOr(
-          '',
-          ['email'],
-          pathOr(
-            {},
-            ['personaId_linked'],
-            find(propEq('id', assignmentId))(allAssignments)
-          )
-        )
-
-        return updateDocument({
-          variables: {
-            acronym: PERSONA_ACRONYM,
-            document: {
-              fields: [
-                { key: 'id', value: personaId },
-                { key: 'businessOrganizationId', value: '' },
-              ],
-            },
-            schema: PERSONA_SCHEMA,
-          },
-          update: (cache: any) =>
-            updateCachePersonaOrgId(cache, '{}', personaEmail, personaId),
-        })
-      })
-      .catch(handleGlobalError())
-  }
-
-  if (loading || profileLoading) {
-    return (
-      <Fragment>
-        <EmptyState title={'Loading...'} />
-      </Fragment>
-    )
-  }
-
-  // if (
-  //   profileError ||
-  //   personaError ||
-  //   personOrgAssignmentError ||
-  //   orgAssignmentError ||
-  //   rolesError
-  // ) {
-  //   return (
-  //     <Fragment>
-  //       <EmptyState title={'Error..'} />
-  //     </Fragment>
-  //   )
-  // }
-  return (
+  return loading || profileLoading? <Spinner />: (
     <Layout
       fullWidth
       pageHeader={
@@ -482,7 +276,6 @@ const MyOrganization = ({ intl }: Props) => {
               personaId={personaId}
               assignments={pendingOrgAssignments}
               defaultAssignment={defaultOrgAssignment}
-              updateAssignmentStatus={updateAssignmentStatus}
               infoUpdated={infoUpdatedPendingOrganizations}
               showToast={showToast}
             />
@@ -508,10 +301,7 @@ const MyOrganization = ({ intl }: Props) => {
                 <DefaultAssignmentInfo
                   personaId={personaId}
                   defaultAssignment={defaultOrgAssignment}
-                  assignments={orgAssignments}
                   userRole={userRole}
-                  updateAssignmentStatus={updateAssignmentStatus}
-                  deleteOrgAssignment={deleteOrgAssignment}
                   infoUpdated={infoUpdatedDefaultAssignment}
                   showToast={showToast}
                 />

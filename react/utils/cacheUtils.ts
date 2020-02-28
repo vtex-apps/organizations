@@ -1,8 +1,6 @@
 import GET_DOCUMENT from '../graphql/documents.graphql'
 import { pathOr, find, propEq, reject } from 'ramda'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
@@ -36,24 +34,28 @@ export const updateCacheAddUser = (
       data
     )
     const assignmentFields = [
-      { key: 'id', value: id },
+      { key: 'id', value: id, __typename: 'Field' },
       {
         key: 'businessOrganizationId',
         value: organizationId,
+        __typename: 'Field',
       },
       {
         key: 'personaId',
         value: personaId,
+        __typename: 'Field',
       },
       {
         key: 'roleId',
         value: roleId,
+        __typename: 'Field',
       },
       {
         key: 'status',
         value: ASSIGNMENT_STATUS_PENDING,
+        __typename: 'Field',
       },
-      { key: 'businessOrganizationId_linked', value: org },
+      { key: 'businessOrganizationId_linked', value: org, __typename: 'Field' },
       {
         key: 'roleId_linked',
         value: selectedRole
@@ -63,6 +65,7 @@ export const updateCacheAddUser = (
               id: selectedRole.value,
             })
           : '',
+          __typename: 'Field',
       },
       {
         key: 'personaId_linked',
@@ -70,15 +73,19 @@ export const updateCacheAddUser = (
           id: personaId,
           email: email,
         }),
+        __typename: 'Field',
       },
     ]
 
     response.myDocuments = [
       ...response.myDocuments,
-      { id: id, fields: assignmentFields },
+      { id: id, fields: assignmentFields, __typename: 'Document', },
     ]
-
-    cache.writeQuery(userListArgs(organizationId), response)
+    const writeData = {
+      ...userListArgs(organizationId),
+      data: { myDocuments: response.myDocuments },
+    }
+    cache.writeQuery(writeData)
   } catch (e) {
     console.log(e)
   }
@@ -91,6 +98,7 @@ export const updateCacheEditUser = (
   organizationId: string,
   roleId: string
 ) => {
+
   try {
     const response: any = cache.readQuery(userListArgs(organizationId))
     const selectedRole = find(propEq('value', roleId), roles)
@@ -119,10 +127,12 @@ export const updateCacheEditUser = (
             id: selectedRole.value,
           })
         : '',
+        __typename: 'Field',
     })
     fieldsExceptRoleAndRoleId_linked.push({
       key: 'roleId',
       value: roleId,
+      __typename: 'Field',
     })
 
     const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
@@ -131,8 +141,11 @@ export const updateCacheEditUser = (
       }
       return x
     })
-
-    cache.writeQuery(userListArgs(organizationId), newData)
+    const writeData = {
+      ...userListArgs(organizationId),
+      data: { myDocuments: newData },
+    }
+    cache.writeQuery(writeData)
   } catch (e) {
     console.log(e)
   }
@@ -143,120 +156,17 @@ export const updateCacheDeleteUser = (
   data: any,
   organizationId: string
 ) => {
+
   try {
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
     const response: any = cache.readQuery(userListArgs(organizationId))
 
-    response.myDocuments = reject(propEq('id', id), response.myDocuments)
-
-    cache.writeQuery(userListArgs(organizationId), response)
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-export const updateCacheCreatePersona = (
-  cache: any,
-  data: any,
-  email: string
-) => {
-  try {
-    const id = pathOr('', ['createMyDocument', 'cacheId'], data)
-    const response: any = cache.readQuery(personaArgs(email))
-    const persona = {
-      id: id,
-      fields: [{ key: 'id', value: id }, { key: 'email', value: email }],
+    const writeData = {
+      ...userListArgs(organizationId),
+      data: { myDocuments: reject(propEq('id', id), response.myDocuments) },
     }
-    response.myDocuments = [persona]
 
-    cache.writeQuery(personaArgs(email), response)
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-export const updateCacheOrgAssignmentStatus = (
-  cache: any,
-  assignmentId: string,
-  status: string,
-  organizationId: string,
-  personaId?: string
-) => {
-  try {
-    const response = cache.readQuery(
-      organizationAssignmentArgs(personaId ? personaId : '', organizationId)
-    )
-    const assignment = find(propEq('id', assignmentId), response.myDocuments)
-    const assignmentFields = reject(
-      propEq('key', 'status'),
-      pathOr([], ['fields'], assignment)
-    )
-
-    response.myDocuments = reject(
-      propEq('id', assignmentId),
-      response.myDocuments
-    )
-    response.myDocuments = [
-      ...response.myDocuments,
-      {
-        id: assignment.id,
-        fields: [...assignmentFields, { key: 'status', value: status }],
-      },
-    ]
-
-    cache.writeQuery(
-      organizationAssignmentArgs(personaId ? personaId : '', organizationId),
-      response
-    )
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-export const updateCachePersonaOrgId = (
-  cache: any,
-  orgFields: any,
-  email: string,
-  personaId: string
-) => {
-  try {
-    
-    const response = cache.readQuery(personaArgs(email))
-    response.myDocuments = reject(propEq('id', personaId), response.myDocuments)
-
-    const persona = {
-      id: personaId,
-      fields: [
-        { key: 'id', value: personaId },
-        { key: 'email', value: email },
-        { key: 'businessOrganizationId_linked', value: orgFields },
-      ],
-    }
-    response.myDocuments.push(persona)
-    cache.writeQuery(personaArgs(email), response)
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-export const updateCacheDeleteAssignment = (
-  cache: any,
-  assignmentId: string,
-  organizationId: string,
-  personaId?: string
-) => {
-  try {
-    const response = cache.readQuery(
-      organizationAssignmentArgs(personaId ? personaId : '', organizationId)
-    )
-    response.myDocuments = reject(
-      propEq('id', assignmentId),
-      response.myDocuments
-    )
-    cache.writeQuery(
-      organizationAssignmentArgs(personaId ? personaId : '', organizationId),
-      response
-    )
+    cache.writeQuery(writeData)
   } catch (e) {
     console.log(e)
   }
@@ -270,33 +180,6 @@ const userListArgs = (orgId: string) => {
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
-    },
-  }
-}
-
-const personaArgs = (email: string) => {
-  return {
-    query: GET_DOCUMENT,
-    variables: {
-      acronym: PERSONA_ACRONYM,
-      fields: ['id', 'businessOrganizationId_linked'],
-      where: `(email=${email})`,
-      schema: PERSONA_SCHEMA,
-    },
-  }
-}
-
-const organizationAssignmentArgs = (
-  personaId: string,
-  organizationId: string
-) => {
-  return {
-    query: GET_DOCUMENT,
-    variables: {
-      acronym: ORG_ASSIGNMENT,
-      schema: ORG_ASSIGNMENT_SCHEMA,
-      fields: ORG_ASSIGNMENT_FIELDS,
-      where: `(personaId=${personaId} OR businessOrganizationId=${organizationId})`,
     },
   }
 }

@@ -34,6 +34,7 @@ import {
   ASSIGNMENT_STATUS_PENDING,
   PERSONA_FIELDS,
 } from '../utils/const'
+import styles from '../my-organization.css'
 
 interface Props {
   intl: any
@@ -101,8 +102,8 @@ const MyOrganization = ({ intl }: Props) => {
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
-
-      const isValidPendingAssignments = find(propEq('businessOrganizationId', organizationId))(
+      const isValidPendingAssignments =
+        find(propEq('businessOrganizationId', organizationId))(
           pathOr([], ['pendingAssignments_d'], data)
         ) === undefined
 
@@ -156,13 +157,13 @@ const MyOrganization = ({ intl }: Props) => {
         equals(data.organizationId_d, '') ||
         equals(data.organizationId_d, organizationId) ||
         (!equals(data.personaId_d, '') &&
-        find(propEq('personaId', data.personaId_d))(
-          pathOr([], ['orgAssignments_d'], data)
-        ) !== undefined)
+          find(propEq('personaId', data.personaId_d))(
+            pathOr([], ['orgAssignments_d'], data)
+          ) !== undefined)
       if (
         data &&
         equals(data.personaId_d, personaId) &&
-        !equals(pendingIds_before, pendingIds_after) && 
+        !equals(pendingIds_before, pendingIds_after) &&
         isValidDefaultAssignment
       ) {
         updateState(data)
@@ -300,18 +301,17 @@ const MyOrganization = ({ intl }: Props) => {
               <Spinner />
             ) : (
               <div>
-                {showOrganizationReload && (
-                  <div className="mb5">
+                { showOrganizationReload && (
+                  <div className={`${styles.reloadMessage} mb5`}>
                     <Alert type="warning" onClose={closeReloadMessage}>
-                      <div className="flex">
+                      <div className="flex-row w-100">
                         {' '}
-                        <div className="flex flex-grow-1 justify-start">
-                          Reload message Reload messageReload messageReload
-                          messageReload messageReload messageReload
-                          messageReload messageReload messageReload
-                          messageReload messageReload message
+                        <div className="fl flex-grow-1 justify-start w-90">
+                          {intl.formatMessage({
+                            id: 'store/my-users.my-organization.reload-message',
+                          })}
                         </div>
-                        <div className="flex flex-grow-1 justify-end">
+                        <div className="fl flex-grow-1 justify-end w-10">
                           <Button
                             variation="secondary"
                             size="small"

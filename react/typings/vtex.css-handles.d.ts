@@ -1,1 +1,7 @@
-declare module 'vtex.css-handles'
+declare module '*.css' {
+    import { DocumentNode } from 'css'
+  
+    const value: DocumentNode
+    export default value
+  }
+  

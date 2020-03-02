@@ -132,7 +132,6 @@ const MyOrganization = ({ intl }: Props) => {
         ) !== undefined
       if (
         data &&
-        equals(data.personaId_d, personaId) &&
         !equals(data.organizationId_d, '') &&
         !equals(data.defaultAssignment_d, {}) &&
         isValidDefaultAssignment

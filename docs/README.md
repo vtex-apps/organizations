@@ -29,7 +29,7 @@ Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (ht
 
 These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas and indices you can ignore this step
 
-## Master data schemas
+### Master data schemas
 
 <details><summary>BusinessPermission</summary>
 
@@ -417,7 +417,7 @@ Schema Name: organization-assignment-schema-v1
 ```
 </details>
 
-## Indices
+### Indices
 
 <details><summary>EmailIndexOnPersona</summary>
 

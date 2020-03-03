@@ -32,6 +32,7 @@ interface Props {
   infoUpdated: Function
   showToast: Function
   intl: any
+  showLeaveBtn: boolean
 }
 
 const DefaultAssignmentInfo = ({
@@ -41,6 +42,7 @@ const DefaultAssignmentInfo = ({
   infoUpdated,
   showToast,
   intl,
+  showLeaveBtn
 }: Props) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [
@@ -340,7 +342,7 @@ const DefaultAssignmentInfo = ({
       </div>
       <div className="ml5 w-25 flex items-center">
         <span className="mr2">
-          <Button
+          {showLeaveBtn && (<Button
             variation="danger-tertiary"
             size="small"
             isLoading={isLeaveBtnLoading}
@@ -348,7 +350,7 @@ const DefaultAssignmentInfo = ({
             {intl.formatMessage({
               id: 'store/my-users.my-organization.leave',
             })}
-          </Button>
+          </Button>)}
         </span>
         {userRole && userRole.name && userRole.name === 'manager' && (
           <span className="ml2">

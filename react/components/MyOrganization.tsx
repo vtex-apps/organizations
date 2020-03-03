@@ -54,6 +54,7 @@ const MyOrganization = ({ intl }: Props) => {
   const [loading, setLoading] = useState(false)
   const [reloadStart, setReloadStart] = useState(false)
   const [showOrganizationReload, setShowOrganizationReload] = useState(false)
+  const [showLeaveOrganizationBtn, setShowLeaveOrganizationBtn] = useState(false)
 
   const client = useApolloClient()
   const did_email_set = useRef(false)
@@ -96,6 +97,10 @@ const MyOrganization = ({ intl }: Props) => {
     setPendingOrgAssignments(data.pendingAssignments_d)
     setDefaultOrgAssignment(data.defaultAssignment_d)
     setUserRole(data.userRole_d)
+
+    if(pathOr([], ['orgAssignments_d'], data).length > 1){
+      setShowLeaveOrganizationBtn(true)
+    }
   }
 
   // Compare props to reload - Leave Delete default organization
@@ -356,6 +361,7 @@ const MyOrganization = ({ intl }: Props) => {
                       userRole={userRole}
                       infoUpdated={infoUpdatedDefaultAssignment}
                       showToast={showToast}
+                      showLeaveBtn={showLeaveOrganizationBtn}
                     />
 
                     {userRole && userRole.name && userRole.name === 'manager' && (

@@ -271,28 +271,13 @@ Schema Name: organization-assignment-schema-v1
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1"
 		},
-		"personaEmail": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1",
-			"linked_field": "email"
-		},
 		"businessOrganizationId": {
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
 		},
-		"businessOrganizationName": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1",
-			"linked_field": "name"
-		},
 		"roleId": {
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1"
-		},
-		"roleName": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1",
-			"linked_field": "name"
 		},
 		"status": {
 			"type": "string"
@@ -300,12 +285,9 @@ Schema Name: organization-assignment-schema-v1
 	},
 	"v-default-fields": [
 		"personaId",
-		"personaEmail",
 		"id",
 		"businessOrganizationId",
-		"businessOrganizationName",
 		"roleId",
-		"roleName",
 		"status"
 	],
 	"required": [
@@ -325,14 +307,11 @@ Schema Name: organization-assignment-schema-v1
 		"publicRead": [
 			"personaId",
 			"personaId_linked",
-			"personaEmail",
 			"id",
 			"businessOrganizationId",
 			"businessOrganizationId_linked",
-			"businessOrganizationName",
 			"roleId",
 			"roleId_linked",
-			"roleName",
 			"status"
 		],
 		"publicWrite": [
@@ -344,12 +323,9 @@ Schema Name: organization-assignment-schema-v1
 		],
 		"publicFilter": [
 			"personaId",
-			"personaEmail",
 			"id",
 			"businessOrganizationId",
-			"businessOrganizationName",
 			"roleId",
-			"roleName",
 			"status"
 		]
 	},

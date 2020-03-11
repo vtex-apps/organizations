@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useQuery, useMutation } from 'react-apollo'
+import { useQuery, useMutation, useApolloClient } from 'react-apollo'
 import { Table, Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
@@ -16,8 +16,8 @@ import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 
 import { updateCacheDeleteUser } from '../utils/cacheUtils'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  CLIENT_ACRONYM,
+  CLIENT_FIELDS,
   BUSINESS_ROLE,
   BUSINESS_ROLE_FIELDS,
   BUSINESS_ROLE_SCHEMA,
@@ -31,7 +31,7 @@ import {
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
 interface Props {
-  personaId: string
+  email: string
   organizationId: string
   showToast: Function
   intl: any
@@ -39,7 +39,7 @@ interface Props {
 
 const MyUsers = ({
   organizationId,
-  personaId,
+  email,
   showToast,
   intl,
 }: Props) => {
@@ -62,6 +62,8 @@ const MyUsers = ({
   const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
     {} as OrganizationAssignment
   )
+
+  const client = useApolloClient()
 
   const [isUserEditOpen, setIsUserEditOpen] = useState(false)
 
@@ -95,7 +97,7 @@ const MyUsers = ({
   )
 
   const defaultUserAssignment = find(
-    propEq('personaId', personaId),
+    propEq('email', email),
     assignments
   )
 
@@ -192,14 +194,31 @@ const MyUsers = ({
     },
   }
 
-  const tableItems = assignments.map((assignment: OrganizationAssignment) => ({
-    email: pathOr('', ['personaId_linked', 'email'], assignment),
+  // const getClient = async (email: string) => {
+  //   return client
+  //     .query({
+  //       query: documentQuery,
+  //       variables: {
+  //         acronym: 'CL',
+  //         fields: ['email', 'isOrgAdmin'],
+  //         where: `email=${email}`,
+  //       },
+  //     }).catch((e) => {
+  //       Promise.reject(e)
+  //     })
+  // }
+
+  const tableItems = assignments.map((assignment: OrganizationAssignment) => {
+    // const cl = await getClient("9f30ceaf-ca02-11e8-822e-12ab2183dbbe")
+    // console.log(cl)
+    return {
+    email: pathOr('', ['email'], assignment),
     status: pathOr('', ['status'], assignment),
     role: pathOr('', ['roleId_linked', 'label'], assignment),
     editAssignment: pathOr('', ['id'], assignment),
     reInviteAssignment: pathOr('', ['id'], assignment),
     deleteAssignment: pathOr('', ['id'], assignment),
-  }))
+  }})
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -212,17 +231,27 @@ const MyUsers = ({
 
   const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
     return deleteOrgAssignment(assignment)
-      .then(() => {
+      .then(()=> {
+        return client.query({
+          query: documentQuery,
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            fields: CLIENT_FIELDS,
+            where: `email=${assignment.email}`
+          },
+        })
+      })
+      .then(({data}: any) => {
+        const clid = pathOr('', ['myDocuments', 0, 'id'], data)
         return updateDocument({
           variables: {
-            acronym: PERSONA_ACRONYM,
+            acronym: CLIENT_ACRONYM,
             document: {
               fields: [
-                { key: 'id', value: assignment.personaId },
-                { key: 'businessOrganizationId', value: '' },
+                { key: 'id', value: clid },
+                { key: 'organizationId', value: '' },
               ],
             },
-            schema: PERSONA_SCHEMA,
           },
         })
       })

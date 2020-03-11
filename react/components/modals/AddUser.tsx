@@ -1,17 +1,17 @@
 import React, { SyntheticEvent, useReducer } from 'react'
-import { isEmpty, path, pathOr, find, propEq, last, contains } from 'ramda'
+import { isEmpty, path, contains } from 'ramda'
 import { injectIntl } from 'react-intl'
 import { Modal, Button, Dropdown, Input } from 'vtex.styleguide'
-import { useMutation, useApolloClient } from 'react-apollo'
+import { useMutation } from 'react-apollo'
 
 import CREATE_DOCUMENT from '../../graphql/createDocument.graphql'
-import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
-import GET_DOCUMENT from '../../graphql/documents.graphql'
+// import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
+// import GET_DOCUMENT from '../../graphql/documents.graphql'
 
 import { updateCacheAddUser } from '../../utils/cacheUtils'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  // CLIENT_ACRONYM,
+  // CLIENT_FIELDS,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_PENDING
@@ -75,9 +75,9 @@ const AddUser = ({
   existingUsers,
   showToast
 }: Props) => {
-  const client = useApolloClient()
-  const [createDocument] = useMutation(CREATE_DOCUMENT)
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  // const client = useApolloClient()
+  // const [createDocument] = useMutation(CREATE_DOCUMENT)
+  // const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [createAssignmentDocument] = useMutation(CREATE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
       updateCacheAddUser(
@@ -85,7 +85,6 @@ const AddUser = ({
         data,
         roles,
         organizationId,
-        state.personaId,
         state.email,
         state.roleId
       ),
@@ -209,28 +208,28 @@ const AddUser = ({
     }
   }
 
-  const getPersonaFields = (persona?: string) => {
-    const fields = [{ key: 'email', value: state.email }]
-    if (persona) {
-      fields.push({ key: 'id', value: persona })
-    } else {
-      fields.push({
-        key: 'businessOrganizationId',
-        value: '',
-      })
-    }
-    return fields
-  }
+  // const getPersonaFields = (persona?: string) => {
+  //   const fields = [{ key: 'email', value: state.email }]
+  //   if (persona) {
+  //     fields.push({ key: 'id', value: persona })
+  //   } else {
+  //     fields.push({
+  //       key: 'businessOrganizationId',
+  //       value: '',
+  //     })
+  //   }
+  //   return fields
+  // }
 
-  const getAssignmentFields = (persona: string) => {
+  const getAssignmentFields = () => {
     const fields = [
       {
         key: 'businessOrganizationId',
         value: organizationId,
       },
       {
-        key: 'personaId',
-        value: persona,
+        key: 'email',
+        value: state.email,
       },
       {
         key: 'roleId',
@@ -249,94 +248,138 @@ const AddUser = ({
     e.preventDefault()
 
     if (state.email && state.roleId) {
-      client
-        .query({
-          query: GET_DOCUMENT,
-          variables: {
-            acronym: PERSONA_ACRONYM,
-            schema: PERSONA_SCHEMA,
-            fields: ['id', 'email', 'businessOrganizationId'],
-            where: `email=${state.email}`,
+
+      createAssignmentDocument({
+        variables: {
+          acronym: ORG_ASSIGNMENT,
+          document: {
+            fields: getAssignmentFields(),
+          },
+          schema: ORG_ASSIGNMENT_SCHEMA,
+        },
+      }).catch(handleGraphqlError())
+      .then(() => {
+        dispatch({
+          type: 'RESPONSE',
+          args: {
+            type: 'SUCCESS',
+            message: intl.formatMessage({ id: 'store/my-users.success' }),
           },
         })
-        .then(({ data: personaData }: any) => {
-          const personaFields =
-            personaData && personaData.myDocuments
-              ? pathOr([], ['fields'], last(personaData.myDocuments))
-              : []
-          const personaId =
-          personaFields && personaFields.length > 0
-              ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
-              : ''
-          return Promise.resolve({ personaId })
+        dispatch({
+          type: 'CHANGE_EMAIL',
+          args: { email: '' },
         })
-        .then((data: { personaId: string }) => {
-          const savePersona =
-            data && data.personaId ? updateDocument : createDocument
-          return savePersona({
-            variables: {
-              acronym: PERSONA_ACRONYM,
-              document: {
-                fields: getPersonaFields(data.personaId),
-              },
-              schema: PERSONA_SCHEMA,
-            },
-          })
+        dispatch({
+          type: 'CHANGE_ROLE',
+          args: { roleId: '' },
         })
-        .then((response: any) => {
-          const persona = pathOr(
-            pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
-            ['data', 'createMyDocument', 'cacheId'],
-            response
-          )
+        dispatch({
+          type: 'CHANGE_PERSONA_ID',
+          args: { personaId: '' },
+        })
 
-          dispatch({
-            type: 'CHANGE_PERSONA_ID',
-            args: { personaId: persona },
-          })
-
-          return createAssignmentDocument({
-            variables: {
-              acronym: ORG_ASSIGNMENT,
-              document: {
-                fields: getAssignmentFields(persona),
-              },
-              schema: ORG_ASSIGNMENT_SCHEMA,
-            },
-          })
-        }).catch(handleGraphqlError())
-        .then(() => {
-          dispatch({
-            type: 'RESPONSE',
-            args: {
-              type: 'SUCCESS',
-              message: intl.formatMessage({ id: 'store/my-users.success' }),
-            },
-          })
-          dispatch({
-            type: 'CHANGE_EMAIL',
-            args: { email: '' },
-          })
-          dispatch({
-            type: 'CHANGE_ROLE',
-            args: { roleId: '' },
-          })
-          dispatch({
-            type: 'CHANGE_PERSONA_ID',
-            args: { personaId: '' },
-          })
-
-          onSuccess()
+        onSuccess()
+      })
+      .catch((message: string) => {
+        showToast({
+          message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
+          duration: 5000,
+          horizontalPosition: 'right',
         })
-        .catch((message: string) => {
-          showToast({
-            message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
-            duration: 5000,
-            horizontalPosition: 'right',
-          })
-        })
+      })
+
     }
   }
+
+
+      // client
+      //   .query({
+      //     query: GET_DOCUMENT,
+      //     variables: {
+      //       acronym: CLIENT_ACRONYM,
+      //       fields: CLIENT_FIELDS,
+      //       where: `email=${state.email}`,
+      //     },
+      //   })
+      //   .then(({ data: clientData }: any) => {
+      //     const clientFields =
+      //     clientData && clientData.myDocuments
+      //         ? pathOr([], ['fields'], last(clientData.myDocuments))
+      //         : []
+      //     const clientId =
+      //     clientFields && clientFields.length > 0
+      //         ? pathOr('', ['value'], find(propEq('key', 'id'), clientFields))
+      //         : ''
+      //     return Promise.resolve({ clientId })
+      //   })
+      //   .then((data: { clientId: string }) => {
+      //     const savePersona =
+      //       data && data.clientId ? updateDocument : createDocument
+      //     return savePersona({
+      //       variables: {
+      //         acronym: PERSONA_ACRONYM,
+      //         document: {
+      //           fields: getPersonaFields(data.personaId),
+      //         },
+      //         schema: PERSONA_SCHEMA,
+      //       },
+      //     })
+      //   })
+      //   .then((response: any) => {
+      //     const persona = pathOr(
+      //       pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
+      //       ['data', 'createMyDocument', 'cacheId'],
+      //       response
+      //     )
+
+      //     dispatch({
+      //       type: 'CHANGE_PERSONA_ID',
+      //       args: { personaId: persona },
+      //     })
+
+      //     return createAssignmentDocument({
+      //       variables: {
+      //         acronym: ORG_ASSIGNMENT,
+      //         document: {
+      //           fields: getAssignmentFields(persona),
+      //         },
+      //         schema: ORG_ASSIGNMENT_SCHEMA,
+      //       },
+      //     })
+      //   }).catch(handleGraphqlError())
+      //   .then(() => {
+      //     dispatch({
+      //       type: 'RESPONSE',
+      //       args: {
+      //         type: 'SUCCESS',
+      //         message: intl.formatMessage({ id: 'store/my-users.success' }),
+      //       },
+      //     })
+      //     dispatch({
+      //       type: 'CHANGE_EMAIL',
+      //       args: { email: '' },
+      //     })
+      //     dispatch({
+      //       type: 'CHANGE_ROLE',
+      //       args: { roleId: '' },
+      //     })
+      //     dispatch({
+      //       type: 'CHANGE_PERSONA_ID',
+      //       args: { personaId: '' },
+      //     })
+
+      //     onSuccess()
+      //   })
+      //   .catch((message: string) => {
+      //     showToast({
+      //       message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
+      //       duration: 5000,
+      //       horizontalPosition: 'right',
+      //     })
+      //   })
+  //   }
+  // }
   return (
     <Modal isOpen={isOpen} onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>

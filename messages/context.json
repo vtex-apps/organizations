@@ -8,12 +8,6 @@
   "store/my-users.errors.email.exists": "User already exists",
   "store/my-users.errors.email.invalid": "Email is invalid",
   "store/my-users.success": "User added successfully",
-  "admin/editor.challenge-permission.title": "Permission Challenge",
-  "admin/editor.challenge-permission.permissions.title": "Permissions",
-  "admin/editor.challenge-permission.permissions.items.title": "Permissions",
-  "admin/editor.challenge-permission.permissions.items.name": "Name",
-  "admin/test": "test",
-  "store/test": "test",
   "store/my-users.errors.organization.text": "Organization",
   "store/my-users.button.cancel": "Cancel",
   "store/my-users.button.save": "Save",
@@ -70,5 +64,9 @@
   "store/my-users.toast.user.delete.error": "Can't create delete because",
   "store/my-users.toast.user.reinvitation.sent": "Re invitation sent",
   "store/my-users.toast.user.reinvitation.error": "Re invitation failed, ",
-  "store/my-users.my-organization.reload-message": "Your changes have been applied successfully, it may take a while to reflect them"
+  "store/my-users.my-organization.reload-message": "Your changes have been applied successfully, it may take a while to reflect them",
+  "store/my-users.my-organization.organization.title": "Organization",
+  "store/my-users.my-organization.status.rejected": "Rejected",
+  "store/my-users.my-organization.status.accepted": "Organization Admin",
+  "store/my-users.my-organization.status.not-responded": "Pending Approval"
 }

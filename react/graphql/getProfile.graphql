@@ -1,5 +1,10 @@
-query Profile @context(scope: "private") {
-  profile {
+query Profile($customFields: String) {
+  profile (customFields: $customFields){
+    id
     email
+    customFields {
+      key
+      value
+    }
   }
 }

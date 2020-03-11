@@ -19,24 +19,25 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
   ASSIGNMENT_STATUS_PENDING,
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  CLIENT_ACRONYM,
   BUSINESS_ORGANIZATION,
   ASSIGNMENT_STATUS_DECLINED
 } from '../utils/const'
 
+import { updateCacheProfile } from '../utils/cacheUtils'
+
 interface Props {
-  personaId: string
+  clientId: string
   defaultAssignment: OrganizationAssignment
   userRole: any
-  infoUpdated: Function
-  showToast: Function
+  infoUpdated: () => void
+  showToast: (message: any) => void
   intl: any
   showLeaveBtn: boolean
 }
 
 const DefaultAssignmentInfo = ({
-  personaId,
+  clientId,
   defaultAssignment,
   userRole,
   infoUpdated,
@@ -76,85 +77,10 @@ const DefaultAssignmentInfo = ({
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
 
-  const updateAssignmentStatus = (status: string) => {
-    const assignmentId = pathOr('', ['id'], defaultAssignment)
-    return updateDocument({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'status', value: status },
-          ],
-        },
-        schema: ORG_ASSIGNMENT_SCHEMA,
-      }
-    })
-      .then(() => {
-        const updatedOrgId: string =
-          status === ASSIGNMENT_STATUS_APPROVED
-            ? pathOr(
-                '',
-                ['businessOrganizationId'],
-                defaultAssignment
-              )
-            : ''
-        return updateDocument({
-          variables: {
-            acronym: PERSONA_ACRONYM,
-            document: {
-              fields: [
-                { key: 'id', value: personaId },
-                { key: 'businessOrganizationId', value: updatedOrgId },
-              ],
-            },
-            schema: PERSONA_SCHEMA,
-          },
-        })
-      })
-  }
-
-  const deleteOrgAssignment = () => {
-    const assignmentId = pathOr('', ['id'], defaultAssignment)
-    return deleteDocument({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        documentId: assignmentId,
-      },
-    })
-      .then(() => {
-        const orgId: string = pathOr(
-          '',
-          ['businessOrganizationId'],
-          defaultAssignment
-        )
-        return deleteDocument({
-          variables: {
-            acronym: BUSINESS_ORGANIZATION,
-            documentId: orgId,
-          },
-        })
-      })
-      .then(() => {
-        return updateDocument({
-          variables: {
-            acronym: PERSONA_ACRONYM,
-            document: {
-              fields: [
-                { key: 'id', value: personaId },
-                { key: 'businessOrganizationId', value: '' },
-              ],
-            },
-            schema: PERSONA_SCHEMA,
-          },
-        })
-      })
-  }
-
-
   // LEAVE
   const leaveOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
+    const email = pathOr('', ['email'], defaultAssignment)
     setIsLeaveBtnLoading(true)
     client
       .query({
@@ -171,7 +97,7 @@ const DefaultAssignmentInfo = ({
         if (data) {
           const assignments_d = documentSerializer(data ? data.myDocuments : [])
           const assignmentsExceptMe = reject(
-            propEq('personaId', personaId),
+            propEq('email', email),
             assignments_d
           )
           const assignmentsWithManagerRole = filter(
@@ -212,12 +138,39 @@ const DefaultAssignmentInfo = ({
 
   const confirmLeaveOrganization = () => {
     setLeaveOrgConfirmationLoading(true)
-    updateAssignmentStatus(ASSIGNMENT_STATUS_DECLINED)
+    const assignmentId = pathOr('', ['id'], defaultAssignment)
+    updateDocument({
+      variables: {
+        acronym: ORG_ASSIGNMENT,
+        document: {
+          fields: [
+            { key: 'id', value: assignmentId },
+            { key: 'status', value: ASSIGNMENT_STATUS_DECLINED },
+          ],
+        },
+        schema: ORG_ASSIGNMENT_SCHEMA,
+      }
+    })
+      .then(() => {
+        
+        return updateDocument({
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            document: {
+              fields: [
+                { key: 'id', value: clientId },
+                { key: 'organizationId', value: '' },
+              ],
+            },
+          },
+          update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, '') 
+        })
+      })
       .then(() => {
         setLeaveOrgConfirmationLoading(false)
         setIsLeaveOrgConfirmationOpen(false)
 
-        infoUpdated(personaId, '')
+        infoUpdated()
       })
       .catch((e: any) => {
         const message = getErrorMessage(e)
@@ -239,6 +192,7 @@ const DefaultAssignmentInfo = ({
   // DELETE ORGANIZATION
   const deleteCurrentOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
+    const email = pathOr('', ['email'], defaultAssignment)
     setIsDeleteBtnLoading(true)
     client
       .query({
@@ -255,7 +209,7 @@ const DefaultAssignmentInfo = ({
         if (data) {
           const assignments_d = documentSerializer(data ? data.myDocuments : [])
           const assignmentsExceptMe = reject(
-            propEq('personaId', personaId),
+            propEq('email', email),
             assignments_d
           )
           if (assignmentsExceptMe && assignmentsExceptMe.length > 0) {
@@ -291,11 +245,44 @@ const DefaultAssignmentInfo = ({
 
   const confirmDeleteOrganization = () => {
     setDeleteOrgConfirmationLoading(true)
-    deleteOrgAssignment()
+    const assignmentId = pathOr('', ['id'], defaultAssignment)
+    return deleteDocument({
+      variables: {
+        acronym: ORG_ASSIGNMENT,
+        documentId: assignmentId,
+      },
+    })
+      .then(() => {
+        const orgId: string = pathOr(
+          '',
+          ['businessOrganizationId'],
+          defaultAssignment
+        )
+        return deleteDocument({
+          variables: {
+            acronym: BUSINESS_ORGANIZATION,
+            documentId: orgId,
+          },
+        })
+      })
+      .then(() => {
+        return updateDocument({
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            document: {
+              fields: [
+                { key: 'id', value: clientId },
+                { key: 'organizationId', value: '' },
+              ],
+            },
+          },
+          update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, '') 
+        })
+      })
       .then(() => {
         setDeleteOrgConfirmationLoading(false)
         setIsDeleteOrgConfirmationOpen(false)
-        infoUpdated(personaId, '')
+        infoUpdated()
       })
       .catch((e: any) => {
         const message = getErrorMessage(e)

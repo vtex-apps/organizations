@@ -1,6 +1,8 @@
 import GET_DOCUMENT from '../graphql/documents.graphql'
+import profileQuery from '../graphql/getProfile.graphql'
 import { pathOr, find, propEq, reject } from 'ramda'
 import {
+  PROFILE_FIELDS,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
@@ -12,7 +14,6 @@ export const updateCacheAddUser = (
   data: any,
   roles: Role[],
   organizationId: string,
-  personaId: string,
   email: string,
   roleId: string
 ) => {
@@ -41,8 +42,8 @@ export const updateCacheAddUser = (
         __typename: 'Field',
       },
       {
-        key: 'personaId',
-        value: personaId,
+        key: 'email',
+        value: email,
         __typename: 'Field',
       },
       {
@@ -65,21 +66,13 @@ export const updateCacheAddUser = (
               id: selectedRole.value,
             })
           : '',
-          __typename: 'Field',
-      },
-      {
-        key: 'personaId_linked',
-        value: JSON.stringify({
-          id: personaId,
-          email: email,
-        }),
         __typename: 'Field',
-      },
+      }
     ]
 
     response.myDocuments = [
       ...response.myDocuments,
-      { id: id, fields: assignmentFields, __typename: 'Document', },
+      { id: id, fields: assignmentFields, __typename: 'Document' },
     ]
     const writeData = {
       ...userListArgs(organizationId),
@@ -98,7 +91,6 @@ export const updateCacheEditUser = (
   organizationId: string,
   roleId: string
 ) => {
-
   try {
     const response: any = cache.readQuery(userListArgs(organizationId))
     const selectedRole = find(propEq('value', roleId), roles)
@@ -127,7 +119,7 @@ export const updateCacheEditUser = (
             id: selectedRole.value,
           })
         : '',
-        __typename: 'Field',
+      __typename: 'Field',
     })
     fieldsExceptRoleAndRoleId_linked.push({
       key: 'roleId',
@@ -156,7 +148,6 @@ export const updateCacheDeleteUser = (
   data: any,
   organizationId: string
 ) => {
-
   try {
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
     const response: any = cache.readQuery(userListArgs(organizationId))
@@ -164,6 +155,39 @@ export const updateCacheDeleteUser = (
     const writeData = {
       ...userListArgs(organizationId),
       data: { myDocuments: reject(propEq('id', id), response.myDocuments) },
+    }
+
+    cache.writeQuery(writeData)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+export const updateCacheProfile = (
+  cache: any,
+  data: any,
+  organizationId: string
+) => {
+  console.log(cache)
+  console.log(data)
+  console.log(organizationId)
+  // TODO: logic
+  try {
+    const response: any = cache.readQuery(getProfile())
+
+    const customFieldsExceptOrgId = reject(propEq('key', 'organizationId'), response.profile.customFields) 
+
+    const customFields = [ ...customFieldsExceptOrgId, {
+      key: 'organizationId',
+      value: organizationId,
+      __typename: 'ProfileCustomField',
+    } ]
+
+    response.profile.customFields = customFields
+
+    const writeData = {
+      ...getProfile(),
+      data: { profile: response.profile },
     }
 
     cache.writeQuery(writeData)
@@ -181,5 +205,12 @@ const userListArgs = (orgId: string) => {
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
     },
+  }
+}
+
+const getProfile = () => {
+  return { 
+    query: profileQuery, 
+    variables: { customFields: PROFILE_FIELDS } 
   }
 }

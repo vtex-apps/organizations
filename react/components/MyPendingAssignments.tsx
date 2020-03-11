@@ -6,30 +6,29 @@ import { injectIntl } from 'react-intl'
 import WarningModal from './modals/WarningModal'
 import ConfirmationModal from './modals/ConfirmationModal'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  CLIENT_ACRONYM,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
   ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
-
+import { updateCacheProfile } from '../utils/cacheUtils'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
 import { useMutation } from 'react-apollo'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 
 interface Props {
-  personaId: string
+  clientId: string
   assignments: OrganizationAssignment[]
   defaultAssignment: OrganizationAssignment
-  infoUpdated: Function
-  showToast: Function
+  infoUpdated: (orgAssignmentId: string) => void
+  showToast: (messag: any) => void
   intl: any
 }
 
 const MyPendingAssignments = ({
-  personaId,
+  clientId,
   assignments,
   defaultAssignment,
   infoUpdated,
@@ -79,25 +78,24 @@ const MyPendingAssignments = ({
 
           return updateDocument({
             variables: {
-              acronym: PERSONA_ACRONYM,
+              acronym: CLIENT_ACRONYM,
               document: {
                 fields: [
-                  { key: 'id', value: personaId },
-                  { key: 'businessOrganizationId', value: updatedOrgId },
+                  { key: 'id', value: clientId },
+                  { key: 'organizationId', value: updatedOrgId },
                 ],
               },
-              schema: PERSONA_SCHEMA,
             },
+            update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, updatedOrgId) 
           })
         })
-        .then((data: any) => {
-          console.log(data)
+        .then(() => {
           const updatedOrgId: string = pathOr(
             '',
             ['businessOrganizationId'],
             find(propEq('id', assignmentId))(assignments)
           )
-          infoUpdated(personaId, updatedOrgId)
+          infoUpdated(updatedOrgId)
         })
         .catch((e: any) => {
           const message = getErrorMessage(e)
@@ -130,7 +128,7 @@ const MyPendingAssignments = ({
         setIsDeclineConfirmationOpen(false)
         setSharedAssignment({} as OrganizationAssignment)
 
-        infoUpdated(personaId, '')
+        infoUpdated('')
       })
       .catch((e: any) => {
         const message = getErrorMessage(e)

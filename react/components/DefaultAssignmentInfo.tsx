@@ -21,10 +21,11 @@ import {
   ASSIGNMENT_STATUS_PENDING,
   CLIENT_ACRONYM,
   BUSINESS_ORGANIZATION,
-  ASSIGNMENT_STATUS_DECLINED
+  ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
 
 import { updateCacheProfile } from '../utils/cacheUtils'
+import { addressSplitter } from '../utils/textUtil'
 
 interface Props {
   clientId: string
@@ -43,7 +44,7 @@ const DefaultAssignmentInfo = ({
   infoUpdated,
   showToast,
   intl,
-  showLeaveBtn
+  showLeaveBtn,
 }: Props) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [
@@ -93,7 +94,7 @@ const DefaultAssignmentInfo = ({
         },
         fetchPolicy: 'no-cache',
       })
-      .then(({data}: any) => {
+      .then(({ data }: any) => {
         if (data) {
           const assignments_d = documentSerializer(data ? data.myDocuments : [])
           const assignmentsExceptMe = reject(
@@ -149,10 +150,9 @@ const DefaultAssignmentInfo = ({
           ],
         },
         schema: ORG_ASSIGNMENT_SCHEMA,
-      }
+      },
     })
       .then(() => {
-        
         return updateDocument({
           variables: {
             acronym: CLIENT_ACRONYM,
@@ -163,7 +163,8 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, '') 
+          update: (cache: any, { data }: any) =>
+            updateCacheProfile(cache, data, ''),
         })
       })
       .then(() => {
@@ -205,7 +206,7 @@ const DefaultAssignmentInfo = ({
         },
         fetchPolicy: 'no-cache',
       })
-      .then(({data}: any) => {
+      .then(({ data }: any) => {
         if (data) {
           const assignments_d = documentSerializer(data ? data.myDocuments : [])
           const assignmentsExceptMe = reject(
@@ -276,7 +277,8 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, '') 
+          update: (cache: any, { data }: any) =>
+            updateCacheProfile(cache, data, ''),
         })
       })
       .then(() => {
@@ -303,115 +305,184 @@ const DefaultAssignmentInfo = ({
   }
 
   return (
-    <div className="flex flex-row mb5 mt5">
-      <div className="mt3 w-50">
-        <h2>
+    <div className="pa5">
+      <div>
+        <h3>
           {intl.formatMessage({
             id: 'store/my-users.my-organization.organization',
           })}
-          :{' '}
-          <span className="b">
-            {pathOr(
-              '',
-              ['businessOrganizationId_linked', 'name'],
-              defaultAssignment
-            )}
-          </span>
-        </h2>
-      </div>
-      <div className="ml5 w-25 flex items-center">
-        <h3 className="flex flex-row mb5 mt5">
-          {intl.formatMessage({
-            id: 'store/my-users.my-organization.role',
-          })}
-          : {userRole && userRole.label ? userRole.label : ''}
         </h3>
       </div>
-      <div className="ml5 w-25 flex items-center">
-        <span className="mr2">
-          {showLeaveBtn && (<Button
-            variation="danger-tertiary"
-            size="small"
-            isLoading={isLeaveBtnLoading}
-            onClick={() => leaveOrganization()}>
-            {intl.formatMessage({
-              id: 'store/my-users.my-organization.leave',
-            })}
-          </Button>)}
-        </span>
-        {userRole && userRole.name && userRole.name === 'manager' && (
-          <span className="ml2">
-            <Button
-              variation="danger-tertiary"
-              isLoading={isDeleteBtnLoading}
-              size="small"
-              onClick={() => deleteCurrentOrganization()}>
+      <div className="flex flex-row">
+        <div className="fl mt3 w-40">
+          <div className="w-100 pt2 pb2">
+            <span>
               {intl.formatMessage({
-                id: 'store/my-users.my-organization.delete',
+                id: 'store/my-users.my-organization.organization.name',
               })}
-            </Button>
+              :{' '}
+            </span>
+            <span className="b">
+              {pathOr(
+                '',
+                ['businessOrganizationId_linked', 'name'],
+                defaultAssignment
+              )}
+            </span>
+          </div>
+          <div className="w-100 pt2 pb2">
+            <span>
+              {intl.formatMessage({
+                id: 'store/my-users.my-organization.role',
+              })}{' '}
+            </span>
+            :{' '}
+            <span className="b">
+              {' '}
+              {userRole && userRole.label ? userRole.label : ''}
+            </span>
+          </div>
+          <div className="w-100 pt2 pb2">
+            <span>
+              {intl.formatMessage({
+                id: 'store/my-users.my-organization.organization.telephone',
+              })}
+              :{' '}
+            </span>
+            <span className="b">
+              {pathOr(
+                '',
+                ['businessOrganizationId_linked', 'telephone'],
+                defaultAssignment
+              )}
+            </span>
+          </div>
+          <div className="w-100 pt2 pb2">
+            <span>
+              {intl.formatMessage({
+                id: 'store/my-users.my-organization.organization.email',
+              })}
+              :{' '}
+            </span>
+            <span className="b">
+              {pathOr(
+                '',
+                ['businessOrganizationId_linked', 'email'],
+                defaultAssignment
+              )}
+            </span>
+          </div>
+          <div className="w-100 pt2 pb2"></div>
+        </div>
+        <div className="fl mt3 w-40 ">
+          <div className="fl w-30">
+            {intl.formatMessage({
+              id: 'store/my-users.my-organization.organization.address',
+            })}
+            :{' '}
+          </div>
+          <div className="fl w-70 flex flex-column pl3 pr3">
+            {addressSplitter(
+              pathOr(
+                '',
+                ['businessOrganizationId_linked', 'address'],
+                defaultAssignment
+              )
+            ).map((line: string) => (
+              <span className="pa1 b">{line}</span>
+            ))}
+          </div>
+        </div>
+        <div className="fl w-20 flex flex-column">
+          <span className="pa2">
+            {(showLeaveBtn || true) && (
+              <Button
+                variation="danger-tertiary"
+                size="small"
+                isLoading={isLeaveBtnLoading}
+                onClick={() => leaveOrganization()}
+                block>
+                {intl.formatMessage({
+                  id: 'store/my-users.my-organization.leave',
+                })}
+              </Button>
+            )}
           </span>
-        )}
+          {userRole && userRole.name && userRole.name === 'manager' && (
+            <span className="pa2">
+              <Button
+                variation="danger-tertiary"
+                isLoading={isDeleteBtnLoading}
+                size="small"
+                onClick={() => deleteCurrentOrganization()}
+                block>
+                {intl.formatMessage({
+                  id: 'store/my-users.my-organization.delete',
+                })}
+              </Button>
+            </span>
+          )}
+        </div>
+        <WarningModal
+          onOk={closeLeaveOrganizationMessageModal}
+          onClose={closeLeaveOrganizationMessageModal}
+          isOpen={isLeaveWarningOpen}
+          assignment={defaultAssignment}
+          title={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-leave-title',
+          })}
+          messageLine1={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-leave-message1',
+          })}
+          messageLine2={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-leave-message2',
+          })}
+        />
+
+        <WarningModal
+          onOk={closeDeleteAssignmentWarningModal}
+          onClose={closeDeleteAssignmentWarningModal}
+          isOpen={isDeleteAssignmentWarningOpen}
+          assignment={defaultAssignment}
+          title={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-delete-title',
+          })}
+          messageLine1={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-delete-message1',
+          })}
+          messageLine2={intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-delete-message2',
+          })}
+        />
+
+        <ConfirmationModal
+          isOpen={isLeaveOrgConfirmationOpen}
+          isLoading={leaveOrgConfirmationLoading}
+          onConfirm={confirmLeaveOrganization}
+          onClose={closeLeaveOrganization}
+          assignment={defaultAssignment}
+          confirmAction={intl.formatMessage({
+            id: 'store/my-users.my-organization.button.leave',
+          })}
+          message={intl.formatMessage({
+            id: 'store/my-users.my-organization.leave.message',
+          })}
+        />
+
+        <ConfirmationModal
+          isOpen={isDeleteOrgConfirmationOpen}
+          isLoading={deleteOrgConfirmationLoading}
+          onConfirm={confirmDeleteOrganization}
+          onClose={closeDeleteOrganization}
+          assignment={defaultAssignment}
+          confirmAction={intl.formatMessage({
+            id: 'store/my-users.my-organization.button.delete',
+          })}
+          message={intl.formatMessage({
+            id: 'store/my-users.my-organization.delete.message',
+          })}
+        />
       </div>
-      <WarningModal
-        onOk={closeLeaveOrganizationMessageModal}
-        onClose={closeLeaveOrganizationMessageModal}
-        isOpen={isLeaveWarningOpen}
-        assignment={defaultAssignment}
-        title={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-leave-title',
-        })}
-        messageLine1={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-leave-message1',
-        })}
-        messageLine2={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-leave-message2',
-        })}
-      />
-
-      <WarningModal
-        onOk={closeDeleteAssignmentWarningModal}
-        onClose={closeDeleteAssignmentWarningModal}
-        isOpen={isDeleteAssignmentWarningOpen}
-        assignment={defaultAssignment}
-        title={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-delete-title',
-        })}
-        messageLine1={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-delete-message1',
-        })}
-        messageLine2={intl.formatMessage({
-          id: 'store/my-users.my-organization.unable-to-delete-message2',
-        })}
-      />
-
-      <ConfirmationModal
-        isOpen={isLeaveOrgConfirmationOpen}
-        isLoading={leaveOrgConfirmationLoading}
-        onConfirm={confirmLeaveOrganization}
-        onClose={closeLeaveOrganization}
-        assignment={defaultAssignment}
-        confirmAction={intl.formatMessage({
-          id: 'store/my-users.my-organization.button.leave',
-        })}
-        message={intl.formatMessage({
-          id: 'store/my-users.my-organization.leave.message',
-        })}
-      />
-
-      <ConfirmationModal
-        isOpen={isDeleteOrgConfirmationOpen}
-        isLoading={deleteOrgConfirmationLoading}
-        onConfirm={confirmDeleteOrganization}
-        onClose={closeDeleteOrganization}
-        assignment={defaultAssignment}
-        confirmAction={intl.formatMessage({
-          id: 'store/my-users.my-organization.button.delete',
-        })}
-        message={intl.formatMessage({
-          id: 'store/my-users.my-organization.delete.message',
-        })}
-      />
     </div>
   )
 }

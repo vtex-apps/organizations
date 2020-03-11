@@ -26,7 +26,7 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
   ASSIGNMENT_STATUS_DECLINED,
-  ASSIGNMENT_STATUS_PENDING
+  ASSIGNMENT_STATUS_PENDING,
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
@@ -37,12 +37,7 @@ interface Props {
   intl: any
 }
 
-const MyUsers = ({
-  organizationId,
-  email,
-  showToast,
-  intl,
-}: Props) => {
+const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -96,10 +91,7 @@ const MyUsers = ({
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
-  const defaultUserAssignment = find(
-    propEq('email', email),
-    assignments
-  )
+  const defaultUserAssignment = find(propEq('email', email), assignments)
 
   const defaultSchema = {
     properties: {
@@ -212,13 +204,14 @@ const MyUsers = ({
     // const cl = await getClient("9f30ceaf-ca02-11e8-822e-12ab2183dbbe")
     // console.log(cl)
     return {
-    email: pathOr('', ['email'], assignment),
-    status: pathOr('', ['status'], assignment),
-    role: pathOr('', ['roleId_linked', 'label'], assignment),
-    editAssignment: pathOr('', ['id'], assignment),
-    reInviteAssignment: pathOr('', ['id'], assignment),
-    deleteAssignment: pathOr('', ['id'], assignment),
-  }})
+      email: pathOr('', ['email'], assignment),
+      status: pathOr('', ['status'], assignment),
+      role: pathOr('', ['roleId_linked', 'label'], assignment),
+      editAssignment: pathOr('', ['id'], assignment),
+      reInviteAssignment: pathOr('', ['id'], assignment),
+      deleteAssignment: pathOr('', ['id'], assignment),
+    }
+  })
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -231,17 +224,17 @@ const MyUsers = ({
 
   const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
     return deleteOrgAssignment(assignment)
-      .then(()=> {
+      .then(() => {
         return client.query({
           query: documentQuery,
           variables: {
             acronym: CLIENT_ACRONYM,
             fields: CLIENT_FIELDS,
-            where: `email=${assignment.email}`
+            where: `email=${assignment.email}`,
           },
         })
       })
-      .then(({data}: any) => {
+      .then(({ data }: any) => {
         const clid = pathOr('', ['myDocuments', 0, 'id'], data)
         return updateDocument({
           variables: {
@@ -270,21 +263,25 @@ const MyUsers = ({
       sharedOrgAssignment.status === ASSIGNMENT_STATUS_APPROVED
         ? deleteAssignmentWithUser
         : deleteOrgAssignment
-    doDelete(sharedOrgAssignment).then(() => {
-      setDeleteConfirmationLoading(false)
-      setIsDeleteConfirmationOpen(false)
-      setSharedOrgAssignment({} as OrganizationAssignment)
-    }).catch((e: Error) => {
-      const message = getErrorMessage(e)
-      setDeleteConfirmationLoading(false)
-      setIsDeleteConfirmationOpen(false)
-      setSharedOrgAssignment({} as OrganizationAssignment)
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.delete.error'})} ${message}`,
-        duration: 5000,
-        horizontalPosition: 'right',
+    doDelete(sharedOrgAssignment)
+      .then(() => {
+        setDeleteConfirmationLoading(false)
+        setIsDeleteConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
       })
-    })
+      .catch((e: Error) => {
+        const message = getErrorMessage(e)
+        setDeleteConfirmationLoading(false)
+        setIsDeleteConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
+        showToast({
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.user.delete.error',
+          })} ${message}`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
 
   const closeDelete = () => {
@@ -305,21 +302,27 @@ const MyUsers = ({
         },
         schema: ORG_ASSIGNMENT_SCHEMA,
       },
-    }).then(() => {
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.sent'})} `,
-        duration: 5000,
-        horizontalPosition: 'right',
-      })
-      setSharedOrgAssignment({} as OrganizationAssignment)
-    }).catch((e: Error) => {
-      const message = getErrorMessage(e)
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.error'})} ${message}`,
-        duration: 5000,
-        horizontalPosition: 'right',
-      })
     })
+      .then(() => {
+        showToast({
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.user.reinvitation.sent',
+          })} `,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+        setSharedOrgAssignment({} as OrganizationAssignment)
+      })
+      .catch((e: Error) => {
+        const message = getErrorMessage(e)
+        showToast({
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.user.reinvitation.error',
+          })} ${message}`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
 
   // EDIT
@@ -353,56 +356,63 @@ const MyUsers = ({
   }
 
   return (
-    <div className="flex flex-column">
-      <div>
-        <div className="mb5">
-          <Table
-            fullWidth
-            schema={defaultSchema}
-            items={tableItems}
-            toolbar={{
-              newLine: {
-                label: intl.formatMessage({
-                  id: 'store/my-users.my-user.table.button.add-new',
-                }),
-                handleCallback: () => addNewUser(),
-              },
-            }}
-          />
+    <div className="flex flex-column pa5">
+      <h3 className="">
+        {intl.formatMessage({
+          id: 'store/my-users.my-organization.users-in-organization',
+        })}
+      </h3>
+      <div className="flex flex-column">
+        <div>
+          <div className="mb5">
+            <Table
+              fullWidth
+              schema={defaultSchema}
+              items={tableItems}
+              toolbar={{
+                newLine: {
+                  label: intl.formatMessage({
+                    id: 'store/my-users.my-user.table.button.add-new',
+                  }),
+                  handleCallback: () => addNewUser(),
+                },
+              }}
+            />
+          </div>
         </div>
+        <UserConfirmationModal
+          isOpen={isDeleteConfirmationOpen}
+          isLoading={deleteConfirmationLoading}
+          onConfirm={confirmDelete}
+          onClose={closeDelete}
+          assignment={sharedOrgAssignment}
+          confirmAction={intl.formatMessage({
+            id: 'store/my-users.my-user.delete-confirmation-action',
+          })}
+          message={intl.formatMessage({
+            id: 'store/my-users.my-user.delete-confirmation-message',
+          })}
+        />
+        <UserEditModal
+          isOpen={isUserEditOpen}
+          onClose={closeUserEdit}
+          onSave={saveEditUser}
+          orgAssignment={sharedOrgAssignment}
+          roles={roles}
+          showToast={showToast}
+        />
+        <AddUser
+          roles={roles}
+          organizationId={organizationId}
+          isOpen={isAddNewUserOpen}
+          onClose={addNewUserClosed}
+          onSuccess={newUserAdded}
+          showToast={showToast}
+          existingUsers={assignments.map((assignment: OrganizationAssignment) =>
+            pathOr('', ['personaId_linked', 'email'], assignment)
+          )}
+        />
       </div>
-      <UserConfirmationModal
-        isOpen={isDeleteConfirmationOpen}
-        isLoading={deleteConfirmationLoading}
-        onConfirm={confirmDelete}
-        onClose={closeDelete}
-        assignment={sharedOrgAssignment}
-        confirmAction={intl.formatMessage({
-          id: 'store/my-users.my-user.delete-confirmation-action',
-        })}
-        message={intl.formatMessage({
-          id: 'store/my-users.my-user.delete-confirmation-message',
-        })}
-      />
-      <UserEditModal
-        isOpen={isUserEditOpen}
-        onClose={closeUserEdit}
-        onSave={saveEditUser}
-        orgAssignment={sharedOrgAssignment}
-        roles={roles}
-        showToast={showToast}
-      />
-      <AddUser
-        roles={roles}
-        organizationId={organizationId}
-        isOpen={isAddNewUserOpen}
-        onClose={addNewUserClosed}
-        onSuccess={newUserAdded}
-        showToast={showToast}
-        existingUsers={assignments.map((assignment: OrganizationAssignment) =>
-          pathOr('', ['personaId_linked', 'email'], assignment)
-        )}
-      />
     </div>
   )
 }

@@ -35,6 +35,7 @@ interface Props {
 }
 
 const MyOrganization = ({ intl }: Props) => {
+  // my organization state
   const [clientId, setClientId] = useState('')
   const [organizationId, setOrganizationId] = useState('')
   const [email, setEmail] = useState('')
@@ -53,15 +54,20 @@ const MyOrganization = ({ intl }: Props) => {
     false
   )
 
+  // apollo client
   const client = useApolloClient()
+
+  // restrict re render multiple times
   const did_email_set = useRef(false)
   const did_first_load = useRef(false)
 
+  // get initial profile info
   const { data: profileData, loading: profileLoading } = useQuery(
     profileQuery,
     { variables: { customFields: PROFILE_FIELDS } }
   )
 
+  // after email changed
   useEffect(() => {
     const abortController = new AbortController()
     if (did_email_set.current && !did_first_load.current) {
@@ -79,6 +85,7 @@ const MyOrganization = ({ intl }: Props) => {
     }
   }, [email])
 
+  // after profile data loaded
   useEffect(() => {
     const abortController = new AbortController()
 
@@ -115,27 +122,15 @@ const MyOrganization = ({ intl }: Props) => {
     }
   }, [profileData])
 
-  const updateState = (data: any) => {
-    setOrganizationId(data.organizationId_d)
-    setPendingOrgAssignments(data.pendingAssignments_d)
-    setDefaultOrgAssignment(data.defaultAssignment_d)
-    setUserRole(data.userRole_d)
-
-    if (pathOr([], ['orgAssignments_d'], data).length > 1) {
-      setShowLeaveOrganizationBtn(true)
-    }
-  }
-
   // Compare props to reload - Leave Delete default organization
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
-      
       const isValidPendingAssignments =
         find(propEq('email', email))(
           pathOr([], ['pendingAssignments_d'], data)
         ) === undefined
-      
+
       if (
         data &&
         isValidPendingAssignments &&
@@ -189,7 +184,6 @@ const MyOrganization = ({ intl }: Props) => {
 
   // Load data
   const load = () => {
-    //let personaId_d = ''
     let organizationId_d = ''
     let pendingAssignments_d = [] as OrganizationAssignment[]
     let orgAssignments_d = [] as OrganizationAssignment[]
@@ -293,6 +287,18 @@ const MyOrganization = ({ intl }: Props) => {
       })
   }
 
+  // update new values
+  const updateState = (data: any) => {
+    setOrganizationId(data.organizationId_d)
+    setPendingOrgAssignments(data.pendingAssignments_d)
+    setDefaultOrgAssignment(data.defaultAssignment_d)
+    setUserRole(data.userRole_d)
+
+    if (pathOr([], ['orgAssignments_d'], data).length > 1) {
+      setShowLeaveOrganizationBtn(true)
+    }
+  }
+
   const closeReloadMessage = () => {
     setShowOrganizationReload(false)
   }
@@ -376,7 +382,7 @@ const MyOrganization = ({ intl }: Props) => {
                   </div>
                 )}
                 {defaultOrgAssignment && defaultOrgAssignment.id && (
-                  <div>
+                  <div className="ba b--light-gray">
                     <DefaultAssignmentInfo
                       clientId={clientId}
                       defaultAssignment={defaultOrgAssignment}
@@ -386,21 +392,15 @@ const MyOrganization = ({ intl }: Props) => {
                       showLeaveBtn={showLeaveOrganizationBtn}
                     />
 
-                    {userRole && userRole.name && userRole.name === 'manager' && (
-                      <div className="flex flex-column mb5 mt5">
-                        <h2 className="">
-                          {intl.formatMessage({
-                            id:
-                              'store/my-users.my-organization.users-in-organization',
-                          })}
-                        </h2>
+                    {userRole &&
+                      userRole.name &&
+                      userRole.name === 'manager' && (
                         <MyUsers
                           organizationId={organizationId}
                           email={email}
                           showToast={showToast}
                         />
-                      </div>
-                    )}
+                      )}
                   </div>
                 )}
               </div>

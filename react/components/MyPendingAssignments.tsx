@@ -150,15 +150,15 @@ const MyPendingAssignments = ({
   }
 
   return assignments && assignments.length > 0 ? (
-    <div className="mb7">
-      <h2>
+    <div className="mb7 b--light-gray pa2 ">
+      <h3>
         {intl.formatMessage({
           id: 'store/my-users.my-organization.pending-requests',
         })}
-      </h2>
+      </h3>
       {assignments.map((x: OrganizationAssignment) => (
         <div className="flex flex-row mb3 mt3 ba b--light-gray pa2 pl3">
-          <div className="mt3 w-75">
+          <div className="fl mt3 w-60">
             {intl.formatMessage({
               id: 'store/my-users.my-organization.join-request-from',
             })}
@@ -167,28 +167,32 @@ const MyPendingAssignments = ({
               {pathOr('', ['businessOrganizationId_linked', 'name'], x)}
             </span>
           </div>
-          <div className="ml5 w-25 flex">
-            <span className="mr2">
+          <div className="fl w-20 pl2 pr2">
+            <span className="">
               <Button
                 variation="secondary"
                 size="small"
-                onClick={() => approveOrganization(x.id)}>
+                onClick={() => approveOrganization(x.id)}
+                block>
                 {intl.formatMessage({
                   id: 'store/my-users.my-organization.button.approve',
                 })}
               </Button>
             </span>
-            <span className="ml2">
+            </div>
+            <div className="fl w-20 pl2 pr2">
+            <span className="">
               <Button
                 variation="danger-tertiary"
                 size="small"
-                onClick={() => declineOrganization(x)}>
+                onClick={() => declineOrganization(x)}
+                block>
                 {intl.formatMessage({
                   id: 'store/my-users.my-organization.button.decline',
                 })}
               </Button>
             </span>
-          </div>
+            </div>
         </div>
       ))}
       <WarningModal

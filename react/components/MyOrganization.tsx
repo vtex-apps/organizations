@@ -53,6 +53,9 @@ const MyOrganization = ({ intl }: Props) => {
   const [showLeaveOrganizationBtn, setShowLeaveOrganizationBtn] = useState(
     false
   )
+  const [showDeleteOrganizationBtn, setShowDeleteOrganizationBtn] = useState(
+    false
+  )
 
   // apollo client
   const client = useApolloClient()
@@ -122,18 +125,13 @@ const MyOrganization = ({ intl }: Props) => {
     }
   }, [profileData])
 
-  // Compare props to reload - Leave Delete default organization
+  // Continue reload - [Leave, Delete] default organization
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
-      const isValidPendingAssignments =
-        find(propEq('email', email))(
-          pathOr([], ['pendingAssignments_d'], data)
-        ) === undefined
 
       if (
         data &&
-        isValidPendingAssignments &&
         equals(data.organizationId_d, '')
       ) {
         updateState(data)
@@ -144,8 +142,8 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
-  // Compare props to reload - Create organization
-  const infoUpdatedCreateOrganization = (orgId: string) => {
+  // Continue reload - [Create] organization
+  const infoUpdatedCreateOrganization = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
       const isValidDefaultAssignment =
@@ -160,12 +158,12 @@ const MyOrganization = ({ intl }: Props) => {
         updateState(data)
         setShowOrganizationReload(false)
       } else {
-        infoUpdatedCreateOrganization(orgId)
+        infoUpdatedCreateOrganization()
       }
     })
   }
 
-  // Compare props to reload - Approve Decline Pending organization
+  // Continue reload - [Approve, Reject] Pending organization
   const infoUpdatedPendingOrganizations = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
@@ -192,6 +190,7 @@ const MyOrganization = ({ intl }: Props) => {
 
     setReloadStart(true)
 
+    // Get client info
     return client
       .query({
         query: DOCUMENTS,
@@ -207,6 +206,7 @@ const MyOrganization = ({ intl }: Props) => {
 
         organizationId_d = pathOr('', [0, 'organizationId'], clients)
 
+        // get current user organization assignments
         return client
           .query({
             query: DOCUMENTS,
@@ -235,10 +235,13 @@ const MyOrganization = ({ intl }: Props) => {
             propEq('status', ASSIGNMENT_STATUS_APPROVED),
             assignments
           )
+
           defaultAssignment_d = defaultAssignment
             ? defaultAssignment
             : ({} as OrganizationAssignment)
         }
+
+        // get current organization's users assignments
         return client
           .query({
             query: DOCUMENTS,
@@ -258,6 +261,8 @@ const MyOrganization = ({ intl }: Props) => {
         if (data) {
           orgAssignments_d = documentSerializer(data ? data.myDocuments : [])
         }
+
+        // get roles in the system
         return client.query({
           query: DOCUMENTS,
           variables: {
@@ -287,7 +292,7 @@ const MyOrganization = ({ intl }: Props) => {
       })
   }
 
-  // update new values
+  // update state variables
   const updateState = (data: any) => {
     setOrganizationId(data.organizationId_d)
     setPendingOrgAssignments(data.pendingAssignments_d)
@@ -297,6 +302,7 @@ const MyOrganization = ({ intl }: Props) => {
     if (pathOr([], ['orgAssignments_d'], data).length > 1) {
       setShowLeaveOrganizationBtn(true)
     }
+    setShowDeleteOrganizationBtn(isOrgAdmin)
   }
 
   const closeReloadMessage = () => {
@@ -390,17 +396,19 @@ const MyOrganization = ({ intl }: Props) => {
                       infoUpdated={infoUpdatedDefaultAssignment}
                       showToast={showToast}
                       showLeaveBtn={showLeaveOrganizationBtn}
+                      showDeleteBtn={showDeleteOrganizationBtn}
                     />
 
-                    {userRole &&
+                    {((userRole &&
                       userRole.name &&
-                      userRole.name === 'manager' && (
-                        <MyUsers
-                          organizationId={organizationId}
-                          email={email}
-                          showToast={showToast}
-                        />
-                      )}
+                      userRole.name === 'manager') ||
+                      isOrgAdmin) && (
+                      <MyUsers
+                        organizationId={organizationId}
+                        email={email}
+                        showToast={showToast}
+                      />
+                    )}
                   </div>
                 )}
               </div>

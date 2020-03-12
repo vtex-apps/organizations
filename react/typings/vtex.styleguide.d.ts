@@ -18,7 +18,7 @@ declare module 'vtex.styleguide' {
   export const ToastConsumer: ComponentType<InputProps>
   export const Spinner: ComponentType<InputProps>
   export const Tag: ComponentType<InputProps>
-  
+  export const Collapsible: ComponentType<InputProps>
   interface InputProps {
     [key: string]: any
   }

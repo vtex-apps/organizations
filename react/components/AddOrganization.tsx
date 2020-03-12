@@ -1,13 +1,5 @@
 import React, { useState, useReducer } from 'react'
-import {
-  pathOr,
-  isEmpty,
-  filter,
-  propEq,
-  reject,
-  find,
-  last,
-} from 'ramda'
+import { pathOr, isEmpty, filter, propEq, reject, find, last } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
 import { injectIntl } from 'react-intl'
@@ -34,7 +26,7 @@ import { updateCacheProfile } from '../utils/cacheUtils'
 interface Props {
   userEmail: string
   clientId: string
-  updateOrgInfo: (organizationId: string) => void
+  updateOrgInfo: () => void
   showToast: (message: any) => void
   intl: any
 }
@@ -155,15 +147,13 @@ const AddOrganization = ({
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
 
-  //const [addPersona] = useMutation(CREATE_DOCUMENT)
-
   const getOrganizationFields = () => {
     return [
       { key: 'name', value: name },
       { key: 'telephone', value: telephone },
       { key: 'address', value: address },
       { key: 'email', value: email },
-      { key: 'status', value: ORGANIZATION_STATUS_NOT_RESPONDED }
+      { key: 'status', value: ORGANIZATION_STATUS_NOT_RESPONDED },
     ]
   }
 
@@ -179,21 +169,8 @@ const AddOrganization = ({
     ]
   }
 
-  // const getPersonaFields = (organizationId: string, personaId?: string) => {
-  //   let array = [
-  //     { key: 'email', value: userEmail },
-  //     { key: 'businessOrganizationId', value: organizationId },
-  //   ]
-  //   if (personaId !== undefined) {
-  //     array.push({ key: 'id', value: personaId })
-  //   }
-  //   return array
-  // }
-
   const createOrganization = async (roleId: string) => {
     let orgId = ''
-    //let pid = personaId ? personaId : ''
-
     createDocument({
       variables: {
         acronym: BUSINESS_ORGANIZATION,
@@ -201,12 +178,12 @@ const AddOrganization = ({
         schema: BUSINESS_ORGANIZATION_SCHEMA,
       },
     })
-    .then((organizationResponse: any) => {
-      orgId = pathOr(
-        '',
-        ['data', 'createMyDocument', 'cacheId'],
-        organizationResponse
-      )
+      .then((organizationResponse: any) => {
+        orgId = pathOr(
+          '',
+          ['data', 'createMyDocument', 'cacheId'],
+          organizationResponse
+        )
 
         return createDocument({
           variables: {
@@ -231,21 +208,24 @@ const AddOrganization = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, orgId) 
+          update: (cache: any, { data }: any) =>
+            updateCacheProfile(cache, data, orgId),
         })
       })
-      
+
       .catch(handleGlobalError())
       .then(() => {
         setName('')
         setTelephone('')
         setAddress('')
         setEmail('')
-        updateOrgInfo(orgId)
+        updateOrgInfo()
       })
       .catch((message: string) => {
         showToast({
-          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.create.error'})} "${message}"`,
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.organization.create.error',
+          })} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })
@@ -265,7 +245,8 @@ const AddOrganization = ({
     ? pathOr([], ['fields'], last(roleData.myDocuments))
     : []
 
-  const roleId = roleFields && roleFields.length > 0
+  const roleId =
+    roleFields && roleFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), roleFields))
       : ''
 

@@ -3,7 +3,7 @@
 // export const PERSONA_SCHEMA = 'persona-schema-v1'
 
 export const CLIENT_ACRONYM = 'CL'
-export const CLIENT_FIELDS = ['id', 'email', 'organizationId']
+export const CLIENT_FIELDS = ['id', 'email', 'isOrgAdmin', 'organizationId']
 export const PROFILE_FIELDS = 'isOrgAdmin,organizationId'
 
 export const BUSINESS_ROLE = 'BusinessRole'

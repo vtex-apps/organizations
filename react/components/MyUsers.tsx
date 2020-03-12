@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useApolloClient } from 'react-apollo'
-import { Table, Button } from 'vtex.styleguide'
+import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
 
@@ -13,6 +13,7 @@ import UserEditModal from './modals/UserEditModal'
 import documentQuery from '../graphql/documents.graphql'
 import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import UserListItem from './UserListItem'
 
 import { updateCacheDeleteUser } from '../utils/cacheUtils'
 import {
@@ -25,7 +26,6 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_DECLINED,
   ASSIGNMENT_STATUS_PENDING,
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
@@ -91,127 +91,10 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
-  const defaultUserAssignment = find(propEq('email', email), assignments)
-
-  const defaultSchema = {
-    properties: {
-      email: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.email',
-        }),
-      },
-      status: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.status',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          if (cellData === ASSIGNMENT_STATUS_APPROVED) {
-            return 'Active'
-          } else if (cellData === ASSIGNMENT_STATUS_DECLINED) {
-            return 'Inactive'
-          } else if (cellData === ASSIGNMENT_STATUS_PENDING) {
-            return 'Pending'
-          }
-          return ''
-        },
-      },
-      role: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.role',
-        }),
-      },
-      editAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.edit',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id ? (
-            <Button
-              variation="tertiary"
-              size="small"
-              onClick={() => editUser(cellData)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.edit',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-      reInviteAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.invite',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          const assignment = find(propEq('id', cellData), assignments)
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id &&
-            assignment &&
-            assignment.status === ASSIGNMENT_STATUS_DECLINED ? (
-            <Button
-              variation="tertiary"
-              size="small"
-              onClick={() => reInvite(cellData)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.invite',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-      deleteAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.delete',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id ? (
-            <Button
-              variation="danger-tertiary"
-              size="small"
-              onClick={() => deleteUserAssignment(cellData as string)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.delete',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-    },
-  }
-
-  // const getClient = async (email: string) => {
-  //   return client
-  //     .query({
-  //       query: documentQuery,
-  //       variables: {
-  //         acronym: 'CL',
-  //         fields: ['email', 'isOrgAdmin'],
-  //         where: `email=${email}`,
-  //       },
-  //     }).catch((e) => {
-  //       Promise.reject(e)
-  //     })
-  // }
-
-  const tableItems = assignments.map((assignment: OrganizationAssignment) => {
-    // const cl = await getClient("9f30ceaf-ca02-11e8-822e-12ab2183dbbe")
-    // console.log(cl)
-    return {
-      email: pathOr('', ['email'], assignment),
-      status: pathOr('', ['status'], assignment),
-      role: pathOr('', ['roleId_linked', 'label'], assignment),
-      editAssignment: pathOr('', ['id'], assignment),
-      reInviteAssignment: pathOr('', ['id'], assignment),
-      deleteAssignment: pathOr('', ['id'], assignment),
-    }
-  })
+  const defaultUserAssignment: OrganizationAssignment = find(
+    propEq('email', email),
+    assignments
+  ) as OrganizationAssignment
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -357,27 +240,41 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
 
   return (
     <div className="flex flex-column pa5">
-      <h3 className="">
-        {intl.formatMessage({
-          id: 'store/my-users.my-organization.users-in-organization',
-        })}
-      </h3>
+      <div className="flex-row">
+        <div className="fl pr2">
+          <h3>
+            {intl.formatMessage({
+              id: 'store/my-users.my-organization.users-in-organization',
+            })}
+          </h3>
+        </div>
+        <div className="fl pl3 mt5">
+          <Button
+            variation="secondary"
+            size="small"
+            onClick={() => addNewUser()}>
+            {intl.formatMessage({
+              id: 'store/my-users.my-user.table.button.add-new',
+            })}
+          </Button>
+        </div>
+      </div>
       <div className="flex flex-column">
         <div>
           <div className="mb5">
-            <Table
-              fullWidth
-              schema={defaultSchema}
-              items={tableItems}
-              toolbar={{
-                newLine: {
-                  label: intl.formatMessage({
-                    id: 'store/my-users.my-user.table.button.add-new',
-                  }),
-                  handleCallback: () => addNewUser(),
-                },
-              }}
-            />
+            {assignments.map((assignment: OrganizationAssignment) => {
+              return (
+                <UserListItem
+                  isDefaultAssignment={
+                    defaultUserAssignment.id == assignment.id
+                  }
+                  orgAssignment={assignment}
+                  edit={editUser}
+                  reInvite={reInvite}
+                  deleteAssignment={deleteUserAssignment}
+                />
+              )
+            })}
           </div>
         </div>
         <UserConfirmationModal

@@ -18,7 +18,6 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_PENDING,
   CLIENT_ACRONYM,
   BUSINESS_ORGANIZATION,
   ASSIGNMENT_STATUS_DECLINED,
@@ -35,6 +34,7 @@ interface Props {
   showToast: (message: any) => void
   intl: any
   showLeaveBtn: boolean
+  showDeleteBtn: boolean
 }
 
 const DefaultAssignmentInfo = ({
@@ -45,6 +45,7 @@ const DefaultAssignmentInfo = ({
   showToast,
   intl,
   showLeaveBtn,
+  showDeleteBtn,
 }: Props) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [
@@ -78,11 +79,13 @@ const DefaultAssignmentInfo = ({
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
 
-  // LEAVE
+  // Check conditions before leave - [Leave btn clicked] 
   const leaveOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
     const email = pathOr('', ['email'], defaultAssignment)
     setIsLeaveBtnLoading(true)
+
+    // get all approved organization assignments
     client
       .query({
         query: DOCUMENTS,
@@ -90,7 +93,7 @@ const DefaultAssignmentInfo = ({
           acronym: ORG_ASSIGNMENT,
           schema: ORG_ASSIGNMENT_SCHEMA,
           fields: ORG_ASSIGNMENT_FIELDS,
-          where: `(businessOrganizationId=${orgId} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+          where: `(businessOrganizationId=${orgId} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
         },
         fetchPolicy: 'no-cache',
       })
@@ -101,19 +104,25 @@ const DefaultAssignmentInfo = ({
             propEq('email', email),
             assignments_d
           )
+
+          // managers except me
           const assignmentsWithManagerRole = filter(
             propEq('roleId', userRole.id),
             assignmentsExceptMe
           )
 
+          // Ok to leave if 
+          // ** current user is not a manager OR
+          // ** has more than one ACCEPTED manager except current user
           if (
             userRole.name !== 'manager' ||
-            (assignmentsExceptMe && assignmentsExceptMe.length == 0) ||
             assignmentsWithManagerRole.length > 0
           ) {
+            // show leave confirmation
             setIsLeaveOrgConfirmationOpen(true)
             setIsLeaveBtnLoading(false)
           } else {
+            // show warning
             setIsLeaveWarningOpen(true)
             setIsLeaveBtnLoading(false)
           }
@@ -133,13 +142,12 @@ const DefaultAssignmentInfo = ({
       })
   }
 
-  const closeLeaveOrganizationMessageModal = () => {
-    setIsLeaveWarningOpen(false)
-  }
-
+  // Confirm leave - [Leave organization]
   const confirmLeaveOrganization = () => {
     setLeaveOrgConfirmationLoading(true)
     const assignmentId = pathOr('', ['id'], defaultAssignment)
+    
+    // update organization assignment status to declined
     updateDocument({
       variables: {
         acronym: ORG_ASSIGNMENT,
@@ -153,6 +161,8 @@ const DefaultAssignmentInfo = ({
       },
     })
       .then(() => {
+
+        // remove client organizationId
         return updateDocument({
           variables: {
             acronym: CLIENT_ACRONYM,
@@ -186,15 +196,24 @@ const DefaultAssignmentInfo = ({
         })
       })
   }
+
+  // Cancel leave 
   const closeLeaveOrganization = () => {
     setIsLeaveOrgConfirmationOpen(false)
   }
 
-  // DELETE ORGANIZATION
+  // Cancel leave warning
+  const closeLeaveOrganizationMessageModal = () => {
+    setIsLeaveWarningOpen(false)
+  }
+
+  // Check conditions before delete - [Delete btn clicked] 
   const deleteCurrentOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
     const email = pathOr('', ['email'], defaultAssignment)
     setIsDeleteBtnLoading(true)
+
+    // get all approved organization assignments
     client
       .query({
         query: DOCUMENTS,
@@ -202,17 +221,22 @@ const DefaultAssignmentInfo = ({
           acronym: ORG_ASSIGNMENT,
           schema: ORG_ASSIGNMENT_SCHEMA,
           fields: ORG_ASSIGNMENT_FIELDS,
-          where: `(businessOrganizationId=${orgId} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+          where: `(businessOrganizationId=${orgId})`,
         },
         fetchPolicy: 'no-cache',
       })
       .then(({ data }: any) => {
         if (data) {
           const assignments_d = documentSerializer(data ? data.myDocuments : [])
+
+          // assignments except current user
           const assignmentsExceptMe = reject(
             propEq('email', email),
             assignments_d
           )
+
+          // Delete organization if 
+          // ** No other user exists 
           if (assignmentsExceptMe && assignmentsExceptMe.length > 0) {
             setIsDeleteAssignmentWarningOpen(true)
             setIsDeleteBtnLoading(false)
@@ -236,17 +260,12 @@ const DefaultAssignmentInfo = ({
       })
   }
 
-  const closeDeleteAssignmentWarningModal = () => {
-    setIsDeleteAssignmentWarningOpen(false)
-  }
-
-  const deleteOrganization = () => {
-    setIsDeleteOrgConfirmationOpen(true)
-  }
-
+  // Confirm delete - [Delete organization]
   const confirmDeleteOrganization = () => {
     setDeleteOrgConfirmationLoading(true)
     const assignmentId = pathOr('', ['id'], defaultAssignment)
+
+    // delete current organization assignment
     return deleteDocument({
       variables: {
         acronym: ORG_ASSIGNMENT,
@@ -259,6 +278,8 @@ const DefaultAssignmentInfo = ({
           ['businessOrganizationId'],
           defaultAssignment
         )
+
+        // delete organization
         return deleteDocument({
           variables: {
             acronym: BUSINESS_ORGANIZATION,
@@ -267,6 +288,8 @@ const DefaultAssignmentInfo = ({
         })
       })
       .then(() => {
+
+        // remove client organization id
         return updateDocument({
           variables: {
             acronym: CLIENT_ACRONYM,
@@ -300,6 +323,17 @@ const DefaultAssignmentInfo = ({
       })
   }
 
+  // close delete warning
+  const closeDeleteAssignmentWarningModal = () => {
+    setIsDeleteAssignmentWarningOpen(false)
+  }
+
+  // delete confirmation open
+  const deleteOrganization = () => {
+    setIsDeleteOrgConfirmationOpen(true)
+  }
+
+  // close delete confirmation
   const closeDeleteOrganization = () => {
     setIsDeleteOrgConfirmationOpen(false)
   }
@@ -395,7 +429,7 @@ const DefaultAssignmentInfo = ({
         </div>
         <div className="fl w-20 flex flex-column">
           <span className="pa2">
-            {(showLeaveBtn || true) && (
+            {showLeaveBtn && (
               <Button
                 variation="danger-tertiary"
                 size="small"
@@ -408,7 +442,7 @@ const DefaultAssignmentInfo = ({
               </Button>
             )}
           </span>
-          {userRole && userRole.name && userRole.name === 'manager' && (
+          {showDeleteBtn && (
             <span className="pa2">
               <Button
                 variation="danger-tertiary"

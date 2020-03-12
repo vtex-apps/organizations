@@ -98,22 +98,22 @@ const DefaultAssignmentInfo = ({
         if (data) {
           const clients = documentSerializer(data ? data.myDocuments : [])
           
-          // managers except me
-          const assignmentsWithManagerRole = filter(
+          // orgAdmins belongs to this organization
+          const orgAdmins = filter(
             propEq('isOrgAdmin', 'true'),
             clients
           )
 
-          const assignmentsExceptMe = reject(
+          // orgAdmins except current user
+          const orgAdminsExcept = reject(
             propEq('email', email),
-            assignmentsWithManagerRole
+            orgAdmins
           )
 
           // Ok to leave if 
-          // ** current user is not a manager OR
-          // ** has more than one ACCEPTED manager except current user
+          // ** organization admins except current user 
           if (
-            assignmentsExceptMe.length > 0
+            orgAdminsExcept.length > 0
           ) {
             // show leave confirmation
             setIsLeaveOrgConfirmationOpen(true)

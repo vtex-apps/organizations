@@ -35,6 +35,7 @@ const MyPendingAssignments = ({
   showToast,
   intl,
 }: Props) => {
+
   const [isApproveWarningOpen, setIsApproveWarningOpen] = useState(false)
   const [isDeclineConfirmationOpen, setIsDeclineConfirmationOpen] = useState(
     false
@@ -48,6 +49,7 @@ const MyPendingAssignments = ({
   )
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
 
+  // Update Org Assignment status
   const updateAssignmentStatus = (assignmentId: string, status: string) => {
     return updateDocument({
       variables: {
@@ -63,11 +65,15 @@ const MyPendingAssignments = ({
     })
   }
 
-  // APPROVE
+  // Approve organization status - [Approve btn clicked] 
   const approveOrganization = (assignmentId: string) => {
+
+    // show warning when default assignment exists
     if (defaultAssignment && defaultAssignment.id) {
       setIsApproveWarningOpen(true)
     } else {
+
+      // approve organization assignment status
       updateAssignmentStatus(assignmentId, ASSIGNMENT_STATUS_APPROVED)
         .then(() => {
           const updatedOrgId: string = pathOr(
@@ -76,6 +82,7 @@ const MyPendingAssignments = ({
             find(propEq('id', assignmentId))(assignments)
           )
 
+          // add organization id to client
           return updateDocument({
             variables: {
               acronym: CLIENT_ACRONYM,
@@ -110,18 +117,22 @@ const MyPendingAssignments = ({
     }
   }
 
+  // close approve confirmation
   const closeApproveMessageModal = () => {
     setIsApproveWarningOpen(false)
   }
 
-  // DECLINE
+  // Decline organization status - [Decline btn clicked] 
   const declineOrganization = (assignment: OrganizationAssignment) => {
     setSharedAssignment(assignment)
     setIsDeclineConfirmationOpen(true)
   }
 
+  // Decline confirmation 
   const confirmDeclineOrgAssignment = () => {
     setDeclineAssignmentLoading(true)
+
+    // update decline status
     updateAssignmentStatus(sharedAssignment.id, ASSIGNMENT_STATUS_DECLINED)
       .then(() => {
         setDeclineAssignmentLoading(false)
@@ -144,6 +155,8 @@ const MyPendingAssignments = ({
         })
       })
   }
+
+  // close decline confirmation
   const closeDeclineOrgAssignment = () => {
     setIsDeclineConfirmationOpen(false)
     setSharedAssignment({} as OrganizationAssignment)

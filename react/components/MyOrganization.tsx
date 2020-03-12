@@ -50,12 +50,6 @@ const MyOrganization = ({ intl }: Props) => {
   const [loading, setLoading] = useState(false)
   const [reloadStart, setReloadStart] = useState(false)
   const [showOrganizationReload, setShowOrganizationReload] = useState(false)
-  const [showLeaveOrganizationBtn, setShowLeaveOrganizationBtn] = useState(
-    false
-  )
-  const [showDeleteOrganizationBtn, setShowDeleteOrganizationBtn] = useState(
-    false
-  )
 
   // apollo client
   const client = useApolloClient()
@@ -298,11 +292,6 @@ const MyOrganization = ({ intl }: Props) => {
     setPendingOrgAssignments(data.pendingAssignments_d)
     setDefaultOrgAssignment(data.defaultAssignment_d)
     setUserRole(data.userRole_d)
-
-    if (pathOr([], ['orgAssignments_d'], data).length > 1) {
-      setShowLeaveOrganizationBtn(true)
-    }
-    setShowDeleteOrganizationBtn(isOrgAdmin)
   }
 
   const closeReloadMessage = () => {
@@ -395,8 +384,7 @@ const MyOrganization = ({ intl }: Props) => {
                       userRole={userRole}
                       infoUpdated={infoUpdatedDefaultAssignment}
                       showToast={showToast}
-                      showLeaveBtn={showLeaveOrganizationBtn}
-                      showDeleteBtn={showDeleteOrganizationBtn}
+                      isOrgAdmin={isOrgAdmin}
                     />
 
                     {((userRole &&

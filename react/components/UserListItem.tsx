@@ -7,9 +7,8 @@ import {
   CLIENT_FIELDS,
   ASSIGNMENT_STATUS_APPROVED,
   ASSIGNMENT_STATUS_DECLINED,
-  ORGANIZATION_STATUS_REJECTED,
 } from '../utils/const'
-import { Spinner, Collapsible, Tag, Button } from 'vtex.styleguide'
+import { Collapsible, Tag, Button } from 'vtex.styleguide'
 import { documentSerializer } from '../utils/documentSerializer'
 
 import { injectIntl } from 'react-intl'
@@ -117,7 +116,7 @@ const UserListItem = ({
   }
 
   return loading ? (
-    <Spinner />
+    <div />
   ) : (
     <div
       id={`item-${orgAssignment.id}`}
@@ -152,7 +151,11 @@ const UserListItem = ({
               </div>
             </div>
             <div className="flex-column fl w-30">
-              {!isDefaultAssignment && !(client.isOrgAdmin === 'true') ? (
+              {!isDefaultAssignment &&
+              !(
+                client.isOrgAdmin === 'true' &&
+                orgAssignment.status === ASSIGNMENT_STATUS_APPROVED
+              ) ? (
                 <div className="pt5 pb5 pr3">
                   <div className="pa2 w-100">
                     <Button
@@ -165,7 +168,7 @@ const UserListItem = ({
                       })}
                     </Button>
                   </div>
-                  {orgAssignment.status === ORGANIZATION_STATUS_REJECTED ? (
+                  {orgAssignment.status === ASSIGNMENT_STATUS_DECLINED ? (
                     <div className="pa2 w-100">
                       <Button
                         variation="tertiary"

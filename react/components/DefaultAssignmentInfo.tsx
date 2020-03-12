@@ -17,8 +17,8 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
   CLIENT_ACRONYM,
+  CLIENT_FIELDS,
   BUSINESS_ORGANIZATION,
   ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
@@ -33,8 +33,7 @@ interface Props {
   infoUpdated: () => void
   showToast: (message: any) => void
   intl: any
-  showLeaveBtn: boolean
-  showDeleteBtn: boolean
+  isOrgAdmin: boolean
 }
 
 const DefaultAssignmentInfo = ({
@@ -44,8 +43,7 @@ const DefaultAssignmentInfo = ({
   infoUpdated,
   showToast,
   intl,
-  showLeaveBtn,
-  showDeleteBtn,
+  isOrgAdmin,
 }: Props) => {
   const [isLeaveWarningOpen, setIsLeaveWarningOpen] = useState(false)
   const [
@@ -90,33 +88,32 @@ const DefaultAssignmentInfo = ({
       .query({
         query: DOCUMENTS,
         variables: {
-          acronym: ORG_ASSIGNMENT,
-          schema: ORG_ASSIGNMENT_SCHEMA,
-          fields: ORG_ASSIGNMENT_FIELDS,
-          where: `(businessOrganizationId=${orgId} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
+          acronym: CLIENT_ACRONYM,
+          fields: CLIENT_FIELDS,
+          where: `(organizationId=${orgId})`,
         },
         fetchPolicy: 'no-cache',
       })
       .then(({ data }: any) => {
         if (data) {
-          const assignments_d = documentSerializer(data ? data.myDocuments : [])
-          const assignmentsExceptMe = reject(
-            propEq('email', email),
-            assignments_d
-          )
-
+          const clients = documentSerializer(data ? data.myDocuments : [])
+          
           // managers except me
           const assignmentsWithManagerRole = filter(
-            propEq('roleId', userRole.id),
-            assignmentsExceptMe
+            propEq('isOrgAdmin', 'true'),
+            clients
+          )
+
+          const assignmentsExceptMe = reject(
+            propEq('email', email),
+            assignmentsWithManagerRole
           )
 
           // Ok to leave if 
           // ** current user is not a manager OR
           // ** has more than one ACCEPTED manager except current user
           if (
-            userRole.name !== 'manager' ||
-            assignmentsWithManagerRole.length > 0
+            assignmentsExceptMe.length > 0
           ) {
             // show leave confirmation
             setIsLeaveOrgConfirmationOpen(true)
@@ -429,7 +426,7 @@ const DefaultAssignmentInfo = ({
         </div>
         <div className="fl w-20 flex flex-column">
           <span className="pa2">
-            {showLeaveBtn && (
+            
               <Button
                 variation="danger-tertiary"
                 size="small"
@@ -440,9 +437,8 @@ const DefaultAssignmentInfo = ({
                   id: 'store/my-users.my-organization.leave',
                 })}
               </Button>
-            )}
           </span>
-          {showDeleteBtn && (
+          {isOrgAdmin && (
             <span className="pa2">
               <Button
                 variation="danger-tertiary"

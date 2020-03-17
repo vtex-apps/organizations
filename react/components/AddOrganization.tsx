@@ -208,8 +208,8 @@ const AddOrganization = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>
-            updateCacheProfile(cache, data, orgId),
+          update: (cache: any) =>
+            updateCacheProfile(cache, orgId),
         })
       })
 

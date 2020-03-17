@@ -36,7 +36,7 @@ const UserListItem = ({
     variables: {
       acronym: CLIENT_ACRONYM,
       fields: CLIENT_FIELDS,
-      where: `(email=${orgAssignment.email})`,
+      where: `email=${orgAssignment.email}`,
     },
   })
 
@@ -70,6 +70,20 @@ const UserListItem = ({
             <div className="pt2 f6">
               <span>
                 {intl.formatMessage({
+                  id: 'store/my-users.my-user.table-title.role',
+                })}
+              </span>
+            </div>
+            <div className="pt3 b">
+              <span>
+                {pathOr('', ['roleId_linked', 'label'], orgAssignment)}
+              </span>
+            </div>
+          </div>
+          <div className="fl w-20 pa2">
+            <div className="pt2 f6">
+              <span>
+                {intl.formatMessage({
                   id: 'store/my-users.my-user.table-title.status',
                 })}
               </span>
@@ -89,20 +103,6 @@ const UserListItem = ({
                     Pending
                   </Tag>
                 )}
-              </span>
-            </div>
-          </div>
-          <div className="fl w-20 pa2">
-            <div className="pt2 f6">
-              <span>
-                {intl.formatMessage({
-                  id: 'store/my-users.my-user.table-title.role',
-                })}
-              </span>
-            </div>
-            <div className="pt3 b">
-              <span>
-                {pathOr('', ['roleId_linked', 'label'], orgAssignment)}
               </span>
             </div>
           </div>
@@ -151,11 +151,7 @@ const UserListItem = ({
               </div>
             </div>
             <div className="flex-column fl w-30">
-              {!isDefaultAssignment &&
-              !(
-                client.isOrgAdmin === 'true' &&
-                orgAssignment.status === ASSIGNMENT_STATUS_APPROVED
-              ) ? (
+              {!isDefaultAssignment ? (
                 <div className="pt5 pb5 pr3">
                   <div className="pa2 w-100">
                     <Button

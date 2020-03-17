@@ -1,20 +1,21 @@
 import React, { SyntheticEvent, useReducer } from 'react'
-import { isEmpty, path, contains } from 'ramda'
+import { isEmpty, path, contains, pathOr } from 'ramda'
 import { injectIntl } from 'react-intl'
-import { Modal, Button, Dropdown, Input } from 'vtex.styleguide'
-import { useMutation } from 'react-apollo'
+import { Modal, Button, Dropdown, Input, Checkbox } from 'vtex.styleguide'
+import { useMutation, useApolloClient } from 'react-apollo'
 
 import CREATE_DOCUMENT from '../../graphql/createDocument.graphql'
-// import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
-// import GET_DOCUMENT from '../../graphql/documents.graphql'
+import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
+import GET_DOCUMENT from '../../graphql/documents.graphql'
 
-import { updateCacheAddUser } from '../../utils/cacheUtils'
+import { documentSerializer } from '../../utils/documentSerializer'
+import { updateCacheAddUser, updateCacheClient } from '../../utils/cacheUtils'
 import {
-  // CLIENT_ACRONYM,
-  // CLIENT_FIELDS,
+  CLIENT_ACRONYM,
+  CLIENT_FIELDS,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_PENDING
+  ASSIGNMENT_STATUS_APPROVED,
 } from '../../utils/const'
 
 interface Props {
@@ -24,7 +25,8 @@ interface Props {
   existingUsers: string[]
   roles: Role[]
   organizationId: string
-  showToast: Function
+  showToast: (message: any) => void
+  isCurrentUserAdmin: boolean
   intl: any
 }
 
@@ -32,6 +34,7 @@ interface State {
   email: string
   roleId: string
   personaId: string
+  isOrgAdmin: boolean
   formErrors: Errors
   touched: {
     email: boolean
@@ -54,6 +57,7 @@ type Actions =
   | Action<'CHANGE_ROLE', { args: { roleId: string } }>
   | Action<'CHANGE_EMAIL', { args: { email: string } }>
   | Action<'CHANGE_PERSONA_ID', { args: { personaId: string } }>
+  | Action<'CHANGE_IS_ORG_ADMIN', { args: { isOrgAdmin: boolean } }>
   | Action<
       'RESPONSE',
       {
@@ -73,11 +77,12 @@ const AddUser = ({
   roles,
   organizationId,
   existingUsers,
-  showToast
+  showToast,
+  isCurrentUserAdmin,
 }: Props) => {
-  // const client = useApolloClient()
-  // const [createDocument] = useMutation(CREATE_DOCUMENT)
-  // const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const client = useApolloClient()
+  const [createDocument] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [createAssignmentDocument] = useMutation(CREATE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
       updateCacheAddUser(
@@ -127,6 +132,13 @@ const AddUser = ({
           formErrors: { roleId: state.formErrors.roleId, email: errors },
         }
       }
+      case 'CHANGE_IS_ORG_ADMIN':
+        const changes = {
+          ...state,
+          ...{ isOrgAdmin: action.args.isOrgAdmin },
+        }
+
+        return changes
       case 'RESPONSE': {
         return {
           ...state,
@@ -170,6 +182,7 @@ const AddUser = ({
   const initialState = {
     roleId: '',
     email: '',
+    isOrgAdmin: false,
     personaId: '',
     formErrors: {
       email: [],
@@ -208,18 +221,17 @@ const AddUser = ({
     }
   }
 
-  // const getPersonaFields = (persona?: string) => {
-  //   const fields = [{ key: 'email', value: state.email }]
-  //   if (persona) {
-  //     fields.push({ key: 'id', value: persona })
-  //   } else {
-  //     fields.push({
-  //       key: 'businessOrganizationId',
-  //       value: '',
-  //     })
-  //   }
-  //   return fields
-  // }
+  const getClientFields = (clientId?: string) => {
+    const fields = [
+      { key: 'email', value: state.email },
+      { key: 'organizationId', value: organizationId },
+      { key: 'isOrgAdmin', value: state.isOrgAdmin.toString() },
+    ]
+    if (clientId) {
+      fields.push({ key: 'id', value: clientId })
+    }
+    return fields
+  }
 
   const getAssignmentFields = () => {
     const fields = [
@@ -237,7 +249,7 @@ const AddUser = ({
       },
       {
         key: 'status',
-        value: ASSIGNMENT_STATUS_PENDING,
+        value: ASSIGNMENT_STATUS_APPROVED,
       },
     ]
 
@@ -248,138 +260,115 @@ const AddUser = ({
     e.preventDefault()
 
     if (state.email && state.roleId) {
-
-      createAssignmentDocument({
-        variables: {
-          acronym: ORG_ASSIGNMENT,
-          document: {
-            fields: getAssignmentFields(),
+      client
+        .query({
+          query: GET_DOCUMENT,
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            fields: CLIENT_FIELDS,
+            where: `email=${state.email}`,
           },
-          schema: ORG_ASSIGNMENT_SCHEMA,
-        },
-      }).catch(handleGraphqlError())
-      .then(() => {
-        dispatch({
-          type: 'RESPONSE',
-          args: {
-            type: 'SUCCESS',
-            message: intl.formatMessage({ id: 'store/my-users.success' }),
-          },
+          fetchPolicy: 'no-cache',
         })
-        dispatch({
-          type: 'CHANGE_EMAIL',
-          args: { email: '' },
-        })
-        dispatch({
-          type: 'CHANGE_ROLE',
-          args: { roleId: '' },
-        })
-        dispatch({
-          type: 'CHANGE_PERSONA_ID',
-          args: { personaId: '' },
-        })
+        .then(({ data }: any) => {
+          const clients = documentSerializer(data ? data.myDocuments : [])
 
-        onSuccess()
-      })
-      .catch((message: string) => {
-        showToast({
-          message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
-          duration: 5000,
-          horizontalPosition: 'right',
-        })
-      })
+          const clientId_d = pathOr('', [0, 'id'], clients)
+          const organizationId_d = pathOr('', [0, 'organizationId'], clients)
 
+          if (clients.length == 0) {
+            return createDocument({
+              variables: {
+                acronym: CLIENT_ACRONYM,
+                document: {
+                  fields: getClientFields(),
+                },
+              },
+              update: (cache: any, { data }: any) =>
+                updateCacheClient(
+                  cache,
+                  data,
+                  state.email,
+                  organizationId,
+                  state.isOrgAdmin.toString()
+                ),
+            })
+          } else if (organizationId_d !== '') {
+            showToast({
+              message: `This user is already belongs to some other company`,
+              duration: 5000,
+              horizontalPosition: 'right',
+            })
+            return Promise.reject()
+          } else {
+            return updateDocument({
+              variables: {
+                acronym: CLIENT_ACRONYM,
+                document: {
+                  fields: getClientFields(clientId_d),
+                },
+              },
+              update: (cache: any, { data }: any) =>
+                updateCacheClient(
+                  cache,
+                  data,
+                  state.email,
+                  organizationId,
+                  state.isOrgAdmin.toString()
+                ),
+            })
+          }
+        })
+        .then(({ data }: any) => {
+          console.log(data)
+          return createAssignmentDocument({
+            variables: {
+              acronym: ORG_ASSIGNMENT,
+              document: {
+                fields: getAssignmentFields(),
+              },
+              schema: ORG_ASSIGNMENT_SCHEMA,
+            },
+          })
+        })
+        .catch(handleGraphqlError())
+        .then(() => {
+          dispatch({
+            type: 'RESPONSE',
+            args: {
+              type: 'SUCCESS',
+              message: intl.formatMessage({ id: 'store/my-users.success' }),
+            },
+          })
+          dispatch({
+            type: 'CHANGE_EMAIL',
+            args: { email: '' },
+          })
+          dispatch({
+            type: 'CHANGE_ROLE',
+            args: { roleId: '' },
+          })
+          dispatch({
+            type: 'CHANGE_PERSONA_ID',
+            args: { personaId: '' },
+          })
+
+          onSuccess()
+        })
+        .catch((message: string) => {
+          if (message) {
+            showToast({
+              message: `${intl.formatMessage({
+                id: 'store/my-users.toast.user.create.error',
+              })} "${message}"`,
+              duration: 5000,
+              horizontalPosition: 'right',
+            })
+          }
+        })
     }
   }
 
-
-      // client
-      //   .query({
-      //     query: GET_DOCUMENT,
-      //     variables: {
-      //       acronym: CLIENT_ACRONYM,
-      //       fields: CLIENT_FIELDS,
-      //       where: `email=${state.email}`,
-      //     },
-      //   })
-      //   .then(({ data: clientData }: any) => {
-      //     const clientFields =
-      //     clientData && clientData.myDocuments
-      //         ? pathOr([], ['fields'], last(clientData.myDocuments))
-      //         : []
-      //     const clientId =
-      //     clientFields && clientFields.length > 0
-      //         ? pathOr('', ['value'], find(propEq('key', 'id'), clientFields))
-      //         : ''
-      //     return Promise.resolve({ clientId })
-      //   })
-      //   .then((data: { clientId: string }) => {
-      //     const savePersona =
-      //       data && data.clientId ? updateDocument : createDocument
-      //     return savePersona({
-      //       variables: {
-      //         acronym: PERSONA_ACRONYM,
-      //         document: {
-      //           fields: getPersonaFields(data.personaId),
-      //         },
-      //         schema: PERSONA_SCHEMA,
-      //       },
-      //     })
-      //   })
-      //   .then((response: any) => {
-      //     const persona = pathOr(
-      //       pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
-      //       ['data', 'createMyDocument', 'cacheId'],
-      //       response
-      //     )
-
-      //     dispatch({
-      //       type: 'CHANGE_PERSONA_ID',
-      //       args: { personaId: persona },
-      //     })
-
-      //     return createAssignmentDocument({
-      //       variables: {
-      //         acronym: ORG_ASSIGNMENT,
-      //         document: {
-      //           fields: getAssignmentFields(persona),
-      //         },
-      //         schema: ORG_ASSIGNMENT_SCHEMA,
-      //       },
-      //     })
-      //   }).catch(handleGraphqlError())
-      //   .then(() => {
-      //     dispatch({
-      //       type: 'RESPONSE',
-      //       args: {
-      //         type: 'SUCCESS',
-      //         message: intl.formatMessage({ id: 'store/my-users.success' }),
-      //       },
-      //     })
-      //     dispatch({
-      //       type: 'CHANGE_EMAIL',
-      //       args: { email: '' },
-      //     })
-      //     dispatch({
-      //       type: 'CHANGE_ROLE',
-      //       args: { roleId: '' },
-      //     })
-      //     dispatch({
-      //       type: 'CHANGE_PERSONA_ID',
-      //       args: { personaId: '' },
-      //     })
-
-      //     onSuccess()
-      //   })
-      //   .catch((message: string) => {
-      //     showToast({
-      //       message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
-      //       duration: 5000,
-      //       horizontalPosition: 'right',
-      //     })
-      //   })
-  //   }
-  // }
   return (
     <Modal isOpen={isOpen} onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
@@ -413,6 +402,23 @@ const AddUser = ({
             errorMessage={path(['formErrors', 'roleId', 0], state)}
           />
         </div>
+        {isCurrentUserAdmin && (
+          <div className="mb5">
+            <Checkbox
+              checked={state.isOrgAdmin}
+              name="disabled-checkbox-group"
+              label="Organization Admin"
+              onChange={(e: { target: { checked: boolean } }) => {
+                dispatch({
+                  type: 'CHANGE_IS_ORG_ADMIN',
+                  args: { isOrgAdmin: e.target.checked },
+                })
+              }}
+              id="option-0"
+            />
+          </div>
+        )}
+
         <div className="mb5">
           <Button
             variation="primary"

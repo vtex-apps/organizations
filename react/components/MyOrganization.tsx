@@ -27,6 +27,7 @@ import {
   ASSIGNMENT_STATUS_PENDING,
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
+  ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -126,7 +127,8 @@ const MyOrganization = ({ intl }: Props) => {
 
       if (
         data &&
-        equals(data.organizationId_d, '')
+        equals(data.organizationId_d, '' && 
+        equals(data.defaultAssignment_d, {}))
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -191,7 +193,7 @@ const MyOrganization = ({ intl }: Props) => {
         variables: {
           acronym: CLIENT_ACRONYM,
           fields: CLIENT_FIELDS,
-          where: `(email=${email})`,
+          where: `email=${email}`,
         },
         fetchPolicy: 'no-cache',
       })
@@ -225,10 +227,10 @@ const MyOrganization = ({ intl }: Props) => {
             propEq('businessOrganizationId', organizationId_d)
           )(filter(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments))
 
-          pendingAssignments_d = reject(
+          pendingAssignments_d = reject(propEq('status', ASSIGNMENT_STATUS_DECLINED), reject(
             propEq('status', ASSIGNMENT_STATUS_APPROVED),
             assignments
-          )
+          ))
 
           defaultAssignment_d = defaultAssignment
             ? defaultAssignment
@@ -392,6 +394,7 @@ const MyOrganization = ({ intl }: Props) => {
                       userRole.name === 'manager') ||
                       isOrgAdmin) && (
                       <MyUsers
+                        isCurrentUserAdmin={isOrgAdmin}
                         organizationId={organizationId}
                         email={email}
                         showToast={showToast}

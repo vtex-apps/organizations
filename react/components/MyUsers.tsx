@@ -15,7 +15,7 @@ import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 import UserListItem from './UserListItem'
 
-import { updateCacheDeleteUser } from '../utils/cacheUtils'
+import { updateCacheDeleteUser, updateCacheReInvite } from '../utils/cacheUtils'
 import {
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
@@ -26,18 +26,18 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_PENDING,
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
 interface Props {
+  isCurrentUserAdmin: boolean
   email: string
   organizationId: string
-  showToast: Function
+  showToast: (message: any) => void
   intl: any
 }
 
-const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
+const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -105,6 +105,9 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
     })
   }
 
+  // ** Delete Org Assignment
+  // ** Remove `organizationId` from CL
+  // ** Remove `isOrgAdmin` from CL
   const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
     return deleteOrgAssignment(assignment)
       .then(() => {
@@ -126,6 +129,7 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
               fields: [
                 { key: 'id', value: clid },
                 { key: 'organizationId', value: '' },
+                { key: 'isOrgAdmin', value: 'false' },
               ],
             },
           },
@@ -133,13 +137,15 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
       })
   }
 
-  // DELETE
+  // Delete user - [Delete Btn clicked]
   const deleteUserAssignment = (assignmentId: string) => {
     const assignment = find(propEq('id', assignmentId), assignments)
     setSharedOrgAssignment(assignment as OrganizationAssignment)
     setIsDeleteConfirmationOpen(true)
   }
 
+  // Confirm delete - [Confirm delete btn clicked]
+  // ** delete org assignment with user if request is approved
   const confirmDelete = () => {
     setDeleteConfirmationLoading(true)
     const doDelete =
@@ -167,25 +173,72 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
       })
   }
 
+  // Close delete confirmation
   const closeDelete = () => {
     setIsDeleteConfirmationOpen(false)
     setSharedOrgAssignment({} as OrganizationAssignment)
   }
 
-  // RE Invite
+  // Re invite user - [Delete Btn clicked]
+  // ** Get CL with email
+  // ** Update his organization if he is not belongs to other company
+  // ** Set organization assignment to APPROVED
   const reInvite = (assignmentId: string) => {
-    return updateDocument({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'status', value: ASSIGNMENT_STATUS_PENDING },
-          ],
+    const assignment = find(propEq('id', assignmentId), assignments) as any
+
+    client
+      .query({
+        query: documentQuery,
+        variables: {
+          acronym: CLIENT_ACRONYM,
+          fields: CLIENT_FIELDS,
+          where: `email=${assignment.email}`,
         },
-        schema: ORG_ASSIGNMENT_SCHEMA,
-      },
-    })
+        fetchPolicy: 'no-cache',
+      })
+      .then(({ data }: any) => {
+        const clients = documentSerializer(data ? data.myDocuments : [])
+
+        const clientId_d = pathOr('', [0, 'id'], clients)
+        const organizationId_d = pathOr('', [0, 'organizationId'], clients)
+
+        if (organizationId_d !== '') {
+          showToast({
+            message: `This user is already belongs to some other company`,
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
+          return Promise.reject()
+        } else {
+          return updateDocument({
+            variables: {
+              acronym: CLIENT_ACRONYM,
+              document: {
+                fields: [
+                  { key: 'id', value: clientId_d },
+                  { key: 'organizationId', value: organizationId },
+                ],
+              },
+            },
+          })
+        }
+      })
+      .then(() => {
+        return updateDocument({
+          variables: {
+            acronym: ORG_ASSIGNMENT,
+            document: {
+              fields: [
+                { key: 'id', value: assignmentId },
+                { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
+              ],
+            },
+            schema: ORG_ASSIGNMENT_SCHEMA,
+          },
+          update: (cache: any, { data }: any) =>
+            updateCacheReInvite(cache, data, organizationId),
+        })
+      })
       .then(() => {
         showToast({
           message: `${intl.formatMessage({
@@ -198,43 +251,38 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
       })
       .catch((e: Error) => {
         const message = getErrorMessage(e)
-        showToast({
-          message: `${intl.formatMessage({
-            id: 'store/my-users.toast.user.reinvitation.error',
-          })} ${message}`,
-          duration: 5000,
-          horizontalPosition: 'right',
-        })
+        if (message && message !== '') {
+          showToast({
+            message: `${intl.formatMessage({
+              id: 'store/my-users.toast.user.reinvitation.error',
+            })} ${message}`,
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
+        }
       })
   }
 
-  // EDIT
+  // Edit organization assignment - [Edit Btn clicked]
   const editUser = (assignmentId: string) => {
     const assignment = find(propEq('id', assignmentId), assignments)
     setSharedOrgAssignment(assignment as OrganizationAssignment)
     setIsUserEditOpen(true)
   }
 
-  const closeUserEdit = () => {
+  // Close edit organization assignment 
+  const closeUserEditModal = () => {
     setSharedOrgAssignment({} as OrganizationAssignment)
     setIsUserEditOpen(false)
   }
 
-  const saveEditUser = () => {
-    setSharedOrgAssignment({} as OrganizationAssignment)
-    setIsUserEditOpen(false)
-  }
-
-  // CREATE
+  // Create organization assignment - [New organization Btn clicked]
   const addNewUser = () => {
     setIsAddNewUserOpen(true)
   }
 
-  const newUserAdded = () => {
-    setIsAddNewUserOpen(false)
-  }
-
-  const addNewUserClosed = () => {
+  // close modals org assignment create
+  const closeModalAddNewUser = () => {
     setIsAddNewUserOpen(false)
   }
 
@@ -292,19 +340,21 @@ const MyUsers = ({ organizationId, email, showToast, intl }: Props) => {
         />
         <UserEditModal
           isOpen={isUserEditOpen}
-          onClose={closeUserEdit}
-          onSave={saveEditUser}
+          onClose={closeUserEditModal}
+          onSave={closeUserEditModal}
           orgAssignment={sharedOrgAssignment}
           roles={roles}
           showToast={showToast}
+          isCurrentUserAdmin={isCurrentUserAdmin}
         />
         <AddUser
           roles={roles}
           organizationId={organizationId}
           isOpen={isAddNewUserOpen}
-          onClose={addNewUserClosed}
-          onSuccess={newUserAdded}
+          onClose={closeModalAddNewUser}
+          onSuccess={closeModalAddNewUser}
           showToast={showToast}
+          isCurrentUserAdmin={isCurrentUserAdmin}
           existingUsers={assignments.map((assignment: OrganizationAssignment) =>
             pathOr('', ['personaId_linked', 'email'], assignment)
           )}

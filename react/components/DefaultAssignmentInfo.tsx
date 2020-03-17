@@ -170,8 +170,8 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>
-            updateCacheProfile(cache, data, ''),
+          update: (cache: any) =>
+            updateCacheProfile(cache, ''),
         })
       })
       .then(() => {
@@ -297,8 +297,8 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any, { data }: any) =>
-            updateCacheProfile(cache, data, ''),
+          update: (cache: any) =>
+            updateCacheProfile(cache, ''),
         })
       })
       .then(() => {
@@ -464,7 +464,9 @@ const DefaultAssignmentInfo = ({
           messageLine1={intl.formatMessage({
             id: 'store/my-users.my-organization.unable-to-leave-message1',
           })}
-          messageLine2={intl.formatMessage({
+          messageLine2={ isOrgAdmin? intl.formatMessage({
+            id: 'store/my-users.my-organization.unable-to-leave-manager-message2',
+          }): intl.formatMessage({
             id: 'store/my-users.my-organization.unable-to-leave-message2',
           })}
         />

@@ -93,7 +93,7 @@ const MyPendingAssignments = ({
                 ],
               },
             },
-            update: (cache: any, { data }: any) =>  updateCacheProfile(cache, data, updatedOrgId) 
+            update: (cache: any) =>  updateCacheProfile(cache, updatedOrgId) 
           })
         })
         .then(() => {

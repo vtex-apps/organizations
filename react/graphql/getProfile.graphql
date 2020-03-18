@@ -1,0 +1,10 @@
+query Profile($customFields: String) {
+  profile (customFields: $customFields){
+    id
+    email
+    customFields {
+      key
+      value
+    }
+  }
+}

@@ -1,0 +1,10 @@
+mutation createDocument(
+  $acronym: String!
+  $document: DocumentInput
+  $schema: String
+) {
+  createMyDocument(acronym: $acronym, document: $document, schema: $schema) {
+    id
+    cacheId
+  }
+}

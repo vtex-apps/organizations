@@ -1,13 +1,30 @@
-import React, { Fragment } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Route } from 'react-router-dom'
-// Your component pages
-import MyUsers from './components/MyUsers'
+import { ToastProvider } from 'vtex.styleguide'
+import MyOrganization from './components/MyOrganization'
 
-const MyUsersPage = () => (
-  <Fragment>
-    {/* This `path` will be added at the end of the URL */}
-    <Route path="/users" exact component={MyUsers} />
-  </Fragment>
-)
+const MyUsersPage = () => {
+  
+  const first_load = useRef(false)
+
+  useEffect(() => {
+    if(!first_load.current){
+      console.log('this is route first load')
+      first_load.current = false
+    }
+  })
+
+  return (
+      <ToastProvider positioning="window">
+        <Route
+          path="/users"
+          exact
+          component={() => (
+            <MyOrganization />
+          )}
+        />
+      </ToastProvider>
+  )
+}
 
 export default MyUsersPage

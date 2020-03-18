@@ -1,0 +1,9 @@
+query Session {
+  getSession {
+    id
+    adminUserId
+    profile {
+      id
+    }
+  }
+}

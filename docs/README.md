@@ -4,22 +4,80 @@ This application allows you to create organization and manage users under that o
 
 ## Usage
 
-Add this app to your theme dependencies:
+Install this app in your workspace
 
 ```js
-// manifest.json
-// ...
-  "dependencies": {
-    // ...
-    "vtex.my-users": "0.x"
-  }
+vtex install vtex.my-organization
 ```
 
-## Master data tables and schemas
+> **_NOTE:_**  This application is not yet published under `vtex` vendor name, therefore you have to publish this app with your own vendor name or you have to `link` this app to your development workspace directly.
+>
+> ### Link application to development workspace
+> - clone the application to your working environment and checkout to the correct branch (i.e: `dev-master`)
+> - link this app to your workspace (`vtex link --verbose`)
+>
+> ### publish with your vendor name
+> - clone the application to your working environment and checkout to the correct branch (i.e: `dev-master`)
+> - go to `manufest.json` in your project's root directory and change `vendor` to your current vendor name (i.e: `"vendor": "biscoindqa"`)
+> - update the `version` in `manufest.json` if you have published the same version earlier
+> - install that published version to your workspace (`vtex install biscoindqa.my-organization`)
 
-You should have created these master data entities and schemas in order to use this application
+## Prerequisites
 
-> **_NOTE:_**  `BusinessRole` master data entity should be created and `Manager` role with required permissions should be exist before install this application. Follow [this article](https://github.com/clouda-inc/vtex-admin-authorization) if you need more help on creating roles with permission
+In order to run this application following master data schemas and indices should be created. 
+Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (https://developers.vtex.com/reference#master-data-api-v2-overview)
+
+These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas and indices you can ignore this step
+
+### Master data schemas
+
+<details><summary>BusinessPermission</summary>
+
+``` 
+
+Data Entity Name: BusinessPermission
+Schema Name: business-permission-schema-v1
+
+{
+	"properties": {
+		"name": {
+			"type": "string"
+		},
+		"label": {
+			"type": "string"
+		}
+	},
+	"v-default-fields": [
+		"name",
+		"label",
+		"id"
+	],
+	"required": [
+		"name"
+	],
+	"v-indexed": [
+		"name"
+	],
+	"v-security": {
+		"allowGetAll": true,
+		"publicRead": [
+			"name",
+			"label",
+			"id"
+		],
+		"publicWrite": [
+			"name",
+			"label"
+		],
+		"publicFilter": [
+			"name",
+			"id"
+		]
+	}
+}
+
+```
+</details>
 
 <details><summary>BusinessRole</summary>
 
@@ -29,108 +87,50 @@ Data Entity Name: BusinessRole
 Schema Name: business-role-schema-v1
 
 {
-    "properties": {
-        "name": {
-            "type": "string"
-        },
-        "label": {
-            "type": "string"
-        },
-        "permissions": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/permission"
-            }
-        }
-    },
-    "definitions": {
-        "permission": {
-            "type": "string"
-        }
-    },
-    "v-default-fields": [
-        "name",
-        "label",
-        "id",
-        "permissions"
-    ],
-    "required": [
-        "name"
-    ],
-    "v-indexed": [
-        "name"
-    ],
-    "v-security": {
-        "allowGetAll": true,
-        "publicRead": [
-            "name",
-            "label",
-            "permissions",
-            "id"
-        ],
-        "publicWrite": [
-            "name",
-            "label",
-            "permissions"
-        ],
-        "publicFilter": [
-            "name",
-            "id"
-        ]
-    }
-}
-
-```
-</details>
-
-<details><summary>Persona</summary>
-
-``` 
-
-Data Entity Name: Persona
-Schema Name: persona-schema-v1
-
-{
 	"properties": {
-		"businessOrganizationId": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
+		"name": {
+			"type": "string"
 		},
-		"email": {
-			"type": "string",
-			"format": "email"
+		"label": {
+			"type": "string"
+		},
+		"permissions": {
+			"type": "string"
+		}
+	},
+	"definitions": {
+		"permission": {
+			"type": "string"
 		}
 	},
 	"v-default-fields": [
+		"name",
+		"label",
 		"id",
-		"businessOrganizationId",
-		"businessOrganizationId_linked",
-		"email"
+		"permissions"
 	],
 	"required": [
-		"businessOrganizationId",
-		"email"
+		"name"
 	],
 	"v-indexed": [
-		"businessOrganizationId",
-		"email"
+		"name"
 	],
 	"v-security": {
 		"allowGetAll": true,
 		"publicRead": [
-			"id",
-			"businessOrganizationId",
-			"businessOrganizationId_linked",
-			"email"
+			"name",
+			"label",
+			"permissions",
+			"id"
 		],
 		"publicWrite": [
-			"businessOrganizationId",
-			"email"
+			"name",
+			"label",
+			"permissions"
 		],
 		"publicFilter": [
-			"id",
-			"businessOrganizationId",
-			"email"
+			"name",
+			"id"
 		]
 	}
 }
@@ -203,18 +203,17 @@ Schema Name: business-organization-schema-v1
 ```
 </details>
 
-<details><summary>OrgAssignment</summary>
+<details><summary>UserOrganization</summary>
 
 ``` 
 
-Data Entity Name: OrgAssignment
-Schema Name: organization-assignment-schema-v1
+Data Entity Name: UserOrganization
+Schema Name: user-organization-schema-v1
 
 {
 	"properties": {
-		"personaId": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1"
+		"email": {
+			"type": "string"
 		},
 		"businessOrganizationId": {
 			"type": "string",
@@ -229,28 +228,28 @@ Schema Name: organization-assignment-schema-v1
 		}
 	},
 	"v-default-fields": [
-		"personaId",
+		"email",
 		"id",
 		"businessOrganizationId",
 		"roleId",
 		"status"
 	],
 	"required": [
-		"personaId",
+		"email",
 		"businessOrganizationId",
 		"roleId",
 		"status"
 	],
 	"v-indexed": [
-		"personaId",
+		"email",
 		"businessOrganizationId",
-		"roleId"
+		"roleId",
+		"status"
 	],
 	"v-security": {
 		"allowGetAll": true,
 		"publicRead": [
-			"personaId",
-			"personaId_linked",
+			"email",
 			"id",
 			"businessOrganizationId",
 			"businessOrganizationId_linked",
@@ -260,22 +259,70 @@ Schema Name: organization-assignment-schema-v1
 		],
 		"publicWrite": [
 			"id",
-			"personaId",
+			"email",
 			"businessOrganizationId",
 			"roleId",
 			"status"
 		],
 		"publicFilter": [
-			"personaId",
+			"email",
 			"id",
 			"businessOrganizationId",
 			"roleId",
 			"status"
 		]
-	}
+	},
+	"v-triggers": [
+		{
+			"name": "organization-assignment-accept-email",
+			"active": true,
+			"condition": "status=APPROVED",
+			"action": {
+				"type": "email",
+				"provider": "default",
+				"subject": "Organization Assignment Acceptance",
+				"to": [
+					"{!email}"
+				],
+				"bcc": [
+					"jayendra@clouda.io",
+					"sahan@clouda.io"
+				],
+				"replyTo": "noreply@company.com",
+				"body": "You have been assigned to {!businessOrganizationId_linked.name}."
+			}
+		},
+		{
+			"name": "organization-assignment-decline-email",
+			"active": true,
+			"condition": "status=DECLINED",
+			"action": {
+				"type": "email",
+				"provider": "default",
+				"subject": "Organization Assignment Decline",
+				"to": [
+					"{!email}"
+				],
+				"bcc": [
+					"jayendra@clouda.io",
+					"sahan@clouda.io"
+				],
+				"replyTo": "noreply@company.com",
+				"body": "You have left the organization {!businessOrganizationId_linked.name}."
+			}
+		}
+	]
 }
 
 ```
 </details>
 
+### [Deprecated] removed master data collections and schemas
+>Data Entity Name: **Persona**, Schema Name: **persona-schema-v1**
+
+>Data Entity Name: **OrgAssignment**, Schema Name: **organization-assignment-schema-v1**
+
+## Important
+
+> **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
 

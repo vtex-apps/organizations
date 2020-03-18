@@ -34,5 +34,23 @@ declare global {
   interface Role {
     value: string
     label: string
+    name: string
+  }
+
+  interface BusinessOrganization {
+    name: string
+    telephone: string
+    id: string
+    address?: string
+    email?: string
+  }
+
+  interface OrganizationAssignment {
+    id: string
+    email?: string
+    roleId?: string
+    status?: string
+    roleId_linked?: Role
+    businessOrganizationId_linked?: BusinessOrganization
   }
 }

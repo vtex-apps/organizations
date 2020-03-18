@@ -1,8 +1,8 @@
 {
-  "vendor": "vtex",
-  "name": "my-users",
-  "version": "0.0.0",
-  "title": "VTEX My Users",
+  "vendor": "biscoindqa",
+  "name": "my-organization",
+  "version": "0.0.3",
+  "title": "VTEX My Organization",
   "description": "",
   "builders": {
     "react": "3.x",
@@ -12,14 +12,12 @@
   },
   "dependencies": {
     "vtex.store": "2.x",
-    "vtex.store-graphql": "2.x",
     "vtex.my-account": "1.x",
     "vtex.css-handles": "0.x",
-    "vtex.styleguide": "9.x"
+    "vtex.styleguide": "9.x",
+    "biscoindqa.document-graphql": "0.x",
+    "vtex.store-graphql": "2.x",
+    "vtex.my-account-commons": "1.x"
   },
-  "registries": [
-    "smartcheckout"
-  ],
-  "policies": [],
   "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
 }

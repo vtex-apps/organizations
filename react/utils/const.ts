@@ -6,7 +6,7 @@ export const BUSINESS_ROLE = 'BusinessRole'
 export const BUSINESS_ROLE_FIELDS = ['id', 'name', 'label']
 export const BUSINESS_ROLE_SCHEMA = 'business-role-schema-v1'
 
-export const ORG_ASSIGNMENT = 'UserOrgAssignment'
+export const ORG_ASSIGNMENT = 'UserOrganization'
 export const ORG_ASSIGNMENT_FIELDS = [
   'id',
   'email',
@@ -16,7 +16,7 @@ export const ORG_ASSIGNMENT_FIELDS = [
   'roleId',
   'roleId_linked',
 ]
-export const ORG_ASSIGNMENT_SCHEMA = 'organization-assignment-schema-v2'
+export const ORG_ASSIGNMENT_SCHEMA = 'user-organization-schema-v1'
 
 export const BUSINESS_ORGANIZATION = 'BusinessOrganization'
 export const BUSINESS_ORGANIZATION_FIELDS = []

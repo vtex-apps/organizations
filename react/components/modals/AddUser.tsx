@@ -348,6 +348,10 @@ const AddUser = ({
             type: 'CHANGE_PERSONA_ID',
             args: { personaId: '' },
           })
+          dispatch({
+            type: 'CHANGE_IS_ORG_ADMIN',
+            args: { isOrgAdmin: false },
+          })
 
           onSuccess()
         })

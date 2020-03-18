@@ -51,6 +51,7 @@
   "store/my-users.my-organization.unable-to-delete-title": "Não foi possível excluir a organização",
   "store/my-users.my-organization.unable-to-delete-message1": "Você tem mais de um usuário atribuído na organização: ",
   "store/my-users.my-organization.unable-to-delete-message2": "Exclua todos os usuários antes de excluir esta organização",
+  "store/my-users.my-organization.user.already.assigned": "This user is already belongs to some other company",
   "store/my-users.my-organization.decline.message": "Deseja recusar a solicitação de associação à organização: ",
   "store/my-users.my-organization.button.leave": "Sair",
   "store/my-users.my-organization.leave.message": "Deseja sair da organização: ",

@@ -204,7 +204,9 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
 
         if (organizationId_d !== '') {
           showToast({
-            message: `This user is already belongs to some other company`,
+            message: intl.formatMessage({
+              id: 'store/my-users.my-organization.user.already.assigned',
+            }),
             duration: 5000,
             horizontalPosition: 'right',
           })
@@ -313,6 +315,7 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
             {assignments.map((assignment: OrganizationAssignment) => {
               return (
                 <UserListItem
+                  isCurrentUserAdmin={isCurrentUserAdmin}
                   isDefaultAssignment={
                     defaultUserAssignment.id == assignment.id
                   }

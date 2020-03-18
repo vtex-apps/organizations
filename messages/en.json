@@ -51,6 +51,7 @@
   "store/my-users.my-organization.unable-to-delete-title": "Unable to delete organization",
   "store/my-users.my-organization.unable-to-delete-message1": "You have more than one assigned users in organization: ",
   "store/my-users.my-organization.unable-to-delete-message2": "Please delete all the users before deleting this organization",
+  "store/my-users.my-organization.user.already.assigned": "This user is already belongs to some other company",
   "store/my-users.my-organization.decline.message": "Do you want to decline join request to organization: ",
   "store/my-users.my-organization.button.leave": "Leave",
   "store/my-users.my-organization.leave.message": "Do you want to leave organization: ",

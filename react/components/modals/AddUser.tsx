@@ -10,6 +10,7 @@ import GET_DOCUMENT from '../../graphql/documents.graphql'
 
 import { documentSerializer } from '../../utils/documentSerializer'
 import { updateCacheAddUser, updateCacheClient } from '../../utils/cacheUtils'
+import { getErrorMessage } from '../../utils/graphqlErrorHandler'
 import {
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
@@ -198,18 +199,7 @@ const AddUser = ({
 
   const handleGraphqlError = () => {
     return (e: Error) => {
-      const message = path(
-        [
-          'graphQLErrors',
-          0,
-          'extensions',
-          'exception',
-          'response',
-          'data',
-          'Message',
-        ],
-        e
-      ) as string
+      const message = getErrorMessage(e)
       dispatch({
         type: 'RESPONSE',
         args: {
@@ -293,14 +283,11 @@ const AddUser = ({
                   state.isOrgAdmin.toString()
                 ),
             })
-          } else if (organizationId_d !== '') {
-            showToast({
-              message: `This user is already belongs to some other company`,
-              duration: 5000,
-              horizontalPosition: 'right',
-            })
-            return Promise.reject()
-          } else {
+          } else if (
+            organizationId_d == undefined ||
+            organizationId_d === '' ||
+            organizationId_d === 'null'
+          ) {
             return updateDocument({
               variables: {
                 acronym: CLIENT_ACRONYM,
@@ -317,6 +304,15 @@ const AddUser = ({
                   state.isOrgAdmin.toString()
                 ),
             })
+          } else {
+            showToast({
+              message: intl.formatMessage({
+                id: 'store/my-users.my-organization.user.already.assigned',
+              }),
+              duration: 5000,
+              horizontalPosition: 'right',
+            })
+            return Promise.reject()
           }
         })
         .then(({ data }: any) => {

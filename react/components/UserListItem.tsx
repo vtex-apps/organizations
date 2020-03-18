@@ -16,6 +16,7 @@ import { injectIntl } from 'react-intl'
 import styles from '../my-organization.css'
 
 interface Props {
+  isCurrentUserAdmin: boolean
   isDefaultAssignment: boolean
   orgAssignment: OrganizationAssignment
   intl: any
@@ -25,6 +26,7 @@ interface Props {
 }
 
 const UserListItem = ({
+  isCurrentUserAdmin,
   isDefaultAssignment,
   orgAssignment,
   edit,
@@ -45,6 +47,8 @@ const UserListItem = ({
     [0],
     documentSerializer(pathOr([], ['myDocuments'], data))
   ) as any
+
+  const isAdminUserListItem: boolean = (pathOr('false', ['isOrgAdmin'], client) as string === 'true') as boolean
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -140,7 +144,7 @@ const UserListItem = ({
                   </span>
                 </div>
                 <div className="pt3 b flex flex-column">
-                  {client && client.isOrgAdmin && client.isOrgAdmin === 'true'
+                  {isAdminUserListItem
                     ? intl.formatMessage({
                         id: 'store/my-users.my-user.table-title.isAdmin.yes',
                       })
@@ -151,7 +155,7 @@ const UserListItem = ({
               </div>
             </div>
             <div className="flex-column fl w-30">
-              {!isDefaultAssignment ? (
+              {(!isDefaultAssignment && (isCurrentUserAdmin || !isAdminUserListItem)) ? (
                 <div className="pt5 pb5 pr3">
                   <div className="pa2 w-100">
                     <Button

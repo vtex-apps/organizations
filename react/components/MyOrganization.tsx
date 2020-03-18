@@ -2,13 +2,12 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
 import { Alert, ToastConsumer, Button, Spinner, Tag } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
-import { pathOr, find, propEq, filter, reject, equals } from 'ramda'
+import { pathOr, find, propEq, filter, equals } from 'ramda'
 
 import { ContentWrapper } from 'vtex.my-account-commons'
 
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
-import MyPendingAssignments from './MyPendingAssignments'
 import DefaultAssignmentInfo from './DefaultAssignmentInfo'
 
 import DOCUMENTS from '../graphql/documents.graphql'
@@ -24,10 +23,8 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_PENDING,
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
-  ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -41,9 +38,6 @@ const MyOrganization = ({ intl }: Props) => {
   const [organizationId, setOrganizationId] = useState('')
   const [email, setEmail] = useState('')
   const [isOrgAdmin, setIsOrgAdmin] = useState(false)
-  const [pendingOrgAssignments, setPendingOrgAssignments] = useState(
-    [] as OrganizationAssignment[]
-  )
   const [defaultOrgAssignment, setDefaultOrgAssignment] = useState(
     {} as OrganizationAssignment
   )
@@ -160,27 +154,9 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
-  // Continue reload - [Approve, Reject] Pending organization
-  const infoUpdatedPendingOrganizations = () => {
-    setShowOrganizationReload(true)
-    load().then((data: any) => {
-      const pendingIds_before = pendingOrgAssignments.map(x => x.id).sort()
-      const pendingIds_after = pathOr([], ['pendingAssignments_d'], data)
-        .map((x: any) => x.id)
-        .sort()
-      if (data && !equals(pendingIds_before, pendingIds_after)) {
-        updateState(data)
-        setShowOrganizationReload(false)
-      } else {
-        infoUpdatedPendingOrganizations()
-      }
-    })
-  }
-
   // Load data
   const load = () => {
     let organizationId_d = ''
-    let pendingAssignments_d = [] as OrganizationAssignment[]
     let orgAssignments_d = [] as OrganizationAssignment[]
     let defaultAssignment_d = {} as OrganizationAssignment
     let userRole_d = {} as Role
@@ -211,7 +187,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(email=${email} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+              where: `(email=${email} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
             },
             fetchPolicy: 'no-cache',
           })
@@ -228,11 +204,6 @@ const MyOrganization = ({ intl }: Props) => {
             propEq('businessOrganizationId', organizationId_d)
           )(filter(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments))
 
-          pendingAssignments_d = reject(
-            propEq('status', ASSIGNMENT_STATUS_DECLINED),
-            reject(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments)
-          )
-
           defaultAssignment_d = defaultAssignment
             ? defaultAssignment
             : ({} as OrganizationAssignment)
@@ -246,7 +217,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(businessOrganizationId=${organizationId_d} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+              where: `(businessOrganizationId=${organizationId_d} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
             },
             fetchPolicy: 'no-cache',
           })
@@ -281,7 +252,6 @@ const MyOrganization = ({ intl }: Props) => {
         }
         return Promise.resolve({
           organizationId_d,
-          pendingAssignments_d,
           orgAssignments_d,
           defaultAssignment_d,
           userRole_d,
@@ -292,7 +262,6 @@ const MyOrganization = ({ intl }: Props) => {
   // update state variables
   const updateState = (data: any) => {
     setOrganizationId(data.organizationId_d)
-    setPendingOrgAssignments(data.pendingAssignments_d)
     setDefaultOrgAssignment(data.defaultAssignment_d)
     setUserRole(data.userRole_d)
   }
@@ -354,14 +323,6 @@ const MyOrganization = ({ intl }: Props) => {
                     </Alert>
                   </div>
                 )}
-
-                <MyPendingAssignments
-                  clientId={clientId}
-                  assignments={pendingOrgAssignments}
-                  defaultAssignment={defaultOrgAssignment}
-                  infoUpdated={infoUpdatedPendingOrganizations}
-                  showToast={showToast}
-                />
                 {organizationId === '' && isOrgAdmin && (
                   <div className="mb5 mt5">
                     <h2 className="">

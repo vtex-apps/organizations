@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Fixed CSS handles typing issue
+
 ### Added
 - Added functionality to transfer admin privilege (only admin users can transfer his privilege to others)
 - Added `organization` and `isOrgAdmin` columns to `CL` master data table

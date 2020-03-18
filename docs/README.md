@@ -24,10 +24,12 @@ vtex install vtex.my-organization
 
 ## Prerequisites
 
-In order to run this application following master data schemas should be created. 
+In order to run this application following master data schemas and indices should be created. 
 Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (https://developers.vtex.com/reference#master-data-api-v2-overview)
 
-These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas you can ignore this step
+These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas and indices you can ignore this step
+
+### Master data schemas
 
 <details><summary>BusinessPermission</summary>
 

@@ -48,7 +48,11 @@ const UserListItem = ({
     documentSerializer(pathOr([], ['myDocuments'], data))
   ) as any
 
-  const isAdminUserListItem: boolean = (pathOr('false', ['isOrgAdmin'], client) as string === 'true') as boolean
+  const isAdminUserListItem: boolean = ((pathOr(
+    'false',
+    ['isOrgAdmin'],
+    client
+  ) as string) === 'true') as boolean
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -96,15 +100,21 @@ const UserListItem = ({
               <span>
                 {orgAssignment.status === ASSIGNMENT_STATUS_DECLINED ? (
                   <Tag type="error" variation="low">
-                    Rejected
+                    {intl.formatMessage({
+                      id: 'store/my-users.my-organization.status.rejected',
+                    })}
                   </Tag>
                 ) : orgAssignment.status === ASSIGNMENT_STATUS_APPROVED ? (
                   <Tag type="success" variation="low">
-                    Accepted
+                    {intl.formatMessage({
+                      id: 'store/my-users.my-organization.status.accepted',
+                    })}
                   </Tag>
                 ) : (
                   <Tag type="warning" variation="low">
-                    Pending
+                    {intl.formatMessage({
+                      id: 'store/my-users.my-organization.status.not-responded',
+                    })}
                   </Tag>
                 )}
               </span>
@@ -134,28 +144,20 @@ const UserListItem = ({
         caretColor="muted">
         <div className="center bg-white bt b--black-10 pt3">
           <div className="flex cf ph2-ns">
-            <div className="flex-column fl w-70">
-              <div className="flex-row pa3 w-100">
-                <div className="pt2 f6">
-                  <span>
+            <div className="flex-column fl w-70 pa5 f6">
+              <span>
+                {isAdminUserListItem && (
+                  <Tag type="success" variation="low">
                     {intl.formatMessage({
                       id: 'store/my-users.my-user.table-title.isAdmin',
                     })}
-                  </span>
-                </div>
-                <div className="pt3 b flex flex-column">
-                  {isAdminUserListItem
-                    ? intl.formatMessage({
-                        id: 'store/my-users.my-user.table-title.isAdmin.yes',
-                      })
-                    : intl.formatMessage({
-                        id: 'store/my-users.my-user.table-title.isAdmin.no',
-                      })}
-                </div>
-              </div>
+                  </Tag>
+                )}
+              </span>
             </div>
             <div className="flex-column fl w-30">
-              {(!isDefaultAssignment && (isCurrentUserAdmin || !isAdminUserListItem)) ? (
+              {!isDefaultAssignment &&
+              (isCurrentUserAdmin || !isAdminUserListItem) ? (
                 <div className="pt5 pb5 pr3">
                   <div className="pa2 w-100">
                     <Button

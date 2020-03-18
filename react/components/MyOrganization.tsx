@@ -124,11 +124,12 @@ const MyOrganization = ({ intl }: Props) => {
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
-
       if (
         data &&
-        equals(data.organizationId_d, '' && 
-        equals(data.defaultAssignment_d, {}))
+        equals(
+          data.organizationId_d,
+          '' && equals(data.defaultAssignment_d, {})
+        )
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -227,10 +228,10 @@ const MyOrganization = ({ intl }: Props) => {
             propEq('businessOrganizationId', organizationId_d)
           )(filter(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments))
 
-          pendingAssignments_d = reject(propEq('status', ASSIGNMENT_STATUS_DECLINED), reject(
-            propEq('status', ASSIGNMENT_STATUS_APPROVED),
-            assignments
-          ))
+          pendingAssignments_d = reject(
+            propEq('status', ASSIGNMENT_STATUS_DECLINED),
+            reject(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments)
+          )
 
           defaultAssignment_d = defaultAssignment
             ? defaultAssignment
@@ -305,7 +306,7 @@ const MyOrganization = ({ intl }: Props) => {
       <span className="mr4">
         <Tag type="success" variation="low">
           {intl.formatMessage({
-            id: 'store/my-users.my-organization.status.accepted',
+            id: 'store/my-users.my-organization.status.isOrgAdmin',
           })}
         </Tag>
       </span>

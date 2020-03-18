@@ -154,7 +154,7 @@ const UserEditModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      title="Edit User"
+      title={intl.formatMessage({ id: 'store/my-users.edit-user.title' })}
       responsiveFullScreen
       centered
       bottomBar={

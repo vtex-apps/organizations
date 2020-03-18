@@ -366,9 +366,12 @@ const AddUser = ({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()}>
+    <Modal 
+      title={intl.formatMessage({ id: 'store/my-users.add-user.title' })}
+      isOpen={isOpen} 
+      onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
-        <div className="mb5 flex">
+        <div className="mt3 flex">
           <Input
             type="text"
             label={intl.formatMessage({ id: 'store/my-users.email' })}
@@ -383,7 +386,7 @@ const AddUser = ({
             errorMessage={path(['formErrors', 'email', 0], state)}
           />
         </div>
-        <div className="mb5">
+        <div className="mt5">
           <Dropdown
             label={intl.formatMessage({ id: 'store/my-users.role-id' })}
             options={roles}
@@ -399,7 +402,7 @@ const AddUser = ({
           />
         </div>
         {isCurrentUserAdmin && (
-          <div className="mb5">
+          <div className="mt5">
             <Checkbox
               checked={state.isOrgAdmin}
               name="disabled-checkbox-group"
@@ -415,7 +418,7 @@ const AddUser = ({
           </div>
         )}
 
-        <div className="mb5">
+        <div className="mt5">
           <Button
             variation="primary"
             type="submit"

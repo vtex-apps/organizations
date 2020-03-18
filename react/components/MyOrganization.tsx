@@ -1,20 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
-import {
-  PageBlock,
-  PageHeader,
-  Layout,
-  Alert,
-  ToastConsumer,
-  Button,
-  Spinner,
-} from 'vtex.styleguide'
+import { Alert, ToastConsumer, Button, Spinner, Tag } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
-import { pathOr, find, propEq, filter, reject, equals } from 'ramda'
+import { pathOr, find, propEq, filter, equals } from 'ramda'
+
+import { ContentWrapper } from 'vtex.my-account-commons'
 
 import MyUsers from './MyUsers'
 import AddOrganization from './AddOrganization'
-import MyPendingAssignments from './MyPendingAssignments'
 import DefaultAssignmentInfo from './DefaultAssignmentInfo'
 
 import DOCUMENTS from '../graphql/documents.graphql'
@@ -22,8 +15,7 @@ import profileQuery from '../graphql/getProfile.graphql'
 
 import { documentSerializer } from '../utils/documentSerializer'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  PROFILE_FIELDS,
   BUSINESS_ROLE,
   BUSINESS_ROLE_FIELDS,
   BUSINESS_ROLE_SCHEMA,
@@ -31,8 +23,8 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_PENDING,
-  PERSONA_FIELDS,
+  CLIENT_ACRONYM,
+  CLIENT_FIELDS,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -41,12 +33,11 @@ interface Props {
 }
 
 const MyOrganization = ({ intl }: Props) => {
-  const [personaId, setPersonaId] = useState('')
+  // my organization state
+  const [clientId, setClientId] = useState('')
   const [organizationId, setOrganizationId] = useState('')
   const [email, setEmail] = useState('')
-  const [pendingOrgAssignments, setPendingOrgAssignments] = useState(
-    [] as OrganizationAssignment[]
-  )
+  const [isOrgAdmin, setIsOrgAdmin] = useState(false)
   const [defaultOrgAssignment, setDefaultOrgAssignment] = useState(
     {} as OrganizationAssignment
   )
@@ -54,14 +45,21 @@ const MyOrganization = ({ intl }: Props) => {
   const [loading, setLoading] = useState(false)
   const [reloadStart, setReloadStart] = useState(false)
   const [showOrganizationReload, setShowOrganizationReload] = useState(false)
-  const [showLeaveOrganizationBtn, setShowLeaveOrganizationBtn] = useState(false)
 
+  // apollo client
   const client = useApolloClient()
+
+  // restrict re render multiple times
   const did_email_set = useRef(false)
   const did_first_load = useRef(false)
 
-  const { data: profileData, loading: profileLoading } = useQuery(profileQuery)
+  // get initial profile info
+  const { data: profileData, loading: profileLoading } = useQuery(
+    profileQuery,
+    { variables: { customFields: PROFILE_FIELDS } }
+  )
 
+  // after email changed
   useEffect(() => {
     const abortController = new AbortController()
     if (did_email_set.current && !did_first_load.current) {
@@ -79,45 +77,53 @@ const MyOrganization = ({ intl }: Props) => {
     }
   }, [email])
 
+  // after profile data loaded
   useEffect(() => {
     const abortController = new AbortController()
+
+    const id_d = pathOr('', ['profile', 'id'], profileData)
     const email_d = pathOr('', ['profile', 'email'], profileData)
-    setEmail(email_d)
+    const isOrgAdmin_d = pathOr(
+      'false',
+      ['value'],
+      find(propEq('key', 'isOrgAdmin'))(
+        pathOr([], ['profile', 'customFields'], profileData)
+      )
+    ) as any
+    const organizationId_d = pathOr(
+      '',
+      ['value'],
+      find(propEq('key', 'organizationId'))(
+        pathOr([], ['profile', 'customFields'], profileData)
+      )
+    ) as any
+
+    if (email_d !== '') {
+      setClientId(id_d)
+      setEmail(email_d)
+      setIsOrgAdmin(isOrgAdmin_d === 'true' || isOrgAdmin_d === true)
+      setOrganizationId(organizationId_d)
+    }
+
     if (email_d !== '' && !did_first_load.current) {
       did_email_set.current = true
     }
+
     return () => {
       abortController.abort()
     }
   }, [profileData])
 
-  const updateState = (data: any) => {
-    setPersonaId(data.personaId_d)
-    setOrganizationId(data.organizationId_d)
-    setPendingOrgAssignments(data.pendingAssignments_d)
-    setDefaultOrgAssignment(data.defaultAssignment_d)
-    setUserRole(data.userRole_d)
-
-    if(pathOr([], ['orgAssignments_d'], data).length > 1){
-      setShowLeaveOrganizationBtn(true)
-    }
-  }
-
-  // Compare props to reload - Leave Delete default organization
+  // Continue reload - [Leave, Delete] default organization
   const infoUpdatedDefaultAssignment = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
-      const isValidPendingAssignments =
-        find(propEq('businessOrganizationId', organizationId))(
-          pathOr([], ['pendingAssignments_d'], data)
-        ) === undefined
-
       if (
         data &&
-        equals(data.personaId_d, personaId) &&
-        equals(data.organizationId_d, '') &&
-        !equals(data.defaultAssignment_d, defaultOrgAssignment) &&
-        isValidPendingAssignments
+        equals(
+          data.organizationId_d,
+          '' && equals(data.defaultAssignment_d, {})
+        )
       ) {
         updateState(data)
         setShowOrganizationReload(false)
@@ -127,15 +133,13 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
-  // Compare props to reload - Create order
+  // Continue reload - [Create] organization
   const infoUpdatedCreateOrganization = () => {
     setShowOrganizationReload(true)
     load().then((data: any) => {
       const isValidDefaultAssignment =
-        !equals(data.personaId_d, '') &&
-        find(propEq('personaId', data.personaId_d))(
-          pathOr([], ['orgAssignments_d'], data)
-        ) !== undefined
+        find(propEq('email', email))(pathOr([], ['orgAssignments_d'], data)) !==
+        undefined
       if (
         data &&
         !equals(data.organizationId_d, '') &&
@@ -150,65 +154,32 @@ const MyOrganization = ({ intl }: Props) => {
     })
   }
 
-  // Compare props to reload - Approve Decline Pending organization
-  const infoUpdatedPendingOrganizations = () => {
-    setShowOrganizationReload(true)
-    load().then((data: any) => {
-      const pendingIds_before = pendingOrgAssignments.map(x => x.id).sort()
-      const pendingIds_after = pathOr([], ['pendingAssignments_d'], data)
-        .map((x: any) => x.id)
-        .sort()
-      const isValidDefaultAssignment =
-        equals(data.organizationId_d, '') ||
-        equals(data.organizationId_d, organizationId) ||
-        (!equals(data.personaId_d, '') &&
-          find(propEq('personaId', data.personaId_d))(
-            pathOr([], ['orgAssignments_d'], data)
-          ) !== undefined)
-      if (
-        data &&
-        equals(data.personaId_d, personaId) &&
-        !equals(pendingIds_before, pendingIds_after) &&
-        isValidDefaultAssignment
-      ) {
-        updateState(data)
-        setShowOrganizationReload(false)
-      } else {
-        infoUpdatedPendingOrganizations()
-      }
-    })
-  }
-
   // Load data
   const load = () => {
-    let personaId_d = ''
     let organizationId_d = ''
-    let pendingAssignments_d = [] as OrganizationAssignment[]
     let orgAssignments_d = [] as OrganizationAssignment[]
     let defaultAssignment_d = {} as OrganizationAssignment
     let userRole_d = {} as Role
 
     setReloadStart(true)
 
+    // Get client info
     return client
       .query({
         query: DOCUMENTS,
         variables: {
-          acronym: PERSONA_ACRONYM,
-          schema: PERSONA_SCHEMA,
-          fields: PERSONA_FIELDS,
+          acronym: CLIENT_ACRONYM,
+          fields: CLIENT_FIELDS,
           where: `email=${email}`,
         },
         fetchPolicy: 'no-cache',
       })
       .then(({ data }: any) => {
-        if (data) {
-          const persona = documentSerializer(data.myDocuments)
+        const clients = documentSerializer(data ? data.myDocuments : [])
 
-          organizationId_d = pathOr('', [0, 'businessOrganizationId'], persona)
-          personaId_d = pathOr('', [0, 'id'], persona)
-        }
+        organizationId_d = pathOr('', [0, 'organizationId'], clients)
 
+        // get current user organization assignments
         return client
           .query({
             query: DOCUMENTS,
@@ -216,7 +187,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(personaId=${personaId_d} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+              where: `(email=${email} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
             },
             fetchPolicy: 'no-cache',
           })
@@ -224,6 +195,7 @@ const MyOrganization = ({ intl }: Props) => {
             return Promise.resolve({ myDocuments: [] })
           })
       })
+
       .then(({ data }: any) => {
         if (data) {
           const assignments = documentSerializer(data ? data.myDocuments : [])
@@ -232,14 +204,12 @@ const MyOrganization = ({ intl }: Props) => {
             propEq('businessOrganizationId', organizationId_d)
           )(filter(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments))
 
-          pendingAssignments_d = reject(
-            propEq('status', ASSIGNMENT_STATUS_APPROVED),
-            assignments
-          )
           defaultAssignment_d = defaultAssignment
             ? defaultAssignment
             : ({} as OrganizationAssignment)
         }
+
+        // get current organization's users assignments
         return client
           .query({
             query: DOCUMENTS,
@@ -247,7 +217,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(businessOrganizationId=${organizationId_d} AND (status=${ASSIGNMENT_STATUS_PENDING} OR status=${ASSIGNMENT_STATUS_APPROVED}))`,
+              where: `(businessOrganizationId=${organizationId_d} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
             },
             fetchPolicy: 'no-cache',
           })
@@ -259,6 +229,8 @@ const MyOrganization = ({ intl }: Props) => {
         if (data) {
           orgAssignments_d = documentSerializer(data ? data.myDocuments : [])
         }
+
+        // get roles in the system
         return client.query({
           query: DOCUMENTS,
           variables: {
@@ -279,9 +251,7 @@ const MyOrganization = ({ intl }: Props) => {
           setReloadStart(false)
         }
         return Promise.resolve({
-          personaId_d,
           organizationId_d,
-          pendingAssignments_d,
           orgAssignments_d,
           defaultAssignment_d,
           userRole_d,
@@ -289,24 +259,49 @@ const MyOrganization = ({ intl }: Props) => {
       })
   }
 
+  // update state variables
+  const updateState = (data: any) => {
+    setOrganizationId(data.organizationId_d)
+    setDefaultOrgAssignment(data.defaultAssignment_d)
+    setUserRole(data.userRole_d)
+  }
+
   const closeReloadMessage = () => {
     setShowOrganizationReload(false)
   }
 
+  const getHeaderContent = () => {
+    return isOrgAdmin ? (
+      <span className="mr4">
+        <Tag type="success" variation="low">
+          {intl.formatMessage({
+            id: 'store/my-users.my-organization.status.isOrgAdmin',
+          })}
+        </Tag>
+      </span>
+    ) : (
+      <span />
+    )
+  }
+
+  const headerConfig = () => {
+    return {
+      namespace: 'vtex-account__my_organization',
+      titleId: 'store/my-users.my-organization.organization.title',
+      headerContent: getHeaderContent(),
+    }
+  }
+
   return (
-    <Layout
-      fullWidth
-      pageHeader={
-        <PageHeader title="Organization" linkLabel="Return"></PageHeader>
-      }>
-      <ToastConsumer>
-        {({ showToast }: any) => (
-          <PageBlock>
-            {loading || profileLoading ? (
+    <ContentWrapper {...headerConfig()}>
+      {() => (
+        <ToastConsumer>
+          {({ showToast }: any) =>
+            loading || profileLoading ? (
               <Spinner />
             ) : (
-              <div>
-                { showOrganizationReload && (
+              <div className="pl5 pl7-ns near-black">
+                {showOrganizationReload && (
                   <div className={`${styles.reloadMessage} mb5`}>
                     <Alert type="warning" onClose={closeReloadMessage}>
                       <div className="flex-row w-100">
@@ -328,15 +323,7 @@ const MyOrganization = ({ intl }: Props) => {
                     </Alert>
                   </div>
                 )}
-
-                <MyPendingAssignments
-                  personaId={personaId}
-                  assignments={pendingOrgAssignments}
-                  defaultAssignment={defaultOrgAssignment}
-                  infoUpdated={infoUpdatedPendingOrganizations}
-                  showToast={showToast}
-                />
-                {organizationId === '' && (
+                {organizationId === '' && isOrgAdmin && (
                   <div className="mb5 mt5">
                     <h2 className="">
                       {intl.formatMessage({
@@ -347,46 +334,42 @@ const MyOrganization = ({ intl }: Props) => {
 
                     <AddOrganization
                       userEmail={email}
-                      personaId={personaId}
+                      clientId={clientId}
                       updateOrgInfo={infoUpdatedCreateOrganization}
                       showToast={showToast}
                     />
                   </div>
                 )}
                 {defaultOrgAssignment && defaultOrgAssignment.id && (
-                  <div>
+                  <div className="ba b--light-gray">
                     <DefaultAssignmentInfo
-                      personaId={personaId}
+                      clientId={clientId}
                       defaultAssignment={defaultOrgAssignment}
                       userRole={userRole}
                       infoUpdated={infoUpdatedDefaultAssignment}
                       showToast={showToast}
-                      showLeaveBtn={showLeaveOrganizationBtn}
+                      isOrgAdmin={isOrgAdmin}
                     />
 
-                    {userRole && userRole.name && userRole.name === 'manager' && (
-                      <div className="flex flex-column mb5 mt5">
-                        <h2 className="">
-                          {intl.formatMessage({
-                            id:
-                              'store/my-users.my-organization.users-in-organization',
-                          })}
-                        </h2>
-                        <MyUsers
-                          organizationId={organizationId}
-                          personaId={personaId}
-                          showToast={showToast}
-                        />
-                      </div>
+                    {((userRole &&
+                      userRole.name &&
+                      userRole.name === 'manager') ||
+                      isOrgAdmin) && (
+                      <MyUsers
+                        isCurrentUserAdmin={isOrgAdmin}
+                        organizationId={organizationId}
+                        email={email}
+                        showToast={showToast}
+                      />
                     )}
                   </div>
                 )}
               </div>
-            )}
-          </PageBlock>
-        )}
-      </ToastConsumer>
-    </Layout>
+            )
+          }
+        </ToastConsumer>
+      )}
+    </ContentWrapper>
   )
 }
 

@@ -1,13 +1,5 @@
 import React, { useState, useReducer } from 'react'
-import {
-  pathOr,
-  isEmpty,
-  filter,
-  propEq,
-  reject,
-  find,
-  last,
-} from 'ramda'
+import { pathOr, isEmpty, filter, propEq, reject, find, last } from 'ramda'
 import { PageBlock, Input, Button } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
 import { injectIntl } from 'react-intl'
@@ -25,14 +17,16 @@ import {
   BUSINESS_ORGANIZATION,
   BUSINESS_ORGANIZATION_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
+  CLIENT_ACRONYM,
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
+import { updateCacheProfile } from '../utils/cacheUtils'
 
 interface Props {
   userEmail: string
-  personaId?: string
-  updateOrgInfo: Function
-  showToast: Function
+  clientId: string
+  updateOrgInfo: () => void
+  showToast: (message: any) => void
   intl: any
 }
 
@@ -55,7 +49,7 @@ type Actions =
 
 const AddOrganization = ({
   userEmail,
-  personaId,
+  clientId,
   intl,
   updateOrgInfo,
   showToast,
@@ -152,8 +146,6 @@ const AddOrganization = ({
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
 
-  const [addPersona] = useMutation(CREATE_DOCUMENT)
-
   const getOrganizationFields = () => {
     return [
       { key: 'name', value: name },
@@ -165,32 +157,18 @@ const AddOrganization = ({
 
   const getOrganizationAssignmentFields = (
     organizationId: string,
-    personaId: string,
     roleId: string
   ) => {
     return [
-      { key: 'personaId', value: personaId },
+      { key: 'email', value: userEmail },
       { key: 'businessOrganizationId', value: organizationId },
       { key: 'roleId', value: roleId },
       { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
     ]
   }
 
-  const getPersonaFields = (organizationId: string, personaId?: string) => {
-    let array = [
-      { key: 'email', value: userEmail },
-      { key: 'businessOrganizationId', value: organizationId },
-    ]
-    if (personaId !== undefined) {
-      array.push({ key: 'id', value: personaId })
-    }
-    return array
-  }
-
   const createOrganization = async (roleId: string) => {
     let orgId = ''
-    let pid = personaId ? personaId : ''
-
     createDocument({
       variables: {
         acronym: BUSINESS_ORGANIZATION,
@@ -204,43 +182,48 @@ const AddOrganization = ({
           ['data', 'createMyDocument', 'cacheId'],
           organizationResponse
         )
-        const save = personaId !== undefined && personaId !== '' ? updateDocument : addPersona
 
-        return save({
-          variables: {
-            acronym: 'Persona',
-            document: { fields: getPersonaFields(orgId, personaId) },
-            schema: 'persona-schema-v1',
-          },
-        })
-      })
-      .then((personaResponse: any) => {
-        pid = pathOr(
-          pathOr('', ['data', 'updateMyDocument', 'cacheId'], personaResponse),
-          ['data', 'createMyDocument', 'cacheId'],
-          personaResponse
-        )
-        createDocument({
+        return createDocument({
           variables: {
             acronym: ORG_ASSIGNMENT,
             document: {
-              fields: getOrganizationAssignmentFields(orgId, pid, roleId),
+              fields: getOrganizationAssignmentFields(orgId, roleId),
             },
             schema: ORG_ASSIGNMENT_SCHEMA,
           },
         })
       })
+      .then((data: any) => {
+        console.log(data)
+
+        return updateDocument({
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            document: {
+              fields: [
+                { key: 'id', value: clientId },
+                { key: 'organizationId', value: orgId },
+              ],
+            },
+          },
+          update: (cache: any) =>
+            updateCacheProfile(cache, orgId),
+        })
+      })
+
       .catch(handleGlobalError())
       .then(() => {
         setName('')
         setTelephone('')
         setAddress('')
         setEmail('')
-        updateOrgInfo(pid, orgId)
+        updateOrgInfo()
       })
       .catch((message: string) => {
         showToast({
-          message: `${intl.formatMessage({id: 'store/my-users.toast.organization.create.error'})} "${message}"`,
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.organization.create.error',
+          })} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
         })
@@ -260,7 +243,8 @@ const AddOrganization = ({
     ? pathOr([], ['fields'], last(roleData.myDocuments))
     : []
 
-  const roleId = roleFields && roleFields.length > 0
+  const roleId =
+    roleFields && roleFields.length > 0
       ? pathOr('', ['value'], find(propEq('key', 'id'), roleFields))
       : ''
 

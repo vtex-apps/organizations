@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { useQuery, useMutation } from 'react-apollo'
-import { Table, Button } from 'vtex.styleguide'
+import { useQuery, useMutation, useApolloClient } from 'react-apollo'
+import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
 
@@ -13,11 +13,12 @@ import UserEditModal from './modals/UserEditModal'
 import documentQuery from '../graphql/documents.graphql'
 import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
+import UserListItem from './UserListItem'
 
-import { updateCacheDeleteUser } from '../utils/cacheUtils'
+import { updateCacheDeleteUser, updateCacheReInvite } from '../utils/cacheUtils'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  CLIENT_ACRONYM,
+  CLIENT_FIELDS,
   BUSINESS_ROLE,
   BUSINESS_ROLE_FIELDS,
   BUSINESS_ROLE_SCHEMA,
@@ -25,24 +26,18 @@ import {
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_DECLINED,
-  ASSIGNMENT_STATUS_PENDING
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
 interface Props {
-  personaId: string
+  isCurrentUserAdmin: boolean
+  email: string
   organizationId: string
-  showToast: Function
+  showToast: (message: any) => void
   intl: any
 }
 
-const MyUsers = ({
-  organizationId,
-  personaId,
-  showToast,
-  intl,
-}: Props) => {
+const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -62,6 +57,8 @@ const MyUsers = ({
   const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
     {} as OrganizationAssignment
   )
+
+  const client = useApolloClient()
 
   const [isUserEditOpen, setIsUserEditOpen] = useState(false)
 
@@ -94,112 +91,10 @@ const MyUsers = ({
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
-  const defaultUserAssignment = find(
-    propEq('personaId', personaId),
+  const defaultUserAssignment: OrganizationAssignment = find(
+    propEq('email', email),
     assignments
-  )
-
-  const defaultSchema = {
-    properties: {
-      email: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.email',
-        }),
-      },
-      status: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.status',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          if (cellData === ASSIGNMENT_STATUS_APPROVED) {
-            return 'Active'
-          } else if (cellData === ASSIGNMENT_STATUS_DECLINED) {
-            return 'Inactive'
-          } else if (cellData === ASSIGNMENT_STATUS_PENDING) {
-            return 'Pending'
-          }
-          return ''
-        },
-      },
-      role: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.role',
-        }),
-      },
-      editAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.edit',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id ? (
-            <Button
-              variation="tertiary"
-              size="small"
-              onClick={() => editUser(cellData)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.edit',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-      reInviteAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.invite',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          const assignment = find(propEq('id', cellData), assignments)
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id &&
-            assignment &&
-            assignment.status === ASSIGNMENT_STATUS_DECLINED ? (
-            <Button
-              variation="tertiary"
-              size="small"
-              onClick={() => reInvite(cellData)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.invite',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-      deleteAssignment: {
-        title: intl.formatMessage({
-          id: 'store/my-users.my-user.table-title.delete',
-        }),
-        cellRenderer: ({ cellData }: any) => {
-          return defaultUserAssignment &&
-            cellData !== defaultUserAssignment.id ? (
-            <Button
-              variation="danger-tertiary"
-              size="small"
-              onClick={() => deleteUserAssignment(cellData as string)}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-user.table-title.delete',
-              })}
-            </Button>
-          ) : (
-            ''
-          )
-        },
-      },
-    },
-  }
-
-  const tableItems = assignments.map((assignment: OrganizationAssignment) => ({
-    email: pathOr('', ['personaId_linked', 'email'], assignment),
-    status: pathOr('', ['status'], assignment),
-    role: pathOr('', ['roleId_linked', 'label'], assignment),
-    editAssignment: pathOr('', ['id'], assignment),
-    reInviteAssignment: pathOr('', ['id'], assignment),
-    deleteAssignment: pathOr('', ['id'], assignment),
-  }))
+  ) as OrganizationAssignment
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -210,170 +105,264 @@ const MyUsers = ({
     })
   }
 
+  // ** Delete Org Assignment
+  // ** Remove `organizationId` from CL
+  // ** Remove `isOrgAdmin` from CL
   const deleteAssignmentWithUser = (assignment: OrganizationAssignment) => {
     return deleteOrgAssignment(assignment)
       .then(() => {
+        return client.query({
+          query: documentQuery,
+          variables: {
+            acronym: CLIENT_ACRONYM,
+            fields: CLIENT_FIELDS,
+            where: `email=${assignment.email}`,
+          },
+        })
+      })
+      .then(({ data }: any) => {
+        const clid = pathOr('', ['myDocuments', 0, 'id'], data)
         return updateDocument({
           variables: {
-            acronym: PERSONA_ACRONYM,
+            acronym: CLIENT_ACRONYM,
             document: {
               fields: [
-                { key: 'id', value: assignment.personaId },
-                { key: 'businessOrganizationId', value: '' },
+                { key: 'id', value: clid },
+                { key: 'organizationId', value: '' },
+                { key: 'isOrgAdmin', value: 'false' },
               ],
             },
-            schema: PERSONA_SCHEMA,
           },
         })
       })
   }
 
-  // DELETE
+  // Delete user - [Delete Btn clicked]
   const deleteUserAssignment = (assignmentId: string) => {
     const assignment = find(propEq('id', assignmentId), assignments)
     setSharedOrgAssignment(assignment as OrganizationAssignment)
     setIsDeleteConfirmationOpen(true)
   }
 
+  // Confirm delete - [Confirm delete btn clicked]
+  // ** delete org assignment with user if request is approved
   const confirmDelete = () => {
     setDeleteConfirmationLoading(true)
     const doDelete =
       sharedOrgAssignment.status === ASSIGNMENT_STATUS_APPROVED
         ? deleteAssignmentWithUser
         : deleteOrgAssignment
-    doDelete(sharedOrgAssignment).then(() => {
-      setDeleteConfirmationLoading(false)
-      setIsDeleteConfirmationOpen(false)
-      setSharedOrgAssignment({} as OrganizationAssignment)
-    }).catch((e: Error) => {
-      const message = getErrorMessage(e)
-      setDeleteConfirmationLoading(false)
-      setIsDeleteConfirmationOpen(false)
-      setSharedOrgAssignment({} as OrganizationAssignment)
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.delete.error'})} ${message}`,
-        duration: 5000,
-        horizontalPosition: 'right',
+    doDelete(sharedOrgAssignment)
+      .then(() => {
+        setDeleteConfirmationLoading(false)
+        setIsDeleteConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
       })
-    })
+      .catch((e: Error) => {
+        const message = getErrorMessage(e)
+        setDeleteConfirmationLoading(false)
+        setIsDeleteConfirmationOpen(false)
+        setSharedOrgAssignment({} as OrganizationAssignment)
+        showToast({
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.user.delete.error',
+          })} ${message}`,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+      })
   }
 
+  // Close delete confirmation
   const closeDelete = () => {
     setIsDeleteConfirmationOpen(false)
     setSharedOrgAssignment({} as OrganizationAssignment)
   }
 
-  // RE Invite
+  // Re invite user - [Delete Btn clicked]
+  // ** Get CL with email
+  // ** Update his organization if he is not belongs to other company
+  // ** Set organization assignment to APPROVED
   const reInvite = (assignmentId: string) => {
-    return updateDocument({
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'status', value: ASSIGNMENT_STATUS_PENDING },
-          ],
+    const assignment = find(propEq('id', assignmentId), assignments) as any
+
+    client
+      .query({
+        query: documentQuery,
+        variables: {
+          acronym: CLIENT_ACRONYM,
+          fields: CLIENT_FIELDS,
+          where: `email=${assignment.email}`,
         },
-        schema: ORG_ASSIGNMENT_SCHEMA,
-      },
-    }).then(() => {
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.sent'})} `,
-        duration: 5000,
-        horizontalPosition: 'right',
+        fetchPolicy: 'no-cache',
       })
-      setSharedOrgAssignment({} as OrganizationAssignment)
-    }).catch((e: Error) => {
-      const message = getErrorMessage(e)
-      showToast({
-        message: `${intl.formatMessage({id: 'store/my-users.toast.user.reinvitation.error'})} ${message}`,
-        duration: 5000,
-        horizontalPosition: 'right',
+      .then(({ data }: any) => {
+        const clients = documentSerializer(data ? data.myDocuments : [])
+
+        const clientId_d = pathOr('', [0, 'id'], clients)
+        const organizationId_d = pathOr('', [0, 'organizationId'], clients)
+
+        if (organizationId_d !== '') {
+          showToast({
+            message: intl.formatMessage({
+              id: 'store/my-users.my-organization.user.already.assigned',
+            }),
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
+          return Promise.reject()
+        } else {
+          return updateDocument({
+            variables: {
+              acronym: CLIENT_ACRONYM,
+              document: {
+                fields: [
+                  { key: 'id', value: clientId_d },
+                  { key: 'organizationId', value: organizationId },
+                ],
+              },
+            },
+          })
+        }
       })
-    })
+      .then(() => {
+        return updateDocument({
+          variables: {
+            acronym: ORG_ASSIGNMENT,
+            document: {
+              fields: [
+                { key: 'id', value: assignmentId },
+                { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
+              ],
+            },
+            schema: ORG_ASSIGNMENT_SCHEMA,
+          },
+          update: (cache: any, { data }: any) =>
+            updateCacheReInvite(cache, data, organizationId),
+        })
+      })
+      .then(() => {
+        showToast({
+          message: `${intl.formatMessage({
+            id: 'store/my-users.toast.user.reinvitation.sent',
+          })} `,
+          duration: 5000,
+          horizontalPosition: 'right',
+        })
+        setSharedOrgAssignment({} as OrganizationAssignment)
+      })
+      .catch((e: Error) => {
+        const message = getErrorMessage(e)
+        if (message && message !== '') {
+          showToast({
+            message: `${intl.formatMessage({
+              id: 'store/my-users.toast.user.reinvitation.error',
+            })} ${message}`,
+            duration: 5000,
+            horizontalPosition: 'right',
+          })
+        }
+      })
   }
 
-  // EDIT
+  // Edit organization assignment - [Edit Btn clicked]
   const editUser = (assignmentId: string) => {
     const assignment = find(propEq('id', assignmentId), assignments)
     setSharedOrgAssignment(assignment as OrganizationAssignment)
     setIsUserEditOpen(true)
   }
 
-  const closeUserEdit = () => {
+  // Close edit organization assignment 
+  const closeUserEditModal = () => {
     setSharedOrgAssignment({} as OrganizationAssignment)
     setIsUserEditOpen(false)
   }
 
-  const saveEditUser = () => {
-    setSharedOrgAssignment({} as OrganizationAssignment)
-    setIsUserEditOpen(false)
-  }
-
-  // CREATE
+  // Create organization assignment - [New organization Btn clicked]
   const addNewUser = () => {
     setIsAddNewUserOpen(true)
   }
 
-  const newUserAdded = () => {
-    setIsAddNewUserOpen(false)
-  }
-
-  const addNewUserClosed = () => {
+  // close modals org assignment create
+  const closeModalAddNewUser = () => {
     setIsAddNewUserOpen(false)
   }
 
   return (
-    <div className="flex flex-column">
-      <div>
-        <div className="mb5">
-          <Table
-            fullWidth
-            schema={defaultSchema}
-            items={tableItems}
-            toolbar={{
-              newLine: {
-                label: intl.formatMessage({
-                  id: 'store/my-users.my-user.table.button.add-new',
-                }),
-                handleCallback: () => addNewUser(),
-              },
-            }}
-          />
+    <div className="flex flex-column pa5">
+      <div className="flex-row">
+        <div className="fl pr2">
+          <h3>
+            {intl.formatMessage({
+              id: 'store/my-users.my-organization.users-in-organization',
+            })}
+          </h3>
+        </div>
+        <div className="fl pl3 mt5">
+          <Button
+            variation="secondary"
+            size="small"
+            onClick={() => addNewUser()}>
+            {intl.formatMessage({
+              id: 'store/my-users.my-user.table.button.add-new',
+            })}
+          </Button>
         </div>
       </div>
-      <UserConfirmationModal
-        isOpen={isDeleteConfirmationOpen}
-        isLoading={deleteConfirmationLoading}
-        onConfirm={confirmDelete}
-        onClose={closeDelete}
-        assignment={sharedOrgAssignment}
-        confirmAction={intl.formatMessage({
-          id: 'store/my-users.my-user.delete-confirmation-action',
-        })}
-        message={intl.formatMessage({
-          id: 'store/my-users.my-user.delete-confirmation-message',
-        })}
-      />
-      <UserEditModal
-        isOpen={isUserEditOpen}
-        onClose={closeUserEdit}
-        onSave={saveEditUser}
-        orgAssignment={sharedOrgAssignment}
-        roles={roles}
-        showToast={showToast}
-      />
-      <AddUser
-        roles={roles}
-        organizationId={organizationId}
-        isOpen={isAddNewUserOpen}
-        onClose={addNewUserClosed}
-        onSuccess={newUserAdded}
-        showToast={showToast}
-        existingUsers={assignments.map((assignment: OrganizationAssignment) =>
-          pathOr('', ['personaId_linked', 'email'], assignment)
-        )}
-      />
+      <div className="flex flex-column">
+        <div>
+          <div className="mb5">
+            {assignments.map((assignment: OrganizationAssignment) => {
+              return (
+                <UserListItem
+                  isCurrentUserAdmin={isCurrentUserAdmin}
+                  isDefaultAssignment={
+                    defaultUserAssignment.id == assignment.id
+                  }
+                  orgAssignment={assignment}
+                  edit={editUser}
+                  reInvite={reInvite}
+                  deleteAssignment={deleteUserAssignment}
+                />
+              )
+            })}
+          </div>
+        </div>
+        <UserConfirmationModal
+          isOpen={isDeleteConfirmationOpen}
+          isLoading={deleteConfirmationLoading}
+          onConfirm={confirmDelete}
+          onClose={closeDelete}
+          assignment={sharedOrgAssignment}
+          confirmAction={intl.formatMessage({
+            id: 'store/my-users.my-user.delete-confirmation-action',
+          })}
+          message={intl.formatMessage({
+            id: 'store/my-users.my-user.delete-confirmation-message',
+          })}
+        />
+        <UserEditModal
+          isOpen={isUserEditOpen}
+          onClose={closeUserEditModal}
+          onSave={closeUserEditModal}
+          orgAssignment={sharedOrgAssignment}
+          roles={roles}
+          showToast={showToast}
+          isCurrentUserAdmin={isCurrentUserAdmin}
+        />
+        <AddUser
+          roles={roles}
+          organizationId={organizationId}
+          isOpen={isAddNewUserOpen}
+          onClose={closeModalAddNewUser}
+          onSuccess={closeModalAddNewUser}
+          showToast={showToast}
+          isCurrentUserAdmin={isCurrentUserAdmin}
+          existingUsers={assignments.map((assignment: OrganizationAssignment) =>
+            pathOr('', ['personaId_linked', 'email'], assignment)
+          )}
+        />
+      </div>
     </div>
   )
 }

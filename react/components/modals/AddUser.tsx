@@ -1,20 +1,22 @@
 import React, { SyntheticEvent, useReducer } from 'react'
-import { isEmpty, path, pathOr, find, propEq, last, contains } from 'ramda'
+import { isEmpty, path, contains, pathOr } from 'ramda'
 import { injectIntl } from 'react-intl'
-import { Modal, Button, Dropdown, Input } from 'vtex.styleguide'
+import { Modal, Button, Dropdown, Input, Checkbox } from 'vtex.styleguide'
 import { useMutation, useApolloClient } from 'react-apollo'
 
 import CREATE_DOCUMENT from '../../graphql/createDocument.graphql'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
 import GET_DOCUMENT from '../../graphql/documents.graphql'
 
-import { updateCacheAddUser } from '../../utils/cacheUtils'
+import { documentSerializer } from '../../utils/documentSerializer'
+import { updateCacheAddUser, updateCacheClient } from '../../utils/cacheUtils'
+import { getErrorMessage } from '../../utils/graphqlErrorHandler'
 import {
-  PERSONA_ACRONYM,
-  PERSONA_SCHEMA,
+  CLIENT_ACRONYM,
+  CLIENT_FIELDS,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_PENDING
+  ASSIGNMENT_STATUS_APPROVED,
 } from '../../utils/const'
 
 interface Props {
@@ -24,7 +26,8 @@ interface Props {
   existingUsers: string[]
   roles: Role[]
   organizationId: string
-  showToast: Function
+  showToast: (message: any) => void
+  isCurrentUserAdmin: boolean
   intl: any
 }
 
@@ -32,6 +35,7 @@ interface State {
   email: string
   roleId: string
   personaId: string
+  isOrgAdmin: boolean
   formErrors: Errors
   touched: {
     email: boolean
@@ -54,6 +58,7 @@ type Actions =
   | Action<'CHANGE_ROLE', { args: { roleId: string } }>
   | Action<'CHANGE_EMAIL', { args: { email: string } }>
   | Action<'CHANGE_PERSONA_ID', { args: { personaId: string } }>
+  | Action<'CHANGE_IS_ORG_ADMIN', { args: { isOrgAdmin: boolean } }>
   | Action<
       'RESPONSE',
       {
@@ -73,7 +78,8 @@ const AddUser = ({
   roles,
   organizationId,
   existingUsers,
-  showToast
+  showToast,
+  isCurrentUserAdmin,
 }: Props) => {
   const client = useApolloClient()
   const [createDocument] = useMutation(CREATE_DOCUMENT)
@@ -85,7 +91,6 @@ const AddUser = ({
         data,
         roles,
         organizationId,
-        state.personaId,
         state.email,
         state.roleId
       ),
@@ -128,6 +133,13 @@ const AddUser = ({
           formErrors: { roleId: state.formErrors.roleId, email: errors },
         }
       }
+      case 'CHANGE_IS_ORG_ADMIN':
+        const changes = {
+          ...state,
+          ...{ isOrgAdmin: action.args.isOrgAdmin },
+        }
+
+        return changes
       case 'RESPONSE': {
         return {
           ...state,
@@ -171,6 +183,7 @@ const AddUser = ({
   const initialState = {
     roleId: '',
     email: '',
+    isOrgAdmin: false,
     personaId: '',
     formErrors: {
       email: [],
@@ -186,18 +199,7 @@ const AddUser = ({
 
   const handleGraphqlError = () => {
     return (e: Error) => {
-      const message = path(
-        [
-          'graphQLErrors',
-          0,
-          'extensions',
-          'exception',
-          'response',
-          'data',
-          'Message',
-        ],
-        e
-      ) as string
+      const message = getErrorMessage(e)
       dispatch({
         type: 'RESPONSE',
         args: {
@@ -209,28 +211,27 @@ const AddUser = ({
     }
   }
 
-  const getPersonaFields = (persona?: string) => {
-    const fields = [{ key: 'email', value: state.email }]
-    if (persona) {
-      fields.push({ key: 'id', value: persona })
-    } else {
-      fields.push({
-        key: 'businessOrganizationId',
-        value: '',
-      })
+  const getClientFields = (clientId?: string) => {
+    const fields = [
+      { key: 'email', value: state.email },
+      { key: 'organizationId', value: organizationId },
+      { key: 'isOrgAdmin', value: state.isOrgAdmin.toString() },
+    ]
+    if (clientId) {
+      fields.push({ key: 'id', value: clientId })
     }
     return fields
   }
 
-  const getAssignmentFields = (persona: string) => {
+  const getAssignmentFields = () => {
     const fields = [
       {
         key: 'businessOrganizationId',
         value: organizationId,
       },
       {
-        key: 'personaId',
-        value: persona,
+        key: 'email',
+        value: state.email,
       },
       {
         key: 'roleId',
@@ -238,7 +239,7 @@ const AddUser = ({
       },
       {
         key: 'status',
-        value: ASSIGNMENT_STATUS_PENDING,
+        value: ASSIGNMENT_STATUS_APPROVED,
       },
     ]
 
@@ -253,58 +254,80 @@ const AddUser = ({
         .query({
           query: GET_DOCUMENT,
           variables: {
-            acronym: PERSONA_ACRONYM,
-            schema: PERSONA_SCHEMA,
-            fields: ['id', 'email', 'businessOrganizationId'],
+            acronym: CLIENT_ACRONYM,
+            fields: CLIENT_FIELDS,
             where: `email=${state.email}`,
           },
+          fetchPolicy: 'no-cache',
         })
-        .then(({ data: personaData }: any) => {
-          const personaFields =
-            personaData && personaData.myDocuments
-              ? pathOr([], ['fields'], last(personaData.myDocuments))
-              : []
-          const personaId =
-          personaFields && personaFields.length > 0
-              ? pathOr('', ['value'], find(propEq('key', 'id'), personaFields))
-              : ''
-          return Promise.resolve({ personaId })
-        })
-        .then((data: { personaId: string }) => {
-          const savePersona =
-            data && data.personaId ? updateDocument : createDocument
-          return savePersona({
-            variables: {
-              acronym: PERSONA_ACRONYM,
-              document: {
-                fields: getPersonaFields(data.personaId),
+        .then(({ data }: any) => {
+          const clients = documentSerializer(data ? data.myDocuments : [])
+
+          const clientId_d = pathOr('', [0, 'id'], clients)
+          const organizationId_d = pathOr('', [0, 'organizationId'], clients)
+
+          if (clients.length == 0) {
+            return createDocument({
+              variables: {
+                acronym: CLIENT_ACRONYM,
+                document: {
+                  fields: getClientFields(),
+                },
               },
-              schema: PERSONA_SCHEMA,
-            },
-          })
+              update: (cache: any, { data }: any) =>
+                updateCacheClient(
+                  cache,
+                  data,
+                  state.email,
+                  organizationId,
+                  state.isOrgAdmin.toString()
+                ),
+            })
+          } else if (
+            organizationId_d == undefined ||
+            organizationId_d === '' ||
+            organizationId_d === 'null'
+          ) {
+            return updateDocument({
+              variables: {
+                acronym: CLIENT_ACRONYM,
+                document: {
+                  fields: getClientFields(clientId_d),
+                },
+              },
+              update: (cache: any, { data }: any) =>
+                updateCacheClient(
+                  cache,
+                  data,
+                  state.email,
+                  organizationId,
+                  state.isOrgAdmin.toString()
+                ),
+            })
+          } else {
+            showToast({
+              message: intl.formatMessage({
+                id: 'store/my-users.my-organization.user.already.assigned',
+              }),
+              duration: 5000,
+              horizontalPosition: 'right',
+            })
+            return Promise.reject()
+          }
         })
-        .then((response: any) => {
-          const persona = pathOr(
-            pathOr('', ['data', 'updateMyDocument', 'cacheId'], response),
-            ['data', 'createMyDocument', 'cacheId'],
-            response
-          )
-
-          dispatch({
-            type: 'CHANGE_PERSONA_ID',
-            args: { personaId: persona },
-          })
-
+        .then(({ data }: any) => {
+          console.log(data)
           return createAssignmentDocument({
             variables: {
               acronym: ORG_ASSIGNMENT,
               document: {
-                fields: getAssignmentFields(persona),
+                fields: getAssignmentFields(),
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
           })
-        }).catch(handleGraphqlError())
+        })
+        .catch(handleGraphqlError())
         .then(() => {
           dispatch({
             type: 'RESPONSE',
@@ -325,22 +348,34 @@ const AddUser = ({
             type: 'CHANGE_PERSONA_ID',
             args: { personaId: '' },
           })
+          dispatch({
+            type: 'CHANGE_IS_ORG_ADMIN',
+            args: { isOrgAdmin: false },
+          })
 
           onSuccess()
         })
         .catch((message: string) => {
-          showToast({
-            message: `${intl.formatMessage({id: 'store/my-users.toast.user.create.error'})} "${message}"`,
-            duration: 5000,
-            horizontalPosition: 'right',
-          })
+          if (message) {
+            showToast({
+              message: `${intl.formatMessage({
+                id: 'store/my-users.toast.user.create.error',
+              })} "${message}"`,
+              duration: 5000,
+              horizontalPosition: 'right',
+            })
+          }
         })
     }
   }
+
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()}>
+    <Modal 
+      title={intl.formatMessage({ id: 'store/my-users.add-user.title' })}
+      isOpen={isOpen} 
+      onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
-        <div className="mb5 flex">
+        <div className="mt3 flex">
           <Input
             type="text"
             label={intl.formatMessage({ id: 'store/my-users.email' })}
@@ -355,7 +390,7 @@ const AddUser = ({
             errorMessage={path(['formErrors', 'email', 0], state)}
           />
         </div>
-        <div className="mb5">
+        <div className="mt5">
           <Dropdown
             label={intl.formatMessage({ id: 'store/my-users.role-id' })}
             options={roles}
@@ -370,7 +405,24 @@ const AddUser = ({
             errorMessage={path(['formErrors', 'roleId', 0], state)}
           />
         </div>
-        <div className="mb5">
+        {isCurrentUserAdmin && (
+          <div className="mt5">
+            <Checkbox
+              checked={state.isOrgAdmin}
+              name="disabled-checkbox-group"
+              label="Organization Admin"
+              onChange={(e: { target: { checked: boolean } }) => {
+                dispatch({
+                  type: 'CHANGE_IS_ORG_ADMIN',
+                  args: { isOrgAdmin: e.target.checked },
+                })
+              }}
+              id="option-0"
+            />
+          </div>
+        )}
+
+        <div className="mt5">
           <Button
             variation="primary"
             type="submit"

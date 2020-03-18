@@ -138,61 +138,6 @@ Schema Name: business-role-schema-v1
 ```
 </details>
 
-<details><summary>Persona</summary>
-
-``` 
-
-Data Entity Name: Persona
-Schema Name: persona-schema-v1
-
-{
-	"properties": {
-		"businessOrganizationId": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
-		},
-		"email": {
-			"type": "string",
-			"format": "email"
-		}
-	},
-	"v-default-fields": [
-		"id",
-		"businessOrganizationId",
-		"businessOrganizationId_linked",
-		"email"
-	],
-	"required": [
-		"businessOrganizationId",
-		"email"
-	],
-	"v-indexed": [
-		"businessOrganizationId",
-		"email"
-	],
-	"v-security": {
-		"allowGetAll": true,
-		"publicRead": [
-			"id",
-			"businessOrganizationId",
-			"businessOrganizationId_linked",
-			"email"
-		],
-		"publicWrite": [
-			"businessOrganizationId",
-			"email"
-		],
-		"publicFilter": [
-			"id",
-			"businessOrganizationId",
-			"email"
-		]
-	}
-}
-
-```
-</details>
-
 <details><summary>BusinessOrganization</summary>
 
 ``` 
@@ -258,18 +203,17 @@ Schema Name: business-organization-schema-v1
 ```
 </details>
 
-<details><summary>OrgAssignment</summary>
+<details><summary>UserOrganization</summary>
 
 ``` 
 
-Data Entity Name: OrgAssignment
-Schema Name: organization-assignment-schema-v1
+Data Entity Name: UserOrganization
+Schema Name: user-organization-schema-v1
 
 {
 	"properties": {
-		"personaId": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1"
+		"email": {
+			"type": "string"
 		},
 		"businessOrganizationId": {
 			"type": "string",
@@ -284,20 +228,20 @@ Schema Name: organization-assignment-schema-v1
 		}
 	},
 	"v-default-fields": [
-		"personaId",
+		"email",
 		"id",
 		"businessOrganizationId",
 		"roleId",
 		"status"
 	],
 	"required": [
-		"personaId",
+		"email",
 		"businessOrganizationId",
 		"roleId",
 		"status"
 	],
 	"v-indexed": [
-		"personaId",
+		"email",
 		"businessOrganizationId",
 		"roleId",
 		"status"
@@ -305,8 +249,7 @@ Schema Name: organization-assignment-schema-v1
 	"v-security": {
 		"allowGetAll": true,
 		"publicRead": [
-			"personaId",
-			"personaId_linked",
+			"email",
 			"id",
 			"businessOrganizationId",
 			"businessOrganizationId_linked",
@@ -316,13 +259,13 @@ Schema Name: organization-assignment-schema-v1
 		],
 		"publicWrite": [
 			"id",
-			"personaId",
+			"email",
 			"businessOrganizationId",
 			"roleId",
 			"status"
 		],
 		"publicFilter": [
-			"personaId",
+			"email",
 			"id",
 			"businessOrganizationId",
 			"roleId",
@@ -330,25 +273,6 @@ Schema Name: organization-assignment-schema-v1
 		]
 	},
 	"v-triggers": [
-		{
-			"name": "organization-assignment-email",
-			"active": true,
-			"condition": "status=PENDING",
-			"action": {
-				"type": "email",
-				"provider": "default",
-				"subject": "Organization Assignment",
-				"to": [
-					"{!personaId_linked.email}"
-				],
-				"bcc": [
-					"jayendra@clouda.io",
-					"sahan@clouda.io"
-				],
-				"replyTo": "noreply@company.com",
-				"body": "You have been assigned to {!businessOrganizationId_linked.name}."
-			}
-		},
 		{
 			"name": "organization-assignment-accept-email",
 			"active": true,
@@ -358,14 +282,14 @@ Schema Name: organization-assignment-schema-v1
 				"provider": "default",
 				"subject": "Organization Assignment Acceptance",
 				"to": [
-					"{!personaId_linked.email}"
+					"{!email}"
 				],
 				"bcc": [
 					"jayendra@clouda.io",
 					"sahan@clouda.io"
 				],
 				"replyTo": "noreply@company.com",
-				"body": "You have accepted the invitation to join {!businessOrganizationId_linked.name}."
+				"body": "You have been assigned to {!businessOrganizationId_linked.name}."
 			}
 		},
 		{
@@ -377,14 +301,14 @@ Schema Name: organization-assignment-schema-v1
 				"provider": "default",
 				"subject": "Organization Assignment Decline",
 				"to": [
-					"{!personaId_linked.email}"
+					"{!email}"
 				],
 				"bcc": [
 					"jayendra@clouda.io",
 					"sahan@clouda.io"
 				],
 				"replyTo": "noreply@company.com",
-				"body": "You have declined the invitation to join {!businessOrganizationId_linked.name}."
+				"body": "You have left the organization {!businessOrganizationId_linked.name}."
 			}
 		}
 	]
@@ -393,56 +317,12 @@ Schema Name: organization-assignment-schema-v1
 ```
 </details>
 
-### Indices
+### [Deprecated] removed master data collections and schemas
+>Data Entity Name: **Persona**, Schema Name: **persona-schema-v1**
 
-<details><summary>EmailIndexOnPersona</summary>
+>Data Entity Name: **OrgAssignment**, Schema Name: **organization-assignment-schema-v1**
 
-``` 
-
-Data Entity Name: Persona
-
-{
-    "name": "EmailIndexOnPersona",
-    "acronym": "Persona",
-    "isGlobal": false,
-    "multiple": false,
-    "fields": "email"
-}
-
-```
-</details>
-
-<details><summary>NameIndexOnBusinessOrganization</summary>
-
-``` 
-
-Data Entity Name: BusinessOrganization
-{
-    "name": "NameIndexOnBusinessOrganization",
-    "acronym": "BusinessOrganization",
-    "isGlobal": false,
-    "multiple": false,
-    "fields": "name"
-}
-
-```
-</details>
-
-<details><summary>EmailIndexOnBusinessOrganization</summary>
-
-``` 
-Data Entity Name: BusinessOrganization
-
-{
-    "name": "EmailIndexOnBusinessOrganization",
-    "acronym": "BusinessOrganization",
-    "isGlobal": false,
-    "multiple": false,
-    "fields": "email"
-}
-
-```
-</details>
+## Important
 
 > **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
 

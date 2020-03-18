@@ -17,6 +17,9 @@ declare module 'vtex.styleguide' {
   export const ToastProvider: ComponentType<InputProps>
   export const ToastConsumer: ComponentType<InputProps>
   export const Spinner: ComponentType<InputProps>
+  export const Tag: ComponentType<InputProps>
+  export const Collapsible: ComponentType<InputProps>
+  export const Checkbox: ComponentType<InputProps>
 
   interface InputProps {
     [key: string]: any

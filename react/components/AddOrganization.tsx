@@ -17,7 +17,6 @@ import {
   BUSINESS_ORGANIZATION,
   BUSINESS_ORGANIZATION_SCHEMA,
   ASSIGNMENT_STATUS_APPROVED,
-  ORGANIZATION_STATUS_NOT_RESPONDED,
   CLIENT_ACRONYM,
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
@@ -153,7 +152,6 @@ const AddOrganization = ({
       { key: 'telephone', value: telephone },
       { key: 'address', value: address },
       { key: 'email', value: email },
-      { key: 'status', value: ORGANIZATION_STATUS_NOT_RESPONDED },
     ]
   }
 

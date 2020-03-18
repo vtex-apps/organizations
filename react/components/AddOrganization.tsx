@@ -193,9 +193,7 @@ const AddOrganization = ({
           },
         })
       })
-      .then((data: any) => {
-        console.log(data)
-
+      .then(() => {
         return updateDocument({
           variables: {
             acronym: CLIENT_ACRONYM,
@@ -206,8 +204,7 @@ const AddOrganization = ({
               ],
             },
           },
-          update: (cache: any) =>
-            updateCacheProfile(cache, orgId),
+          update: (cache: any) => updateCacheProfile(cache, orgId),
         })
       })
 

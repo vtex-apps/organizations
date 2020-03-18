@@ -11,6 +11,36 @@ import {
   ASSIGNMENT_STATUS_APPROVED,
 } from './const'
 
+const userListArgs = (orgId: string) => {
+  return {
+    query: GET_DOCUMENT,
+    variables: {
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: `businessOrganizationId=${orgId}`,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+    },
+  }
+}
+
+const getProfile = () => {
+  return {
+    query: profileQuery,
+    variables: { customFields: PROFILE_FIELDS },
+  }
+}
+
+const clientListArgs = (email: string) => {
+  return {
+    query: GET_DOCUMENT,
+    variables: {
+      acronym: CLIENT_ACRONYM,
+      fields: CLIENT_FIELDS,
+      where: `email=${email}`,
+    },
+  }
+}
+
 export const updateCacheClient = (
   cache: any,
   data: any,
@@ -29,14 +59,17 @@ export const updateCacheClient = (
 
     fields = reject(propEq('key', 'organizationId'), fields) as any
     fields = reject(propEq('key', 'isOrgAdmin'), fields) as any
-    fields = reject(propEq('key', 'email'), fields)  as any
+    fields = reject(propEq('key', 'email'), fields) as any
 
-    const newFields = [ 
-      ...fields, 
-      ...[{ key: 'organizationId', value: organizationId, __typename: 'Field' }, 
-      { key: 'isOrgAdmin', value: isOrgAdmin, __typename: 'Field' }, 
-      { key: 'email', value: email, __typename: 'Field' }] ]
-    
+    const newFields = [
+      ...fields,
+      ...[
+        { key: 'organizationId', value: organizationId, __typename: 'Field' },
+        { key: 'isOrgAdmin', value: isOrgAdmin, __typename: 'Field' },
+        { key: 'email', value: email, __typename: 'Field' },
+      ],
+    ]
+
     response.myDocuments = [
       { id: id, fields: newFields, __typename: 'Document' },
     ]
@@ -46,7 +79,7 @@ export const updateCacheClient = (
     }
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
+    // continue regardless of error
   }
 }
 
@@ -121,7 +154,7 @@ export const updateCacheAddUser = (
     }
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
+    // continue regardless of error
   }
 }
 
@@ -146,12 +179,12 @@ export const updateCacheEditUser = (
       ['fields'],
       find(propEq('id', id), pathOr([], ['myDocuments'], response))
     )
-    const fieldsExceptRoleAndRoleId_linked = reject(
+    const fieldsExceptRoleAndRoleIdLinked = reject(
       propEq('key', 'roleId'),
       reject(propEq('key', 'roleId_linked'), fields)
     )
 
-    fieldsExceptRoleAndRoleId_linked.push({
+    fieldsExceptRoleAndRoleIdLinked.push({
       key: 'roleId_linked',
       value: selectedRole
         ? JSON.stringify({
@@ -162,7 +195,7 @@ export const updateCacheEditUser = (
         : '',
       __typename: 'Field',
     })
-    fieldsExceptRoleAndRoleId_linked.push({
+    fieldsExceptRoleAndRoleIdLinked.push({
       key: 'roleId',
       value: roleId,
       __typename: 'Field',
@@ -170,7 +203,7 @@ export const updateCacheEditUser = (
 
     const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
       if (x.id === id) {
-        x.fields = fieldsExceptRoleAndRoleId_linked
+        x.fields = fieldsExceptRoleAndRoleIdLinked
       }
       return x
     })
@@ -180,7 +213,7 @@ export const updateCacheEditUser = (
     }
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
+    // continue regardless of error
   }
 }
 
@@ -200,14 +233,11 @@ export const updateCacheDeleteUser = (
 
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
+    // continue regardless of error
   }
 }
 
-export const updateCacheProfile = (
-  cache: any,
-  organizationId: string
-) => {
+export const updateCacheProfile = (cache: any, organizationId: string) => {
   try {
     const response: any = cache.readQuery(getProfile())
 
@@ -234,15 +264,15 @@ export const updateCacheProfile = (
 
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
+    // continue regardless of error
   }
 }
 
 export const updateCacheReInvite = (
   cache: any,
   data: any,
-  organizationId: string) => {
-
+  organizationId: string
+) => {
   try {
     const response: any = cache.readQuery(userListArgs(organizationId))
 
@@ -259,7 +289,10 @@ export const updateCacheReInvite = (
     )
 
     const fieldsExceptStatus = reject(propEq('key', 'status'), fields)
-    const newFields = [...fieldsExceptStatus, { key: 'status', value: ASSIGNMENT_STATUS_APPROVED, __typename: 'Field' }]
+    const newFields = [
+      ...fieldsExceptStatus,
+      { key: 'status', value: ASSIGNMENT_STATUS_APPROVED, __typename: 'Field' },
+    ]
 
     const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
       if (x.id === id) {
@@ -274,36 +307,6 @@ export const updateCacheReInvite = (
 
     cache.writeQuery(writeData)
   } catch (e) {
-    console.log(e)
-  }
-}
-
-const userListArgs = (orgId: string) => {
-  return {
-    query: GET_DOCUMENT,
-    variables: {
-      acronym: ORG_ASSIGNMENT,
-      fields: ORG_ASSIGNMENT_FIELDS,
-      where: `businessOrganizationId=${orgId}`,
-      schema: ORG_ASSIGNMENT_SCHEMA,
-    },
-  }
-}
-
-const getProfile = () => {
-  return {
-    query: profileQuery,
-    variables: { customFields: PROFILE_FIELDS },
-  }
-}
-
-const clientListArgs = (email: string) => {
-  return {
-    query: GET_DOCUMENT,
-    variables: {
-      acronym: CLIENT_ACRONYM,
-      fields: CLIENT_FIELDS,
-      where: `email=${email}`,
-    },
+    // continue regardless of error
   }
 }

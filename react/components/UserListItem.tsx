@@ -130,7 +130,7 @@ const UserListItem = ({
   }
 
   return loading ? (
-    <div />
+    <div key="loading-" />
   ) : (
     <div
       id={`item-${orgAssignment.id}`}

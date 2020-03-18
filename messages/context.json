@@ -65,6 +65,7 @@
   "store/my-users.toast.user.reinvitation.error": "Re invitation failed, ",
   "store/my-users.my-organization.reload-message": "Your changes have been applied successfully, it may take a while to reflect them",
   "store/my-users.my-organization.organization.title": "Organization",
+  "store/my-users.my-organization.organization.returnBtn.text": "RETURN",
   "store/my-users.my-organization.status.rejected": "Rejected",
   "store/my-users.my-organization.status.accepted": "Accepted",
   "store/my-users.my-organization.status.not-responded": "Pending",

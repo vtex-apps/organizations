@@ -37,7 +37,13 @@ interface Props {
   intl: any
 }
 
-const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }: Props) => {
+const MyUsers = ({
+  isCurrentUserAdmin,
+  organizationId,
+  email,
+  showToast,
+  intl,
+}: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -55,7 +61,7 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
   )
 
   const [sharedOrgAssignment, setSharedOrgAssignment] = useState(
-    {} as OrganizationAssignment
+    ({} as any) as OrganizationAssignment
   )
 
   const client = useApolloClient()
@@ -156,13 +162,13 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
       .then(() => {
         setDeleteConfirmationLoading(false)
         setIsDeleteConfirmationOpen(false)
-        setSharedOrgAssignment({} as OrganizationAssignment)
+        setSharedOrgAssignment(({} as any) as OrganizationAssignment)
       })
       .catch((e: Error) => {
         const message = getErrorMessage(e)
         setDeleteConfirmationLoading(false)
         setIsDeleteConfirmationOpen(false)
-        setSharedOrgAssignment({} as OrganizationAssignment)
+        setSharedOrgAssignment(({} as any) as OrganizationAssignment)
         showToast({
           message: `${intl.formatMessage({
             id: 'store/my-users.toast.user.delete.error',
@@ -176,7 +182,7 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
   // Close delete confirmation
   const closeDelete = () => {
     setIsDeleteConfirmationOpen(false)
-    setSharedOrgAssignment({} as OrganizationAssignment)
+    setSharedOrgAssignment(({} as any) as OrganizationAssignment)
   }
 
   // Re invite user - [Delete Btn clicked]
@@ -199,10 +205,10 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
       .then(({ data }: any) => {
         const clients = documentSerializer(data ? data.myDocuments : [])
 
-        const clientId_d = pathOr('', [0, 'id'], clients)
-        const organizationId_d = pathOr('', [0, 'organizationId'], clients)
+        const clientIdData = pathOr('', [0, 'id'], clients)
+        const organizationIdData = pathOr('', [0, 'organizationId'], clients)
 
-        if (organizationId_d !== '') {
+        if (organizationIdData !== '') {
           showToast({
             message: intl.formatMessage({
               id: 'store/my-users.my-organization.user.already.assigned',
@@ -217,7 +223,7 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
               acronym: CLIENT_ACRONYM,
               document: {
                 fields: [
-                  { key: 'id', value: clientId_d },
+                  { key: 'id', value: clientIdData },
                   { key: 'organizationId', value: organizationId },
                 ],
               },
@@ -249,7 +255,7 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
           duration: 5000,
           horizontalPosition: 'right',
         })
-        setSharedOrgAssignment({} as OrganizationAssignment)
+        setSharedOrgAssignment(({} as any) as OrganizationAssignment)
       })
       .catch((e: Error) => {
         const message = getErrorMessage(e)
@@ -272,9 +278,9 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
     setIsUserEditOpen(true)
   }
 
-  // Close edit organization assignment 
+  // Close edit organization assignment
   const closeUserEditModal = () => {
-    setSharedOrgAssignment({} as OrganizationAssignment)
+    setSharedOrgAssignment(({} as any) as OrganizationAssignment)
     setIsUserEditOpen(false)
   }
 
@@ -312,20 +318,24 @@ const MyUsers = ({ isCurrentUserAdmin, organizationId, email, showToast, intl }:
       <div className="flex flex-column">
         <div>
           <div className="mb5">
-            {assignments.map((assignment: OrganizationAssignment) => {
-              return (
-                <UserListItem
-                  isCurrentUserAdmin={isCurrentUserAdmin}
-                  isDefaultAssignment={
-                    defaultUserAssignment.id == assignment.id
-                  }
-                  orgAssignment={assignment}
-                  edit={editUser}
-                  reInvite={reInvite}
-                  deleteAssignment={deleteUserAssignment}
-                />
-              )
-            })}
+            {assignments.map(
+              (assignment: OrganizationAssignment, index: number) => {
+                return (
+                  <div key={`list-item-${index}`}>
+                    <UserListItem
+                      isCurrentUserAdmin={isCurrentUserAdmin}
+                      isDefaultAssignment={
+                        defaultUserAssignment.id == assignment.id
+                      }
+                      orgAssignment={assignment}
+                      edit={editUser}
+                      reInvite={reInvite}
+                      deleteAssignment={deleteUserAssignment}
+                    />
+                  </div>
+                )
+              }
+            )}
           </div>
         </div>
         <UserConfirmationModal

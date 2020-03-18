@@ -77,7 +77,17 @@ const DefaultAssignmentInfo = ({
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT)
 
-  // Check conditions before leave - [Leave btn clicked] 
+  // Cancel leave
+  const closeLeaveOrganization = () => {
+    setIsLeaveOrgConfirmationOpen(false)
+  }
+
+  // Cancel leave warning
+  const closeLeaveOrganizationMessageModal = () => {
+    setIsLeaveWarningOpen(false)
+  }
+
+  // Check conditions before leave - [Leave btn clicked]
   const leaveOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
     const email = pathOr('', ['email'], defaultAssignment)
@@ -97,24 +107,16 @@ const DefaultAssignmentInfo = ({
       .then(({ data }: any) => {
         if (data) {
           const clients = documentSerializer(data ? data.myDocuments : [])
-          
+
           // orgAdmins belongs to this organization
-          const orgAdmins = filter(
-            propEq('isOrgAdmin', 'true'),
-            clients
-          )
+          const orgAdmins = filter(propEq('isOrgAdmin', 'true'), clients)
 
           // orgAdmins except current user
-          const orgAdminsExcept = reject(
-            propEq('email', email),
-            orgAdmins
-          )
+          const orgAdminsExcept = reject(propEq('email', email), orgAdmins)
 
-          // Ok to leave if 
-          // ** organization admins except current user 
-          if (
-            orgAdminsExcept.length > 0
-          ) {
+          // Ok to leave if
+          // ** organization admins except current user
+          if (orgAdminsExcept.length > 0) {
             // show leave confirmation
             setIsLeaveOrgConfirmationOpen(true)
             setIsLeaveBtnLoading(false)
@@ -143,7 +145,7 @@ const DefaultAssignmentInfo = ({
   const confirmLeaveOrganization = () => {
     setLeaveOrgConfirmationLoading(true)
     const assignmentId = pathOr('', ['id'], defaultAssignment)
-    
+
     // update organization assignment status to declined
     updateDocument({
       variables: {
@@ -158,7 +160,6 @@ const DefaultAssignmentInfo = ({
       },
     })
       .then(() => {
-
         // remove client organizationId
         return updateDocument({
           variables: {
@@ -171,8 +172,7 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any) =>
-            updateCacheProfile(cache, ''),
+          update: (cache: any) => updateCacheProfile(cache, ''),
         })
       })
       .then(() => {
@@ -195,17 +195,22 @@ const DefaultAssignmentInfo = ({
       })
   }
 
-  // Cancel leave 
-  const closeLeaveOrganization = () => {
-    setIsLeaveOrgConfirmationOpen(false)
+  // close delete warning
+  const closeDeleteAssignmentWarningModal = () => {
+    setIsDeleteAssignmentWarningOpen(false)
   }
 
-  // Cancel leave warning
-  const closeLeaveOrganizationMessageModal = () => {
-    setIsLeaveWarningOpen(false)
+  // delete confirmation open
+  const deleteOrganization = () => {
+    setIsDeleteOrgConfirmationOpen(true)
   }
 
-  // Check conditions before delete - [Delete btn clicked] 
+  // close delete confirmation
+  const closeDeleteOrganization = () => {
+    setIsDeleteOrgConfirmationOpen(false)
+  }
+
+  // Check conditions before delete - [Delete btn clicked]
   const deleteCurrentOrganization = () => {
     const orgId = pathOr('', ['businessOrganizationId'], defaultAssignment)
     const email = pathOr('', ['email'], defaultAssignment)
@@ -225,16 +230,18 @@ const DefaultAssignmentInfo = ({
       })
       .then(({ data }: any) => {
         if (data) {
-          const assignments_d = documentSerializer(data ? data.myDocuments : [])
+          const assignmentsData = documentSerializer(
+            data ? data.myDocuments : []
+          )
 
           // assignments except current user
           const assignmentsExceptMe = reject(
             propEq('email', email),
-            assignments_d
+            assignmentsData
           )
 
-          // Delete organization if 
-          // ** No other user exists 
+          // Delete organization if
+          // ** No other user exists
           if (assignmentsExceptMe && assignmentsExceptMe.length > 0) {
             setIsDeleteAssignmentWarningOpen(true)
             setIsDeleteBtnLoading(false)
@@ -286,7 +293,6 @@ const DefaultAssignmentInfo = ({
         })
       })
       .then(() => {
-
         // remove client organization id
         return updateDocument({
           variables: {
@@ -299,8 +305,7 @@ const DefaultAssignmentInfo = ({
               ],
             },
           },
-          update: (cache: any) =>
-            updateCacheProfile(cache, ''),
+          update: (cache: any) => updateCacheProfile(cache, ''),
         })
       })
       .then(() => {
@@ -320,21 +325,6 @@ const DefaultAssignmentInfo = ({
           horizontalPosition: 'right',
         })
       })
-  }
-
-  // close delete warning
-  const closeDeleteAssignmentWarningModal = () => {
-    setIsDeleteAssignmentWarningOpen(false)
-  }
-
-  // delete confirmation open
-  const deleteOrganization = () => {
-    setIsDeleteOrgConfirmationOpen(true)
-  }
-
-  // close delete confirmation
-  const closeDeleteOrganization = () => {
-    setIsDeleteOrgConfirmationOpen(false)
   }
 
   return (
@@ -421,24 +411,25 @@ const DefaultAssignmentInfo = ({
                 ['businessOrganizationId_linked', 'address'],
                 defaultAssignment
               )
-            ).map((line: string) => (
-              <span className="pa1 b">{line}</span>
+            ).map((line: string, index: number) => (
+              <span key={`address-line-${index}`} className="pa1 b">
+                {line}
+              </span>
             ))}
           </div>
         </div>
         <div className="fl w-20 flex flex-column">
           <span className="pa2">
-            
-              <Button
-                variation="danger-tertiary"
-                size="small"
-                isLoading={isLeaveBtnLoading}
-                onClick={() => leaveOrganization()}
-                block>
-                {intl.formatMessage({
-                  id: 'store/my-users.my-organization.leave',
-                })}
-              </Button>
+            <Button
+              variation="danger-tertiary"
+              size="small"
+              isLoading={isLeaveBtnLoading}
+              onClick={() => leaveOrganization()}
+              block>
+              {intl.formatMessage({
+                id: 'store/my-users.my-organization.leave',
+              })}
+            </Button>
           </span>
           {isOrgAdmin && (
             <span className="pa2">
@@ -466,11 +457,16 @@ const DefaultAssignmentInfo = ({
           messageLine1={intl.formatMessage({
             id: 'store/my-users.my-organization.unable-to-leave-message1',
           })}
-          messageLine2={ isOrgAdmin? intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-leave-manager-message2',
-          }): intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-leave-message2',
-          })}
+          messageLine2={
+            isOrgAdmin
+              ? intl.formatMessage({
+                  id:
+                    'store/my-users.my-organization.unable-to-leave-manager-message2',
+                })
+              : intl.formatMessage({
+                  id: 'store/my-users.my-organization.unable-to-leave-message2',
+                })
+          }
         />
 
         <WarningModal

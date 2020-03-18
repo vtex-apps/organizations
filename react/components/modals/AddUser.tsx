@@ -84,17 +84,6 @@ const AddUser = ({
   const client = useApolloClient()
   const [createDocument] = useMutation(CREATE_DOCUMENT)
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
-  const [createAssignmentDocument] = useMutation(CREATE_DOCUMENT, {
-    update: (cache: any, { data }: any) =>
-      updateCacheAddUser(
-        cache,
-        data,
-        roles,
-        organizationId,
-        state.email,
-        state.roleId
-      ),
-  })
 
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
@@ -134,12 +123,10 @@ const AddUser = ({
         }
       }
       case 'CHANGE_IS_ORG_ADMIN':
-        const changes = {
+        return {
           ...state,
           ...{ isOrgAdmin: action.args.isOrgAdmin },
         }
-
-        return changes
       case 'RESPONSE': {
         return {
           ...state,
@@ -263,8 +250,8 @@ const AddUser = ({
         .then(({ data }: any) => {
           const clients = documentSerializer(data ? data.myDocuments : [])
 
-          const clientId_d = pathOr('', [0, 'id'], clients)
-          const organizationId_d = pathOr('', [0, 'organizationId'], clients)
+          const clientIdData = pathOr('', [0, 'id'], clients)
+          const organizationIdData = pathOr('', [0, 'organizationId'], clients)
 
           if (clients.length == 0) {
             return createDocument({
@@ -284,15 +271,15 @@ const AddUser = ({
                 ),
             })
           } else if (
-            organizationId_d == undefined ||
-            organizationId_d === '' ||
-            organizationId_d === 'null'
+            organizationIdData == undefined ||
+            organizationIdData === '' ||
+            organizationIdData === 'null'
           ) {
             return updateDocument({
               variables: {
                 acronym: CLIENT_ACRONYM,
                 document: {
-                  fields: getClientFields(clientId_d),
+                  fields: getClientFields(clientIdData),
                 },
               },
               update: (cache: any, { data }: any) =>
@@ -315,9 +302,8 @@ const AddUser = ({
             return Promise.reject()
           }
         })
-        .then(({ data }: any) => {
-          console.log(data)
-          return createAssignmentDocument({
+        .then(() => {
+          return createDocument({
             variables: {
               acronym: ORG_ASSIGNMENT,
               document: {
@@ -325,6 +311,15 @@ const AddUser = ({
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
+            update: (cache: any, { data }: any) =>
+              updateCacheAddUser(
+                cache,
+                data,
+                roles,
+                organizationId,
+                state.email,
+                state.roleId
+              ),
           })
         })
         .catch(handleGraphqlError())
@@ -370,9 +365,9 @@ const AddUser = ({
   }
 
   return (
-    <Modal 
+    <Modal
       title={intl.formatMessage({ id: 'store/my-users.add-user.title' })}
-      isOpen={isOpen} 
+      isOpen={isOpen}
       onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
         <div className="mt3 flex">

@@ -22,7 +22,7 @@ const UserConfirmationModal = ({
   assignment,
   confirmAction,
   message,
-  intl
+  intl,
 }: Props) => {
   return (
     <ModalDialog
@@ -42,9 +42,7 @@ const UserConfirmationModal = ({
       <h1>{confirmAction}</h1>
       <div className="flex flex-column mb5 mt5">
         <div>
-          <span>
-            {message}
-          </span>
+          <span>{message}</span>
           <span className="b">
             {pathOr('', ['personaId_linked', 'email'], assignment)}
           </span>

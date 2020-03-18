@@ -53,7 +53,7 @@ const UserEditModal = ({
 
   const [updateClientDocument] = useMutation(UPDATE_DOCUMENT)
 
-  const { data: clientData, loading, error } = useQuery(GET_DOCUMENT, {
+  const { data: clientData, loading } = useQuery(GET_DOCUMENT, {
     skip: email === '',
     variables: {
       acronym: CLIENT_ACRONYM,
@@ -86,8 +86,6 @@ const UserEditModal = ({
       abortController.abort()
     }
   }, [clientData])
-
-  console.log(error)
 
   // update client if isOrgAdmin changed
   const updateClient = () => {

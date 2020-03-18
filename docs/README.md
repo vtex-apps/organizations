@@ -315,13 +315,12 @@ Schema Name: user-organization-schema-v1
 ```
 </details>
 
-### [Deprecated master data collections and schemas]
->Data Entity Name: Persona
->Schema Name: persona-schema-v1
+### [Deprecated] removed master data collections and schemas
+>Data Entity Name: **Persona**, Schema Name: **persona-schema-v1**
 
->Data Entity Name: OrgAssignment
->Schema Name: organization-assignment-schema-v1
+>Data Entity Name: **OrgAssignment**, Schema Name: **organization-assignment-schema-v1**
 
+## Important
 
 > **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
 

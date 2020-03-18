@@ -24,10 +24,12 @@ vtex install vtex.my-organization
 
 ## Prerequisites
 
-In order to run this application following master data schemas should be created. 
+In order to run this application following master data schemas and indices should be created. 
 Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (https://developers.vtex.com/reference#master-data-api-v2-overview)
 
-These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas you can ignore this step
+These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas and indices you can ignore this step
+
+### Master data schemas
 
 <details><summary>BusinessPermission</summary>
 
@@ -269,28 +271,13 @@ Schema Name: organization-assignment-schema-v1
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1"
 		},
-		"personaEmail": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/Persona/schemas/persona-schema-v1",
-			"linked_field": "email"
-		},
 		"businessOrganizationId": {
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
 		},
-		"businessOrganizationName": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1",
-			"linked_field": "name"
-		},
 		"roleId": {
 			"type": "string",
 			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1"
-		},
-		"roleName": {
-			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1",
-			"linked_field": "name"
 		},
 		"status": {
 			"type": "string"
@@ -298,12 +285,9 @@ Schema Name: organization-assignment-schema-v1
 	},
 	"v-default-fields": [
 		"personaId",
-		"personaEmail",
 		"id",
 		"businessOrganizationId",
-		"businessOrganizationName",
 		"roleId",
-		"roleName",
 		"status"
 	],
 	"required": [
@@ -323,14 +307,11 @@ Schema Name: organization-assignment-schema-v1
 		"publicRead": [
 			"personaId",
 			"personaId_linked",
-			"personaEmail",
 			"id",
 			"businessOrganizationId",
 			"businessOrganizationId_linked",
-			"businessOrganizationName",
 			"roleId",
 			"roleId_linked",
-			"roleName",
 			"status"
 		],
 		"publicWrite": [
@@ -342,12 +323,9 @@ Schema Name: organization-assignment-schema-v1
 		],
 		"publicFilter": [
 			"personaId",
-			"personaEmail",
 			"id",
 			"businessOrganizationId",
-			"businessOrganizationName",
 			"roleId",
-			"roleName",
 			"status"
 		]
 	},
@@ -415,6 +393,56 @@ Schema Name: organization-assignment-schema-v1
 ```
 </details>
 
+### Indices
+
+<details><summary>EmailIndexOnPersona</summary>
+
+``` 
+
+Data Entity Name: Persona
+
+{
+    "name": "EmailIndexOnPersona",
+    "acronym": "Persona",
+    "isGlobal": false,
+    "multiple": false,
+    "fields": "email"
+}
+
+```
+</details>
+
+<details><summary>NameIndexOnBusinessOrganization</summary>
+
+``` 
+
+Data Entity Name: BusinessOrganization
+{
+    "name": "NameIndexOnBusinessOrganization",
+    "acronym": "BusinessOrganization",
+    "isGlobal": false,
+    "multiple": false,
+    "fields": "name"
+}
+
+```
+</details>
+
+<details><summary>EmailIndexOnBusinessOrganization</summary>
+
+``` 
+Data Entity Name: BusinessOrganization
+
+{
+    "name": "EmailIndexOnBusinessOrganization",
+    "acronym": "BusinessOrganization",
+    "isGlobal": false,
+    "multiple": false,
+    "fields": "email"
+}
+
+```
+</details>
 
 > **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
 

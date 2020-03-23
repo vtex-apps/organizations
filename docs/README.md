@@ -317,6 +317,21 @@ Schema Name: user-organization-schema-v1
 ```
 </details>
 
+### Changes to existing **CL** table
+We need to add two fields to existing **CL** master data table. 
+```
+isOrgAdmin: Boolean 
+organizationId: VarChar 100
+```
+After creating the fields change settings of that fields with edit field feature.
+You can update the field settings as shown in the image below. 
+
+<img src="https://drive.google.com/uc?export=view&id=1IzMTKBpB4A9snERILSQJ-DQd1Zp758wE"
+     alt="details"
+     style="float: left; margin-right: 10px;" />
+     
+Dont forget to reindex `CL` table once you add all the fields. 
+
 ### [Deprecated] removed master data collections and schemas
 >Data Entity Name: **Persona**, Schema Name: **persona-schema-v1**
 

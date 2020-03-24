@@ -324,23 +324,24 @@ const MyOrganization = ({ intl }: Props) => {
                     </Alert>
                   </div>
                 )}
-                {(organizationId == '' || organizationId === 'null') && isOrgAdmin && (
-                  <div className="mb5 mt5">
-                    <h2 className="">
-                      {intl.formatMessage({
-                        id:
-                          'store/my-users.my-organization.create-new-organization',
-                      })}
-                    </h2>
+                {(organizationId == '' || organizationId === 'null') &&
+                  isOrgAdmin && (
+                    <div className="mb5 mt5">
+                      <h2 className="">
+                        {intl.formatMessage({
+                          id:
+                            'store/my-users.my-organization.create-new-organization',
+                        })}
+                      </h2>
 
-                    <AddOrganization
-                      userEmail={email}
-                      clientId={clientId}
-                      updateOrgInfo={infoUpdatedCreateOrganization}
-                      showToast={showToast}
-                    />
-                  </div>
-                )}
+                      <AddOrganization
+                        userEmail={email}
+                        clientId={clientId}
+                        updateOrgInfo={infoUpdatedCreateOrganization}
+                        showToast={showToast}
+                      />
+                    </div>
+                  )}
                 {defaultOrgAssignment && defaultOrgAssignment.id && (
                   <div className="ba b--light-gray">
                     <DefaultAssignmentInfo

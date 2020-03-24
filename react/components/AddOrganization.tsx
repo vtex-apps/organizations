@@ -16,8 +16,8 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   BUSINESS_ORGANIZATION,
   BUSINESS_ORGANIZATION_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
   CLIENT_ACRONYM,
+  ORG_ASSIGNMENT_STATUS_APPROVED,
 } from '../utils/const'
 import { handleGlobalError } from '../utils/graphqlErrorHandler'
 import { updateCacheProfile } from '../utils/cacheUtils'
@@ -163,7 +163,7 @@ const AddOrganization = ({
       { key: 'email', value: userEmail },
       { key: 'businessOrganizationId', value: organizationId },
       { key: 'roleId', value: roleId },
-      { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
+      { key: 'status', value: ORG_ASSIGNMENT_STATUS_APPROVED },
     ]
   }
 

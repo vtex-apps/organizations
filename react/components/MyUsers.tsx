@@ -15,7 +15,7 @@ import DELETE_DOCUMENT from '../graphql/deleteDocument.graphql'
 import UPDATE_DOCUMENT from '../graphql/updateDocument.graphql'
 import UserListItem from './UserListItem'
 
-import { updateCacheDeleteUser, updateCacheReInvite } from '../utils/cacheUtils'
+import { updateCacheDeleteUser } from '../utils/cacheUtils'
 import {
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
@@ -25,7 +25,6 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
@@ -136,6 +135,7 @@ const MyUsers = ({
                 { key: 'id', value: clid },
                 { key: 'organizationId', value: '' },
                 { key: 'isOrgAdmin', value: 'false' },
+                { key: 'approved', value: 'false' },
               ],
             },
           },
@@ -154,11 +154,7 @@ const MyUsers = ({
   // ** delete org assignment with user if request is approved
   const confirmDelete = () => {
     setDeleteConfirmationLoading(true)
-    const doDelete =
-      sharedOrgAssignment.status === ASSIGNMENT_STATUS_APPROVED
-        ? deleteAssignmentWithUser
-        : deleteOrgAssignment
-    doDelete(sharedOrgAssignment)
+    deleteAssignmentWithUser(sharedOrgAssignment)
       .then(() => {
         setDeleteConfirmationLoading(false)
         setIsDeleteConfirmationOpen(false)
@@ -183,92 +179,6 @@ const MyUsers = ({
   const closeDelete = () => {
     setIsDeleteConfirmationOpen(false)
     setSharedOrgAssignment(({} as any) as OrganizationAssignment)
-  }
-
-  // Re invite user - [Delete Btn clicked]
-  // ** Get CL with email
-  // ** Update his organization if he is not belongs to other company
-  // ** Set organization assignment to APPROVED
-  const reInvite = (assignmentId: string) => {
-    const assignment = find(propEq('id', assignmentId), assignments) as any
-
-    client
-      .query({
-        query: documentQuery,
-        variables: {
-          acronym: CLIENT_ACRONYM,
-          fields: CLIENT_FIELDS,
-          where: `email=${assignment.email}`,
-        },
-        fetchPolicy: 'no-cache',
-      })
-      .then(({ data }: any) => {
-        const clients = documentSerializer(data ? data.myDocuments : [])
-
-        const clientIdData = pathOr('', [0, 'id'], clients)
-        const organizationIdData = pathOr('', [0, 'organizationId'], clients)
-
-        if (organizationIdData !== '') {
-          showToast({
-            message: intl.formatMessage({
-              id: 'store/my-users.my-organization.user.already.assigned',
-            }),
-            duration: 5000,
-            horizontalPosition: 'right',
-          })
-          return Promise.reject()
-        } else {
-          return updateDocument({
-            variables: {
-              acronym: CLIENT_ACRONYM,
-              document: {
-                fields: [
-                  { key: 'id', value: clientIdData },
-                  { key: 'organizationId', value: organizationId },
-                ],
-              },
-            },
-          })
-        }
-      })
-      .then(() => {
-        return updateDocument({
-          variables: {
-            acronym: ORG_ASSIGNMENT,
-            document: {
-              fields: [
-                { key: 'id', value: assignmentId },
-                { key: 'status', value: ASSIGNMENT_STATUS_APPROVED },
-              ],
-            },
-            schema: ORG_ASSIGNMENT_SCHEMA,
-          },
-          update: (cache: any, { data }: any) =>
-            updateCacheReInvite(cache, data, organizationId),
-        })
-      })
-      .then(() => {
-        showToast({
-          message: `${intl.formatMessage({
-            id: 'store/my-users.toast.user.reinvitation.sent',
-          })} `,
-          duration: 5000,
-          horizontalPosition: 'right',
-        })
-        setSharedOrgAssignment(({} as any) as OrganizationAssignment)
-      })
-      .catch((e: Error) => {
-        const message = getErrorMessage(e)
-        if (message && message !== '') {
-          showToast({
-            message: `${intl.formatMessage({
-              id: 'store/my-users.toast.user.reinvitation.error',
-            })} ${message}`,
-            duration: 5000,
-            horizontalPosition: 'right',
-          })
-        }
-      })
   }
 
   // Edit organization assignment - [Edit Btn clicked]
@@ -329,7 +239,6 @@ const MyUsers = ({
                       }
                       orgAssignment={assignment}
                       edit={editUser}
-                      reInvite={reInvite}
                       deleteAssignment={deleteUserAssignment}
                     />
                   </div>

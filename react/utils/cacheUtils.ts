@@ -8,7 +8,6 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
 } from './const'
 
 const userListArgs = (orgId: string) => {
@@ -60,6 +59,7 @@ export const updateCacheClient = (
     fields = reject(propEq('key', 'organizationId'), fields) as any
     fields = reject(propEq('key', 'isOrgAdmin'), fields) as any
     fields = reject(propEq('key', 'email'), fields) as any
+    fields = reject(propEq('key', 'approved'), fields) as any
 
     const newFields = [
       ...fields,
@@ -67,6 +67,7 @@ export const updateCacheClient = (
         { key: 'organizationId', value: organizationId, __typename: 'Field' },
         { key: 'isOrgAdmin', value: isOrgAdmin, __typename: 'Field' },
         { key: 'email', value: email, __typename: 'Field' },
+        { key: 'approved', value: 'true', __typename: 'Field' },
       ],
     ]
 
@@ -123,11 +124,6 @@ export const updateCacheAddUser = (
       {
         key: 'roleId',
         value: roleId,
-        __typename: 'Field',
-      },
-      {
-        key: 'status',
-        value: ASSIGNMENT_STATUS_APPROVED,
         __typename: 'Field',
       },
       { key: 'businessOrganizationId_linked', value: org, __typename: 'Field' },
@@ -260,49 +256,6 @@ export const updateCacheProfile = (cache: any, organizationId: string) => {
     const writeData = {
       ...getProfile(),
       data: { profile: response.profile },
-    }
-
-    cache.writeQuery(writeData)
-  } catch (e) {
-    // continue regardless of error
-  }
-}
-
-export const updateCacheReInvite = (
-  cache: any,
-  data: any,
-  organizationId: string
-) => {
-  try {
-    const response: any = cache.readQuery(userListArgs(organizationId))
-
-    const id = pathOr(
-      pathOr('', ['createMyDocument', 'cacheId'], data),
-      ['updateMyDocument', 'cacheId'],
-      data
-    )
-
-    const fields = pathOr(
-      [],
-      ['fields'],
-      find(propEq('id', id), pathOr([], ['myDocuments'], response))
-    )
-
-    const fieldsExceptStatus = reject(propEq('key', 'status'), fields)
-    const newFields = [
-      ...fieldsExceptStatus,
-      { key: 'status', value: ASSIGNMENT_STATUS_APPROVED, __typename: 'Field' },
-    ]
-
-    const newData = pathOr([], ['myDocuments'], response).map((x: any) => {
-      if (x.id === id) {
-        x.fields = newFields
-      }
-      return x
-    })
-    const writeData = {
-      ...userListArgs(organizationId),
-      data: newData,
     }
 
     cache.writeQuery(writeData)

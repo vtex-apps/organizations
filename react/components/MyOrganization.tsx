@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
 import { Alert, ToastConsumer, Button, Spinner, Tag } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
-import { pathOr, find, propEq, filter, equals } from 'ramda'
+import { pathOr, find, propEq, equals } from 'ramda'
 
 import { ContentWrapper } from 'vtex.my-account-commons'
 
@@ -22,9 +22,9 @@ import {
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_FIELDS,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
+  ORG_ASSIGNMENT_STATUS_APPROVED,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -92,7 +92,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(email=${email} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
+              where: `email=${email}`,
             },
             fetchPolicy: 'no-cache',
           })
@@ -107,7 +107,7 @@ const MyOrganization = ({ intl }: Props) => {
 
           const defaultAssignment: OrganizationAssignment = find(
             propEq('businessOrganizationId', organizationIdData)
-          )(filter(propEq('status', ASSIGNMENT_STATUS_APPROVED), assignments))
+          )(assignments)
 
           defaultAssignmentData = defaultAssignment
             ? defaultAssignment
@@ -122,7 +122,7 @@ const MyOrganization = ({ intl }: Props) => {
               acronym: ORG_ASSIGNMENT,
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
-              where: `(businessOrganizationId=${organizationIdData} AND status=${ASSIGNMENT_STATUS_APPROVED})`,
+              where: `(businessOrganizationId=${organizationIdData} AND status=${ORG_ASSIGNMENT_STATUS_APPROVED})`,
             },
             fetchPolicy: 'no-cache',
           })

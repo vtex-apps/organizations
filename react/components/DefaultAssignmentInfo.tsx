@@ -20,7 +20,6 @@ import {
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
   BUSINESS_ORGANIZATION,
-  ASSIGNMENT_STATUS_DECLINED,
 } from '../utils/const'
 
 import { updateCacheProfile } from '../utils/cacheUtils'
@@ -147,16 +146,10 @@ const DefaultAssignmentInfo = ({
     const assignmentId = pathOr('', ['id'], defaultAssignment)
 
     // update organization assignment status to declined
-    updateDocument({
+    deleteDocument({
       variables: {
         acronym: ORG_ASSIGNMENT,
-        document: {
-          fields: [
-            { key: 'id', value: assignmentId },
-            { key: 'status', value: ASSIGNMENT_STATUS_DECLINED },
-          ],
-        },
-        schema: ORG_ASSIGNMENT_SCHEMA,
+        documentId: assignmentId,
       },
     })
       .then(() => {
@@ -168,6 +161,7 @@ const DefaultAssignmentInfo = ({
               fields: [
                 { key: 'id', value: clientId },
                 { key: 'organizationId', value: '' },
+                { key: 'approved', value: 'false' },
                 // { key: 'isOrgAdmin', value: 'false' },
               ],
             },
@@ -301,6 +295,7 @@ const DefaultAssignmentInfo = ({
               fields: [
                 { key: 'id', value: clientId },
                 { key: 'organizationId', value: '' },
+                { key: 'approved', value: 'false' },
                 // { key: 'isOrgAdmin', value: 'false' },
               ],
             },

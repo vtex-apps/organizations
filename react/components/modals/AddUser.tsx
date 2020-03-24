@@ -16,7 +16,7 @@ import {
   CLIENT_FIELDS,
   ORG_ASSIGNMENT,
   ORG_ASSIGNMENT_SCHEMA,
-  ASSIGNMENT_STATUS_APPROVED,
+  ORG_ASSIGNMENT_STATUS_APPROVED,
 } from '../../utils/const'
 
 interface Props {
@@ -203,6 +203,7 @@ const AddUser = ({
       { key: 'email', value: state.email },
       { key: 'organizationId', value: organizationId },
       { key: 'isOrgAdmin', value: state.isOrgAdmin.toString() },
+      { key: 'approved', value: 'true' },
     ]
     if (clientId) {
       fields.push({ key: 'id', value: clientId })
@@ -226,7 +227,7 @@ const AddUser = ({
       },
       {
         key: 'status',
-        value: ASSIGNMENT_STATUS_APPROVED,
+        value: ORG_ASSIGNMENT_STATUS_APPROVED,
       },
     ]
 

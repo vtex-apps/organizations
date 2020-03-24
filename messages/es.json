@@ -47,7 +47,6 @@
   "store/my-users.my-organization.delete.message": "Desea eliminar la organización ",
   "store/my-users.my-user.table-title.email": "Email",
   "store/my-users.my-user.table-title.status": "Status",
-  "store/my-users.my-user.table-title.isAdmin": "Org. admin",
   "store/my-users.my-user.table-title.role": "Papel",
   "store/my-users.my-user.table-title.invite": "Invitación",
   "store/my-users.my-user.table-title.edit": "Editar",
@@ -66,8 +65,7 @@
   "store/my-users.my-organization.reload-message": "Your changes have been applied successfully, it may take a while to reflect them",
   "store/my-users.my-organization.organization.title": "Organization",
   "store/my-users.my-organization.organization.returnBtn.text": "RETURN",
-  "store/my-users.my-organization.status.rejected": "Rejected",
-  "store/my-users.my-organization.status.accepted": "Accepted",
-  "store/my-users.my-organization.status.not-responded": "Pending",
+  "store/my-users.my-organization.status.approved": "Approved",
+  "store/my-users.my-organization.status.not-approved": "Not Approved",
   "store/my-users.my-organization.status.isOrgAdmin": "Organization Admin"
 }

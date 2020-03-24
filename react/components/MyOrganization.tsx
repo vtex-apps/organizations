@@ -324,7 +324,7 @@ const MyOrganization = ({ intl }: Props) => {
                     </Alert>
                   </div>
                 )}
-                {organizationId === '' && isOrgAdmin && (
+                {(organizationId == '' || organizationId === 'null') && isOrgAdmin && (
                   <div className="mb5 mt5">
                     <h2 className="">
                       {intl.formatMessage({

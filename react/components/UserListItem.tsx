@@ -2,12 +2,7 @@ import React, { useState } from 'react'
 import { pathOr } from 'ramda'
 import { useQuery } from 'react-apollo'
 import DOCUMENTS from '../graphql/documents.graphql'
-import {
-  CLIENT_ACRONYM,
-  CLIENT_FIELDS,
-  ASSIGNMENT_STATUS_APPROVED,
-  ASSIGNMENT_STATUS_DECLINED,
-} from '../utils/const'
+import { CLIENT_ACRONYM, CLIENT_FIELDS } from '../utils/const'
 import { Collapsible, Tag, Button } from 'vtex.styleguide'
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -21,7 +16,6 @@ interface Props {
   orgAssignment: OrganizationAssignment
   intl: any
   edit: (assignmentId: string) => void
-  reInvite: (assignmentId: string) => void
   deleteAssignment: (assignmentId: string) => void
 }
 
@@ -30,7 +24,6 @@ const UserListItem = ({
   isDefaultAssignment,
   orgAssignment,
   edit,
-  reInvite,
   deleteAssignment,
   intl,
 }: Props) => {
@@ -51,6 +44,12 @@ const UserListItem = ({
   const isAdminUserListItem: boolean = ((pathOr(
     'false',
     ['isOrgAdmin'],
+    client
+  ) as string) === 'true') as boolean
+
+  const isApprovedUser: boolean = ((pathOr(
+    'false',
+    ['approved'],
     client
   ) as string) === 'true') as boolean
 
@@ -98,22 +97,16 @@ const UserListItem = ({
             </div>
             <div className="pt3">
               <span>
-                {orgAssignment.status === ASSIGNMENT_STATUS_DECLINED ? (
-                  <Tag type="error" variation="low">
-                    {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.rejected',
-                    })}
-                  </Tag>
-                ) : orgAssignment.status === ASSIGNMENT_STATUS_APPROVED ? (
+                {isApprovedUser ? (
                   <Tag type="success" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.accepted',
+                      id: 'store/my-users.my-organization.status.approved',
                     })}
                   </Tag>
                 ) : (
                   <Tag type="warning" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.not-responded',
+                      id: 'store/my-users.my-organization.status.not-approved',
                     })}
                   </Tag>
                 )}
@@ -149,7 +142,7 @@ const UserListItem = ({
                 {isAdminUserListItem && (
                   <Tag type="success" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-user.table-title.isAdmin',
+                      id: 'store/my-users.my-organization.status.isOrgAdmin',
                     })}
                   </Tag>
                 )}
@@ -170,21 +163,6 @@ const UserListItem = ({
                       })}
                     </Button>
                   </div>
-                  {orgAssignment.status === ASSIGNMENT_STATUS_DECLINED ? (
-                    <div className="pa2 w-100">
-                      <Button
-                        variation="tertiary"
-                        size="small"
-                        onClick={() => reInvite(orgAssignment.id)}
-                        block>
-                        {intl.formatMessage({
-                          id: 'store/my-users.my-user.table-title.invite',
-                        })}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div />
-                  )}
                   <div className="pa2 w-100">
                     <Button
                       variation="danger-tertiary"

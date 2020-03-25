@@ -1,5 +1,11 @@
 export const CLIENT_ACRONYM = 'CL'
-export const CLIENT_FIELDS = ['id', 'email', 'isOrgAdmin', 'organizationId']
+export const CLIENT_FIELDS = [
+  'id',
+  'email',
+  'approved',
+  'isOrgAdmin',
+  'organizationId',
+]
 export const PROFILE_FIELDS = 'isOrgAdmin,organizationId'
 
 export const BUSINESS_ROLE = 'BusinessRole'
@@ -22,6 +28,4 @@ export const BUSINESS_ORGANIZATION = 'BusinessOrganization'
 export const BUSINESS_ORGANIZATION_FIELDS = []
 export const BUSINESS_ORGANIZATION_SCHEMA = 'business-organization-schema-v1'
 
-export const ASSIGNMENT_STATUS_APPROVED = 'APPROVED'
-export const ASSIGNMENT_STATUS_DECLINED = 'DECLINED'
-export const ASSIGNMENT_STATUS_PENDING = 'PENDING'
+export const ORG_ASSIGNMENT_STATUS_APPROVED = 'APPROVED'

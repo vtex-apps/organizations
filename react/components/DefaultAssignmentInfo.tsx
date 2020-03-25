@@ -161,7 +161,7 @@ const DefaultAssignmentInfo = ({
               fields: [
                 { key: 'id', value: clientId },
                 { key: 'organizationId', value: '' },
-                { key: 'approved', value: isOrgAdmin? 'true': 'false' },
+                { key: 'approved', value: isOrgAdmin ? 'true' : 'false' },
                 // { key: 'isOrgAdmin', value: 'false' },
               ],
             },
@@ -295,7 +295,7 @@ const DefaultAssignmentInfo = ({
               fields: [
                 { key: 'id', value: clientId },
                 { key: 'organizationId', value: '' },
-                { key: 'approved', value: isOrgAdmin? 'true': 'false' },
+                { key: 'approved', value: isOrgAdmin ? 'true' : 'false' },
                 // { key: 'isOrgAdmin', value: 'false' },
               ],
             },

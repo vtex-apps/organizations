@@ -1,4 +1,4 @@
-# My Organization
+# Organizations
 
 This application allows you to create organization and manage users under that organization with diffrent roles. 
 
@@ -7,7 +7,7 @@ This application allows you to create organization and manage users under that o
 Install this app in your workspace
 
 ```js
-vtex install vtex.my-organization
+vtex install vtex.organizations
 ```
 
 > **_NOTE:_**  This application is not yet published under `vtex` vendor name, therefore you have to publish this app with your own vendor name or you have to `link` this app to your development workspace directly.
@@ -18,16 +18,16 @@ vtex install vtex.my-organization
 >
 > ### publish with your vendor name
 > - clone the application to your working environment and checkout to the correct branch (i.e: `dev-master`)
-> - go to `manufest.json` in your project's root directory and change `vendor` to your current vendor name (i.e: `"vendor": "biscoindqa"`)
+> - go to `manufest.json` in your project's root directory and change `vendor` to your current vendor name (i.e: `"vendor": "vtexufcg"`)
 > - update the `version` in `manufest.json` if you have published the same version earlier
-> - install that published version to your workspace (`vtex install biscoindqa.my-organization`)
+> - install that published version to your workspace (`vtex install vtex.organizations`)
 
 ## Prerequisites
 
 In order to run this application following master data schemas and indices should be created. 
 Use `MASTER DATA API - V2` in vtex api documentation to create those schemas (https://developers.vtex.com/reference#master-data-api-v2-overview)
 
-These schemas are shared among several applications `vtex-admin-authorization`, `vtex-permission-challenge` and `vtex-my-organization`, therefore if you have already created these schemas and indices you can ignore this step
+These schemas are shared among several applications `vtex.admin-organizations`, `vtex.auth-challenge` and `vtex.organizations`, therefore if you have already created these schemas and indices you can ignore this step
 
 ### Master data schemas
 
@@ -217,11 +217,11 @@ Schema Name: user-organization-schema-v1
 		},
 		"businessOrganizationId": {
 			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
+			"link": "http://api.vtex.com/{{accountName}}/dataentities/BusinessOrganization/schemas/business-organization-schema-v1"
 		},
 		"roleId": {
 			"type": "string",
-			"link": "http://api.vtex.com/biscoindqa/dataentities/BusinessRole/schemas/business-role-schema-v1"
+			"link": "http://api.vtex.com/{{accountName}}/dataentities/BusinessRole/schemas/business-role-schema-v1"
 		},
 		"status": {
 			"type": "string"
@@ -350,5 +350,5 @@ Dont forget to `save` and `reindex` `CL` table once you add all the fields.
 
 ## Important
 
-> **_NOTE:_**  create `Manager` role with required permissions using `vtex-admin-authorization` application (https://github.com/clouda-inc/vtex-admin-authorization)
+> **_NOTE:_**  create `Manager` role with required permissions using `vtex.admin-organizations` application (https://github.com/vtex/admin-organizations)
 

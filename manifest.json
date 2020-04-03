@@ -1,7 +1,7 @@
 {
   "vendor": "vtex",
   "name": "organizations",
-  "version": "1.0.0",
+  "version": "1.0.0-beta",
   "title": "VTEX Organizations App",
   "description": "",
   "builders": {
@@ -15,7 +15,7 @@
     "vtex.my-account": "1.x",
     "vtex.css-handles": "0.x",
     "vtex.styleguide": "9.x",
-    "vtex.organizations-graphql": "0.x",
+    "vtex.organizations-graphql": "1.x",
     "vtex.store-graphql": "2.x",
     "vtex.my-account-commons": "1.x"
   },

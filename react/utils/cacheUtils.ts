@@ -18,6 +18,7 @@ const userListArgs = (orgId: string) => {
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
+      pageSize: 1000,
     },
   }
 }
@@ -36,6 +37,7 @@ const clientListArgs = (email: string) => {
       acronym: CLIENT_ACRONYM,
       fields: CLIENT_FIELDS,
       where: `email=${email}`,
+      pageSize: 1000,
     },
   }
 }

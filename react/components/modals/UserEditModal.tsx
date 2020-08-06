@@ -59,6 +59,7 @@ const UserEditModal = ({
       acronym: CLIENT_ACRONYM,
       fields: CLIENT_FIELDS,
       where: `email=${email}`,
+      pageSize: 1000,
     },
   })
 

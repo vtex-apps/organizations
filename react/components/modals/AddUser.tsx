@@ -245,6 +245,7 @@ const AddUser = ({
             acronym: CLIENT_ACRONYM,
             fields: CLIENT_FIELDS,
             where: `email=${state.email}`,
+            pageSize: 1000,
           },
           fetchPolicy: 'no-cache',
         })

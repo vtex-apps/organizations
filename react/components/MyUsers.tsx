@@ -72,6 +72,7 @@ const MyUsers = ({
       acronym: BUSINESS_ROLE,
       fields: BUSINESS_ROLE_FIELDS,
       schema: BUSINESS_ROLE_SCHEMA,
+      pageSize: 1000,
     },
   })
   const { data: orgAssignments } = useQuery(documentQuery, {
@@ -81,6 +82,7 @@ const MyUsers = ({
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${organizationId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
+      pageSize: 1000,
     },
   })
 
@@ -122,6 +124,7 @@ const MyUsers = ({
             acronym: CLIENT_ACRONYM,
             fields: CLIENT_FIELDS,
             where: `email=${assignment.email}`,
+            pageSize: 1000,
           },
         })
       })

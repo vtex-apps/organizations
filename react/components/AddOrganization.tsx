@@ -233,6 +233,7 @@ const AddOrganization = ({
       fields: BUSINESS_ROLE_FIELDS,
       where: '(name=*manager*)',
       schema: BUSINESS_ROLE_SCHEMA,
+      pageSize: 1000,
     },
   })
 

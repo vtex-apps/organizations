@@ -76,6 +76,7 @@ const MyOrganization = ({ intl }: Props) => {
           acronym: CLIENT_ACRONYM,
           fields: CLIENT_FIELDS,
           where: `email=${email}`,
+          pageSize: 1000,
         },
         fetchPolicy: 'no-cache',
       })
@@ -93,6 +94,7 @@ const MyOrganization = ({ intl }: Props) => {
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
               where: `email=${email}`,
+              pageSize: 1000,
             },
             fetchPolicy: 'no-cache',
           })
@@ -123,6 +125,7 @@ const MyOrganization = ({ intl }: Props) => {
               schema: ORG_ASSIGNMENT_SCHEMA,
               fields: ORG_ASSIGNMENT_FIELDS,
               where: `(businessOrganizationId=${organizationIdData} AND status=${ORG_ASSIGNMENT_STATUS_APPROVED})`,
+              pageSize: 1000,
             },
             fetchPolicy: 'no-cache',
           })
@@ -142,6 +145,7 @@ const MyOrganization = ({ intl }: Props) => {
             acronym: BUSINESS_ROLE,
             schema: BUSINESS_ROLE_SCHEMA,
             fields: BUSINESS_ROLE_FIELDS,
+            pageSize: 1000,
           },
           fetchPolicy: 'no-cache',
         })

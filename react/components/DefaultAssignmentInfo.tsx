@@ -100,6 +100,7 @@ const DefaultAssignmentInfo = ({
           acronym: CLIENT_ACRONYM,
           fields: CLIENT_FIELDS,
           where: `(organizationId=${orgId})`,
+          pageSize: 1000,
         },
         fetchPolicy: 'no-cache',
       })
@@ -219,6 +220,7 @@ const DefaultAssignmentInfo = ({
           schema: ORG_ASSIGNMENT_SCHEMA,
           fields: ORG_ASSIGNMENT_FIELDS,
           where: `(businessOrganizationId=${orgId})`,
+          pageSize: 1000,
         },
         fetchPolicy: 'no-cache',
       })

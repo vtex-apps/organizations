@@ -32,6 +32,7 @@ const UserListItem = ({
       acronym: CLIENT_ACRONYM,
       fields: CLIENT_FIELDS,
       where: `email=${orgAssignment.email}`,
+      pageSize: 1000,
     },
   })
 

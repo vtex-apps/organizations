@@ -44,7 +44,7 @@ const MyUsers = ({
   intl,
 }: Props) => {
   const PAGE_SIZE_STEPPER = 10
-  const [assignmentsPageSize, setAssignmentsPageSize] = useState(10)
+  const [assignmentsPageSize, setAssignmentsPageSize] = useState(PAGE_SIZE_STEPPER)
 
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
@@ -278,7 +278,9 @@ const MyUsers = ({
             size="small" 
             onClick={loadMoreAssignments}
             isLoading={loadingAssignments}
-            >Show More</Button> : <div />
+            >{intl.formatMessage({
+              id: 'store/my-users.my-organization.showMore',
+            })}</Button> : <div />
           }
         </div>
         <UserConfirmationModal

@@ -25,7 +25,13 @@ export const ORG_ASSIGNMENT_FIELDS = [
 export const ORG_ASSIGNMENT_SCHEMA = 'user-organization-schema-v1'
 
 export const BUSINESS_ORGANIZATION = 'BusinessOrganization'
-export const BUSINESS_ORGANIZATION_FIELDS = []
+export const BUSINESS_ORGANIZATION_FIELDS = [
+  'id',
+  'name',
+  'telephone',
+  'address',
+  'email',
+]
 export const BUSINESS_ORGANIZATION_SCHEMA = 'business-organization-schema-v1'
 
 export const ORG_ASSIGNMENT_STATUS_APPROVED = 'APPROVED'

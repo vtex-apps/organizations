@@ -24,7 +24,7 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
-  ORG_ASSIGNMENT_STATUS_APPROVED,
+  ORG_ASSIGNMENT_STATUS_APPROVED, BUSINESS_ORGANIZATION_SCHEMA, BUSINESS_ORGANIZATION, BUSINESS_ORGANIZATION_FIELDS,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -154,6 +154,29 @@ const MyOrganization = ({ intl }: Props) => {
             roleId !== '' ? find(propEq('id', roleId))(rolesList) : {}
 
           setReloadStart(false)
+        }
+
+        return client
+          .query({
+            query: DOCUMENTS,
+            variables: {
+              acronym: BUSINESS_ORGANIZATION,
+              schema: BUSINESS_ORGANIZATION_SCHEMA,
+              fields: BUSINESS_ORGANIZATION_FIELDS,
+              where: `(id=${organizationIdData})`,
+            },
+            fetchPolicy: 'no-cache',
+          })
+          .catch(() => {
+            return Promise.resolve({ myDocuments: [] })
+          })
+      })
+      .then(({ data }: any) => {
+        if (data) {
+          const businessOrg = documentSerializer(data ? data.myDocuments : [])
+          if (businessOrg.length > 0) {
+            defaultAssignmentData.businessOrganizationId_linked = businessOrg[0]
+          }
         }
         return Promise.resolve({
           organizationIdData,

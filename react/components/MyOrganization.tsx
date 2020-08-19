@@ -41,6 +41,9 @@ const MyOrganization = ({ intl }: Props) => {
   const [defaultOrgAssignment, setDefaultOrgAssignment] = useState(
     ({} as any) as OrganizationAssignment
   )
+  const [orgAssignments, setOrgAssignments] = useState(
+    ([] as any) as OrganizationAssignment[]
+  )
   const [userRole, setUserRole] = useState(({} as any) as Role)
   const [loading, setLoading] = useState(false)
   const [reloadStart, setReloadStart] = useState(false)
@@ -152,7 +155,9 @@ const MyOrganization = ({ intl }: Props) => {
           const roleId = pathOr('', ['roleId'], defaultAssignmentData)
           userRoleData =
             roleId !== '' ? find(propEq('id', roleId))(rolesList) : {}
-
+          orgAssignmentsData.forEach(function(assignment) {
+            assignment.roleId_linked = find(propEq('id', assignment.roleId))(rolesList)
+          })
           setReloadStart(false)
         }
 
@@ -192,6 +197,7 @@ const MyOrganization = ({ intl }: Props) => {
     setOrganizationId(data.organizationIdData)
     setDefaultOrgAssignment(data.defaultAssignmentData)
     setUserRole(data.userRoleData)
+    setOrgAssignments(data.orgAssignmentsData)
   }
 
   // after email changed
@@ -385,6 +391,7 @@ const MyOrganization = ({ intl }: Props) => {
                         organizationId={organizationId}
                         email={email}
                         showToast={showToast}
+                        assignments={orgAssignments}
                       />
                     )}
                   </div>

@@ -23,8 +23,8 @@ import {
   BUSINESS_ROLE_FIELDS,
   BUSINESS_ROLE_SCHEMA,
   ORG_ASSIGNMENT,
-  ORG_ASSIGNMENT_FIELDS,
-  ORG_ASSIGNMENT_SCHEMA,
+  // ORG_ASSIGNMENT_FIELDS,
+  // ORG_ASSIGNMENT_SCHEMA,
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
@@ -33,6 +33,7 @@ interface Props {
   email: string
   organizationId: string
   showToast: (message: any) => void
+  assignments: OrganizationAssignment[]
   intl: any
 }
 
@@ -41,6 +42,7 @@ const MyUsers = ({
   organizationId,
   email,
   showToast,
+  assignments,
   intl,
 }: Props) => {
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
@@ -74,15 +76,6 @@ const MyUsers = ({
       schema: BUSINESS_ROLE_SCHEMA,
     },
   })
-  const { data: orgAssignments } = useQuery(documentQuery, {
-    skip: organizationId == '',
-    variables: {
-      acronym: ORG_ASSIGNMENT,
-      fields: ORG_ASSIGNMENT_FIELDS,
-      where: `businessOrganizationId=${organizationId}`,
-      schema: ORG_ASSIGNMENT_SCHEMA,
-    },
-  })
 
   const rolesList: any[] = documentSerializer(
     pathOr([], ['myDocuments'], roleData)
@@ -92,9 +85,6 @@ const MyUsers = ({
     value: role.id,
     name: role.name,
   }))
-  const assignments: OrganizationAssignment[] = documentSerializer(
-    pathOr([], ['myDocuments'], orgAssignments)
-  )
 
   const defaultUserAssignment: OrganizationAssignment = find(
     propEq('email', email),

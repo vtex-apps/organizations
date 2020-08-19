@@ -37,12 +37,12 @@ interface Props {
 }
 
 const MyUsers = ({
-  isCurrentUserAdmin,
-  organizationId,
-  email,
-  showToast,
-  intl,
-}: Props) => {
+                   isCurrentUserAdmin,
+                   organizationId,
+                   email,
+                   showToast,
+                   intl,
+                 }: Props) => {
   const PAGE_SIZE_STEPPER = 10
   const [assignmentsPageSize, setAssignmentsPageSize] = useState(PAGE_SIZE_STEPPER)
 
@@ -273,14 +273,14 @@ const MyUsers = ({
         </div>
         <div className="flex justify-center">
           {
-            loadingAssignments || assignments.length >= assignmentsPageSize ? 
-            <Button 
-            size="small" 
-            onClick={loadMoreAssignments}
-            isLoading={loadingAssignments}
-            >{intl.formatMessage({
-              id: 'store/my-users.my-organization.showMore',
-            })}</Button> : <div />
+            loadingAssignments || assignments.length >= assignmentsPageSize ?
+              <Button
+                size="small"
+                onClick={loadMoreAssignments}
+                isLoading={loadingAssignments}
+              >{intl.formatMessage({
+                id: 'store/my-users.my-organization.showMore',
+              })}</Button> : <div />
           }
         </div>
         <UserConfirmationModal

@@ -67,5 +67,6 @@
   "store/my-users.my-organization.organization.returnBtn.text": "RETURN",
   "store/my-users.my-organization.status.approved": "Approved",
   "store/my-users.my-organization.status.not-approved": "Not Approved",
-  "store/my-users.my-organization.status.isOrgAdmin": "Organization Admin"
+  "store/my-users.my-organization.status.isOrgAdmin": "Organization Admin",
+  "store/my-users.my-organization.showMore": "Show More"
 }

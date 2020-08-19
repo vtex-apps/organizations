@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Users list pagination
+
+### Fixed
+- Organization page not loading issue fixed
+
 ## [1.0.0] - 2020-04-03
 ### Changed
 - Remove organization assignment status

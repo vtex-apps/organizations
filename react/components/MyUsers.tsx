@@ -43,6 +43,9 @@ const MyUsers = ({
   showToast,
   intl,
 }: Props) => {
+  const PAGE_SIZE_STEPPER = 10
+  const [assignmentsPageSize, setAssignmentsPageSize] = useState(PAGE_SIZE_STEPPER)
+
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -74,12 +77,24 @@ const MyUsers = ({
       schema: BUSINESS_ROLE_SCHEMA,
     },
   })
-  const { data: orgAssignments } = useQuery(documentQuery, {
+  const { data: orgAssignments, loading: loadingAssignments } = useQuery(documentQuery, {
     skip: organizationId == '',
     variables: {
       acronym: ORG_ASSIGNMENT,
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${organizationId}`,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: assignmentsPageSize
+    },
+  })
+
+  const { data: defaultAssignmentData } = useQuery(documentQuery, {
+    skip: organizationId == '',
+    variables: {
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: `businessOrganizationId=${organizationId} AND email=${email}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
     },
   })
@@ -92,13 +107,18 @@ const MyUsers = ({
     value: role.id,
     name: role.name,
   }))
+
   const assignments: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
-  const defaultUserAssignment: OrganizationAssignment = find(
+  const defaultAssignment: OrganizationAssignment[] = documentSerializer(
+    pathOr([], ['myDocuments'], defaultAssignmentData)
+  )
+
+  const defaultUserAssignment = find(
     propEq('email', email),
-    assignments
+    defaultAssignment
   ) as OrganizationAssignment
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
@@ -204,7 +224,11 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
-  return (
+  const loadMoreAssignments = () => {
+    setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
+  }
+
+  return defaultUserAssignment? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
         <div className="fl pr2">
@@ -247,6 +271,18 @@ const MyUsers = ({
             )}
           </div>
         </div>
+        <div className="flex justify-center">
+          {
+            loadingAssignments || assignments.length >= assignmentsPageSize ? 
+            <Button 
+            size="small" 
+            onClick={loadMoreAssignments}
+            isLoading={loadingAssignments}
+            >{intl.formatMessage({
+              id: 'store/my-users.my-organization.showMore',
+            })}</Button> : <div />
+          }
+        </div>
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}
           isLoading={deleteConfirmationLoading}
@@ -283,7 +319,7 @@ const MyUsers = ({
         />
       </div>
     </div>
-  )
+  ): <div />
 }
 
 export default injectIntl(MyUsers)

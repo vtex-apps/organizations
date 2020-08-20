@@ -225,7 +225,7 @@ const MyUsers = ({
                     <UserListItem
                       isCurrentUserAdmin={isCurrentUserAdmin}
                       isDefaultAssignment={
-                        defaultUserAssignment.id == assignment.id
+                        defaultUserAssignment?.id == assignment.id
                       }
                       orgAssignment={assignment}
                       edit={editUser}

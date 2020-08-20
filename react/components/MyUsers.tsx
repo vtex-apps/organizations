@@ -22,9 +22,7 @@ import {
   BUSINESS_ROLE,
   BUSINESS_ROLE_FIELDS,
   BUSINESS_ROLE_SCHEMA,
-  ORG_ASSIGNMENT,
-  // ORG_ASSIGNMENT_FIELDS,
-  // ORG_ASSIGNMENT_SCHEMA,
+  ORG_ASSIGNMENT
 } from '../utils/const'
 import { getErrorMessage } from '../utils/graphqlErrorHandler'
 
@@ -225,7 +223,7 @@ const MyUsers = ({
                     <UserListItem
                       isCurrentUserAdmin={isCurrentUserAdmin}
                       isDefaultAssignment={
-                        defaultUserAssignment?.id == assignment.id
+                        defaultUserAssignment?.id === assignment.id
                       }
                       orgAssignment={assignment}
                       edit={editUser}

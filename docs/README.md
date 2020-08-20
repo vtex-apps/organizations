@@ -276,10 +276,6 @@ Schema Name: user-organization-schema-v1
 				"to": [
 					"{!email}"
 				],
-				"bcc": [
-					"jayendra@clouda.io",
-					"sahan@clouda.io"
-				],
 				"replyTo": "noreply@company.com",
 				"body": "You have been assigned to {!businessOrganizationId_linked.name}."
 			}
@@ -294,10 +290,6 @@ Schema Name: user-organization-schema-v1
 				"subject": "Organization Assignment Decline",
 				"to": [
 					"{!email}"
-				],
-				"bcc": [
-					"jayendra@clouda.io",
-					"sahan@clouda.io"
 				],
 				"replyTo": "noreply@company.com",
 				"body": "You have left the organization {!businessOrganizationId_linked.name}."

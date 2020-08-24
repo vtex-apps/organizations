@@ -24,7 +24,7 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
   CLIENT_ACRONYM,
   CLIENT_FIELDS,
-  ORG_ASSIGNMENT_STATUS_APPROVED, BUSINESS_ORGANIZATION_SCHEMA, BUSINESS_ORGANIZATION, BUSINESS_ORGANIZATION_FIELDS,
+  ORG_ASSIGNMENT_STATUS_APPROVED,
 } from '../utils/const'
 import styles from '../my-organization.css'
 
@@ -40,9 +40,6 @@ const MyOrganization = ({ intl }: Props) => {
   const [isOrgAdmin, setIsOrgAdmin] = useState(false)
   const [defaultOrgAssignment, setDefaultOrgAssignment] = useState(
     ({} as any) as OrganizationAssignment
-  )
-  const [orgAssignments, setOrgAssignments] = useState(
-    ([] as any) as OrganizationAssignment[]
   )
   const [userRole, setUserRole] = useState(({} as any) as Role)
   const [loading, setLoading] = useState(false)
@@ -155,33 +152,8 @@ const MyOrganization = ({ intl }: Props) => {
           const roleId = pathOr('', ['roleId'], defaultAssignmentData)
           userRoleData =
             roleId !== '' ? find(propEq('id', roleId))(rolesList) : {}
-          orgAssignmentsData.forEach(function(assignment) {
-            assignment.roleId_linked = find(propEq('id', assignment.roleId))(rolesList)
-          })
-          setReloadStart(false)
-        }
 
-        return client
-          .query({
-            query: DOCUMENTS,
-            variables: {
-              acronym: BUSINESS_ORGANIZATION,
-              schema: BUSINESS_ORGANIZATION_SCHEMA,
-              fields: BUSINESS_ORGANIZATION_FIELDS,
-              where: `(id=${organizationIdData})`,
-            },
-            fetchPolicy: 'no-cache',
-          })
-          .catch(() => {
-            return Promise.resolve({ myDocuments: [] })
-          })
-      })
-      .then(({ data }: any) => {
-        if (data) {
-          const businessOrg = documentSerializer(data ? data.myDocuments : [])
-          if (businessOrg.length > 0) {
-            defaultAssignmentData.businessOrganizationId_linked = businessOrg[0]
-          }
+          setReloadStart(false)
         }
         return Promise.resolve({
           organizationIdData,
@@ -197,7 +169,6 @@ const MyOrganization = ({ intl }: Props) => {
     setOrganizationId(data.organizationIdData)
     setDefaultOrgAssignment(data.defaultAssignmentData)
     setUserRole(data.userRoleData)
-    setOrgAssignments(data.orgAssignmentsData)
   }
 
   // after email changed
@@ -354,23 +325,23 @@ const MyOrganization = ({ intl }: Props) => {
                   </div>
                 )}
                 {(organizationId == '' || organizationId === 'null') &&
-                  isOrgAdmin && (
-                    <div className="mb5 mt5">
-                      <h2 className="">
-                        {intl.formatMessage({
-                          id:
-                            'store/my-users.my-organization.create-new-organization',
-                        })}
-                      </h2>
+                isOrgAdmin && (
+                  <div className="mb5 mt5">
+                    <h2 className="">
+                      {intl.formatMessage({
+                        id:
+                          'store/my-users.my-organization.create-new-organization',
+                      })}
+                    </h2>
 
-                      <AddOrganization
-                        userEmail={email}
-                        clientId={clientId}
-                        updateOrgInfo={infoUpdatedCreateOrganization}
-                        showToast={showToast}
-                      />
-                    </div>
-                  )}
+                    <AddOrganization
+                      userEmail={email}
+                      clientId={clientId}
+                      updateOrgInfo={infoUpdatedCreateOrganization}
+                      showToast={showToast}
+                    />
+                  </div>
+                )}
                 {defaultOrgAssignment && defaultOrgAssignment.id && (
                   <div className="ba b--light-gray">
                     <DefaultAssignmentInfo
@@ -391,7 +362,6 @@ const MyOrganization = ({ intl }: Props) => {
                         organizationId={organizationId}
                         email={email}
                         showToast={showToast}
-                        assignments={orgAssignments}
                       />
                     )}
                   </div>

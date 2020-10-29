@@ -142,6 +142,9 @@ const UserEditModal = ({
       .then(() => {
         onSave()
       })
+      .then(() => {
+        window.location.reload()
+      })
       .catch((e: Error) => {
         const message = getErrorMessage(e)
         showToast({

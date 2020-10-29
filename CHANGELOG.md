@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.2.0] - 2020-10-29
+
 ## [1.1.2] - 2020-10-29
 ### Added
 - Budget amount field on user edit/create

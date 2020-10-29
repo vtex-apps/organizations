@@ -1,7 +1,7 @@
 {
   "vendor": "vtex",
   "name": "organizations",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "title": "VTEX Organizations App",
   "description": "",
   "builders": {

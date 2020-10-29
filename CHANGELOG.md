@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.1.2] - 2020-10-29
+### Added
+- Budget amount field on user edit/create
+
 ## [1.1.1] - 2020-08-24
 
 ## [1.1.0] - 2020-08-19
@@ -29,7 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0] - 2020-03-18
 ### Fixed
 - Fixed CSS handles typing issue
-- Fixed linting issues 
+- Fixed linting issues
 
 ### Added
 - Added functionality to transfer admin privilege (only admin users can transfer his privilege to others)
@@ -37,9 +41,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Show notification if user is already assigned to some other organization
-- Create organization assignment with `APPROVED` status 
+- Create organization assignment with `APPROVED` status
 - Add checkbox to change `isOrgAdmin` in Add and Edit users in organization
-- Rename collection `OrgAssignment` to `UserOrganization` 
+- Rename collection `OrgAssignment` to `UserOrganization`
 - Remove `persona` from `user-organization-schema-v1` and added `email` to identify the user
 - Rename schema `organization-assignment-schema-v1` to `user-organization-schema-v1`
 
@@ -63,7 +67,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Create organization functionality
 - Master data collections and schemas added
     * `BusinessRole` with schema name `business-role-schema-v1`
-    * `Persona` with schema name `persona-schema-v1` 
+    * `Persona` with schema name `persona-schema-v1`
     * `BusinessOrganization` with schema name `business-organization-schema-v1`
     * `OrgAssignment` with schema name `organization-assignment-schema-v1`
 

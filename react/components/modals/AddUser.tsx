@@ -2,6 +2,7 @@ import React, { SyntheticEvent, useReducer } from 'react'
 import { isEmpty, path, contains, pathOr } from 'ramda'
 import { injectIntl } from 'react-intl'
 import { Modal, Button, Dropdown, Input, Checkbox } from 'vtex.styleguide'
+import CurrencyInput from '../../components/CurrencyInput'
 import { useMutation, useApolloClient } from 'react-apollo'
 
 import CREATE_DOCUMENT from '../../graphql/createDocument.graphql'
@@ -34,6 +35,7 @@ interface Props {
 interface State {
   email: string
   roleId: string
+  budgetAmount: string
   personaId: string
   isOrgAdmin: boolean
   formErrors: Errors
@@ -57,6 +59,7 @@ type Action<K, V = void> = V extends void ? { type: K } : { type: K } & V
 type Actions =
   | Action<'CHANGE_ROLE', { args: { roleId: string } }>
   | Action<'CHANGE_EMAIL', { args: { email: string } }>
+  | Action<'CHANGE_BUDGET_AMOUNT', { args: { budgetAmount: string } }>
   | Action<'CHANGE_PERSONA_ID', { args: { personaId: string } }>
   | Action<'CHANGE_IS_ORG_ADMIN', { args: { isOrgAdmin: boolean } }>
   | Action<
@@ -122,6 +125,12 @@ const AddUser = ({
           formErrors: { roleId: state.formErrors.roleId, email: errors },
         }
       }
+      case 'CHANGE_BUDGET_AMOUNT': {
+        return {
+          ...state,
+          budgetAmount: action.args.budgetAmount,
+        }
+      }
       case 'CHANGE_IS_ORG_ADMIN':
         return {
           ...state,
@@ -170,6 +179,7 @@ const AddUser = ({
   const initialState = {
     roleId: '',
     email: '',
+    budgetAmount: '',
     isOrgAdmin: false,
     personaId: '',
     formErrors: {
@@ -201,6 +211,7 @@ const AddUser = ({
   const getClientFields = (clientId?: string) => {
     const fields = [
       { key: 'email', value: state.email },
+      { key: 'budgetAmount', value: state.budgetAmount },
       { key: 'organizationId', value: organizationId },
       { key: 'isOrgAdmin', value: state.isOrgAdmin.toString() },
       { key: 'approved', value: 'true' },
@@ -220,6 +231,10 @@ const AddUser = ({
       {
         key: 'email',
         value: state.email,
+      },
+      {
+        key: 'budgetAmount',
+        value: state.budgetAmount,
       },
       {
         key: 'roleId',
@@ -267,6 +282,7 @@ const AddUser = ({
                   cache,
                   data,
                   state.email,
+                  state.budgetAmount,
                   organizationId,
                   state.isOrgAdmin.toString()
                 ),
@@ -288,6 +304,7 @@ const AddUser = ({
                   cache,
                   data,
                   state.email,
+                  state.budgetAmount,
                   organizationId,
                   state.isOrgAdmin.toString()
                 ),
@@ -319,6 +336,7 @@ const AddUser = ({
                 roles,
                 organizationId,
                 state.email,
+                state.budgetAmount,
                 state.roleId
               ),
           })
@@ -335,6 +353,10 @@ const AddUser = ({
           dispatch({
             type: 'CHANGE_EMAIL',
             args: { email: '' },
+          })
+          dispatch({
+            type: 'CHANGE_BUDGET_AMOUNT',
+            args: { budgetAmount: '' },
           })
           dispatch({
             type: 'CHANGE_ROLE',
@@ -384,6 +406,24 @@ const AddUser = ({
             }}
             value={state.email}
             errorMessage={path(['formErrors', 'email', 0], state)}
+          />
+        </div>
+        <div className="mt3 flex">
+          <CurrencyInput
+            type="text"
+            label={intl.formatMessage({ id: 'store/my-users.budget-amount' })}
+            onChange={(e: { target: { value: string } }) => {
+              dispatch({
+                type: 'CHANGE_BUDGET_AMOUNT',
+                args: { budgetAmount: e.target.value },
+              })
+              dispatch({
+                type: 'INPUT_TOUCHED',
+                args: { input: 'budgetAmount' },
+              })
+            }}
+            value={state.budgetAmount}
+            errorMessage={path(['formErrors', 'budgetAmount', 0], state)}
           />
         </div>
         <div className="mt5">

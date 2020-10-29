@@ -44,6 +44,7 @@ export const updateCacheClient = (
   cache: any,
   data: any,
   email: string,
+  budgetAmount: string,
   organizationId: string,
   isOrgAdmin: string
 ) => {
@@ -59,6 +60,7 @@ export const updateCacheClient = (
     fields = reject(propEq('key', 'organizationId'), fields) as any
     fields = reject(propEq('key', 'isOrgAdmin'), fields) as any
     fields = reject(propEq('key', 'email'), fields) as any
+    fields = reject(propEq('key', 'budgetAmount'), fields) as any
     fields = reject(propEq('key', 'approved'), fields) as any
 
     const newFields = [
@@ -67,6 +69,7 @@ export const updateCacheClient = (
         { key: 'organizationId', value: organizationId, __typename: 'Field' },
         { key: 'isOrgAdmin', value: isOrgAdmin, __typename: 'Field' },
         { key: 'email', value: email, __typename: 'Field' },
+        { key: 'budgetAmount', value: budgetAmount, __typename: 'Field' },
         { key: 'approved', value: 'true', __typename: 'Field' },
       ],
     ]
@@ -90,6 +93,7 @@ export const updateCacheAddUser = (
   roles: Role[],
   organizationId: string,
   email: string,
+  budgetAmount: string,
   roleId: string
 ) => {
   try {
@@ -119,6 +123,11 @@ export const updateCacheAddUser = (
       {
         key: 'email',
         value: email,
+        __typename: 'Field',
+      },
+      {
+        key: 'budgetAmount',
+        value: budgetAmount,
         __typename: 'Field',
       },
       {

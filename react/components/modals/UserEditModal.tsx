@@ -3,6 +3,7 @@ import { Modal, Button, Dropdown, Checkbox, Spinner } from 'vtex.styleguide'
 import { useMutation, useQuery } from 'react-apollo'
 import { pathOr } from 'ramda'
 import { injectIntl } from 'react-intl'
+import CurrencyInput from '../../components/CurrencyInput'
 
 import { updateCacheEditUser, updateCacheClient } from '../../utils/cacheUtils'
 import UPDATE_DOCUMENT from '../../graphql/updateDocument.graphql'
@@ -41,6 +42,7 @@ const UserEditModal = ({
 }: Props) => {
   const [clientId, setClientId] = useState('')
   const [email, setEmail] = useState('')
+  const [budgetAmount, setBudgetAmount] = useState('')
   const [roleId, setRoleId] = useState('')
   const [assignmentId, setAssignmentId] = useState('')
   const [organizationId, setOrganizationId] = useState('')
@@ -66,6 +68,7 @@ const UserEditModal = ({
     const abortController = new AbortController()
 
     setEmail(pathOr('', ['email'], orgAssignment))
+    setBudgetAmount(pathOr('', ['budgetAmount'], orgAssignment))
     setAssignmentId(pathOr('', ['id'], orgAssignment))
     setRoleId(pathOr('', ['roleId_linked', 'id'], orgAssignment))
     setOrganizationId(pathOr('', ['businessOrganizationId'], orgAssignment))
@@ -109,6 +112,7 @@ const UserEditModal = ({
             cache,
             data,
             email,
+            budgetAmount,
             organizationId,
             isOrgAdmin.toString()
           ),
@@ -127,6 +131,7 @@ const UserEditModal = ({
             document: {
               fields: [
                 { key: 'id', value: assignmentId },
+                { key: 'budgetAmount', value: budgetAmount },
                 { key: 'roleId', value: roleId },
               ],
             },
@@ -136,6 +141,9 @@ const UserEditModal = ({
       })
       .then(() => {
         onSave()
+      })
+      .then(() => {
+        window.location.reload()
       })
       .catch((e: Error) => {
         const message = getErrorMessage(e)
@@ -179,6 +187,17 @@ const UserEditModal = ({
         <div>
           <div className="mb5 mt5">
             {intl.formatMessage({ id: 'store/my-users.label.email' })} : {email}
+          </div>
+          <div className="mb5">
+            <CurrencyInput
+              type="text"
+              label={intl.formatMessage({ id: 'store/my-users.budget-amount' })}
+              onChange={(e: { target: { value: string } }) => {
+                setBudgetAmount(e.target.value)
+              }}
+              defaultValue={budgetAmount}
+              value={budgetAmount}
+            />
           </div>
           <div className="mb5">
             <Dropdown

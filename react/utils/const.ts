@@ -2,6 +2,7 @@ export const CLIENT_ACRONYM = 'CL'
 export const CLIENT_FIELDS = [
   'id',
   'email',
+  'budgetAmount',
   'approved',
   'isOrgAdmin',
   'organizationId',
@@ -16,6 +17,7 @@ export const ORG_ASSIGNMENT = 'UserOrganization'
 export const ORG_ASSIGNMENT_FIELDS = [
   'id',
   'email',
+  'budgetAmount',
   'businessOrganizationId',
   'businessOrganizationId_linked',
   'status',

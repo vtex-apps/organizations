@@ -4,6 +4,7 @@
   "store/my-users.edit-user.title": "Edit user",
   "store/my-users.add-user": "Add User",
   "store/my-users.email": "Email Address",
+  "store/my-users.budget-amount": "Budget Amount",
   "store/my-users.role-id": "Role",
   "store/my-users.errors.role-id.empty": "Role is empty",
   "store/my-users.errors.email.empty": "Email is empty",

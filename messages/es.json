@@ -4,6 +4,7 @@
   "store/my-users.edit-user.title": "Editar usuario",
   "store/my-users.add-user": "Agregar usuario",
   "store/my-users.email": "Dirección de correo electrónico",
+  "store/my-users.budget-amount": "Cantidad de presupuesto",
   "store/my-users.role-id": "Papel",
   "store/my-users.errors.role-id.empty": "El rol está vacío.",
   "store/my-users.errors.email.empty": "El correo esta vacio",

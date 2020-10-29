@@ -48,6 +48,7 @@ declare global {
   interface OrganizationAssignment {
     id: string
     email?: string
+    budgetAmount?: string
     roleId?: string
     status?: string
     roleId_linked?: Role

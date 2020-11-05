@@ -23,7 +23,6 @@ import {
 } from '../utils/const'
 
 import { updateCacheProfile } from '../utils/cacheUtils'
-import { addressSplitter } from '../utils/textUtil'
 
 interface Props {
   clientId: string
@@ -360,58 +359,7 @@ const DefaultAssignmentInfo = ({
               {userRole && userRole.label ? userRole.label : ''}
             </span>
           </div>
-          <div className="w-100 pt2 pb2">
-            <span>
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.organization.telephone',
-              })}
-              :{' '}
-            </span>
-            <span className="b">
-              {pathOr(
-                '',
-                ['businessOrganizationId_linked', 'telephone'],
-                defaultAssignment
-              )}
-            </span>
-          </div>
-          <div className="w-100 pt2 pb2">
-            <span>
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.organization.email',
-              })}
-              :{' '}
-            </span>
-            <span className="b">
-              {pathOr(
-                '',
-                ['businessOrganizationId_linked', 'email'],
-                defaultAssignment
-              )}
-            </span>
-          </div>
           <div className="w-100 pt2 pb2"></div>
-        </div>
-        <div className="fl mt3 w-40 ">
-          <div className="fl w-30">
-            {intl.formatMessage({
-              id: 'store/my-users.my-organization.organization.address',
-            })}
-            :{' '}
-          </div>
-          <div className="fl w-70 flex flex-column pl3 pr3">
-            {addressSplitter(
-              pathOr(
-                '',
-                ['businessOrganizationId_linked', 'address'],
-                defaultAssignment
-              )
-            ).map((line: string, index: number) => (
-              <span key={`address-line-${index}`} className="pa1 b">
-                {line}
-              </span>
-            ))}
-          </div>
         </div>
         <div className="fl w-20 flex flex-column">
           <span className="pa2">

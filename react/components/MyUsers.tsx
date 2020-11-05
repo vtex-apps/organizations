@@ -117,6 +117,21 @@ const MyUsers = ({
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
+  function compare(a: OrganizationAssignment, b: OrganizationAssignment){
+    if (a.email && b.email){
+      if (a.email < b.email){
+        return -1;
+      }
+      if (a.email > b.email){
+        return 1;
+      }
+      return 0;
+    }
+    return 0
+  }
+
+  assignments.sort(compare);
+
   const defaultAssignment: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['myDocuments'], defaultAssignmentData)
   )

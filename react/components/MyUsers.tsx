@@ -3,6 +3,7 @@ import { useQuery, useMutation, useApolloClient } from 'react-apollo'
 import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
+import { Input } from 'vtex.styleguide'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -47,6 +48,7 @@ const MyUsers = ({
   const [assignmentsPageSize, setAssignmentsPageSize] = useState(
     PAGE_SIZE_STEPPER
   )
+  const [searchUser, setSearchUser] = useState('')
 
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
@@ -86,7 +88,7 @@ const MyUsers = ({
       variables: {
         acronym: ORG_ASSIGNMENT,
         fields: ORG_ASSIGNMENT_FIELDS,
-        where: `businessOrganizationId=${organizationId}`,
+        where: `businessOrganizationId=${organizationId} AND email=${searchUser}`,
         schema: ORG_ASSIGNMENT_SCHEMA,
         page: 1,
         pageSize: assignmentsPageSize,
@@ -117,20 +119,20 @@ const MyUsers = ({
     pathOr([], ['myDocuments'], orgAssignments)
   )
 
-  function compare(a: OrganizationAssignment, b: OrganizationAssignment){
-    if (a.email && b.email){
-      if (a.email < b.email){
-        return -1;
+  function compare(a: OrganizationAssignment, b: OrganizationAssignment) {
+    if (a.email && b.email) {
+      if (a.email < b.email) {
+        return -1
       }
-      if (a.email > b.email){
-        return 1;
+      if (a.email > b.email) {
+        return 1
       }
-      return 0;
+      return 0
     }
     return 0
   }
 
-  assignments.sort(compare);
+  assignments.sort(compare)
 
   const defaultAssignment: OrganizationAssignment[] = documentSerializer(
     pathOr([], ['myDocuments'], defaultAssignmentData)
@@ -248,6 +250,10 @@ const MyUsers = ({
     setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
   }
 
+  const handleChangeSearch = (event: any) => {
+    setSearchUser(event.target.value)
+  }
+
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
@@ -270,6 +276,13 @@ const MyUsers = ({
         </div>
       </div>
       <div className="flex flex-column">
+        <div>
+          <Input
+            placeholder="Search"
+            value={searchUser}
+            onChange={handleChangeSearch}
+          />
+        </div>
         <div>
           <div className="mb5">
             {assignments.map(

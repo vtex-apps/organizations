@@ -43,9 +43,7 @@ const UserConfirmationModal = ({
       <div className="flex flex-column mb5 mt5">
         <div>
           <span>{message}</span>
-          <span className="b">
-            {pathOr('', ['personaId_linked', 'email'], assignment)}
-          </span>
+          <span className="b">{pathOr('', ['email'], assignment)}</span>
         </div>
       </div>
     </ModalDialog>

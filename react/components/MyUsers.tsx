@@ -90,6 +90,7 @@ const MyUsers = ({
         schema: ORG_ASSIGNMENT_SCHEMA,
         page: 1,
         pageSize: assignmentsPageSize,
+        sort: 'email ASC',
       },
     }
   )

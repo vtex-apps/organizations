@@ -5,7 +5,7 @@ query getDocuments(
   $where: String
   $page: Int
   $pageSize: Int,
-  $sort: String
+  sort: String
 ) {
   myDocuments(
     acronym: $acronym

@@ -30,6 +30,8 @@ interface Props {
   showToast: (message: any) => void
   isCurrentUserAdmin: boolean
   intl: any
+  assignmentsPageSize: number
+  // setAssignmentsPageSize: (pageSize: number) => void
 }
 
 interface State {
@@ -83,10 +85,14 @@ const AddUser = ({
   existingUsers,
   showToast,
   isCurrentUserAdmin,
+  // setAssignmentsPageSize,
+  assignmentsPageSize,
 }: Props) => {
   const client = useApolloClient()
-  const [createDocument] = useMutation(CREATE_DOCUMENT)
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [createDocument, { loading: loadingAdd }] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument, { loading: loadingUpdate }] = useMutation(
+    UPDATE_DOCUMENT
+  )
 
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
@@ -329,7 +335,7 @@ const AddUser = ({
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
-            update: (cache: any, { data }: any) =>
+            update: (cache: any, { data }: any) => {
               updateCacheAddUser(
                 cache,
                 data,
@@ -337,12 +343,14 @@ const AddUser = ({
                 organizationId,
                 state.email,
                 state.budgetAmount,
-                state.roleId
-              ),
+                state.roleId,
+                assignmentsPageSize
+              )
+            },
           })
         })
         .catch(handleGraphqlError())
-        .then(() => {
+        .then(async () => {
           dispatch({
             type: 'RESPONSE',
             args: {
@@ -462,6 +470,7 @@ const AddUser = ({
           <Button
             variation="primary"
             type="submit"
+            isLoading={loadingAdd || loadingUpdate}
             disabled={
               !state.touched.email ||
               !state.touched.roleId ||

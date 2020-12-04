@@ -10,7 +10,13 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
 } from './const'
 
-const userListArgs = (orgId: string) => {
+const compareEmailFields = (a: any, b: any) => {
+  const emailA = a.fields.find(({ key }: { key: string }) => key === 'email')
+  const emailB = b.fields.find(({ key }: { key: string }) => key === 'email')
+  return emailA.value.localeCompare(emailB.value)
+}
+
+const userListArgs = (orgId: string, assignmentsPageSize: number = 10) => {
   return {
     query: GET_DOCUMENT,
     variables: {
@@ -18,6 +24,9 @@ const userListArgs = (orgId: string) => {
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: assignmentsPageSize,
+      sort: 'email ASC',
     },
   }
 }
@@ -94,10 +103,14 @@ export const updateCacheAddUser = (
   organizationId: string,
   email: string,
   budgetAmount: string,
-  roleId: string
+  roleId: string,
+  assignmentsPageSize: number
+  // setAssignmentsPageSize: (pageSize: any) => void
 ) => {
   try {
-    const response: any = cache.readQuery(userListArgs(organizationId))
+    const response: any = cache.readQuery(
+      userListArgs(organizationId, assignmentsPageSize)
+    )
 
     const org = pathOr(
       '',
@@ -149,15 +162,16 @@ export const updateCacheAddUser = (
       },
     ]
 
-    response.myDocuments = [
+    const newData = [
       ...response.myDocuments,
       { id: id, fields: assignmentFields, __typename: 'Document' },
-    ]
+    ].sort(compareEmailFields)
     const writeData = {
-      ...userListArgs(organizationId),
-      data: { myDocuments: response.myDocuments },
+      ...userListArgs(organizationId, assignmentsPageSize),
+      data: { myDocuments: newData },
     }
     cache.writeQuery(writeData)
+    // setAssignmentsPageSize((pageSize: number) => pageSize + 1)
   } catch (e) {
     // continue regardless of error
   }
@@ -225,15 +239,20 @@ export const updateCacheEditUser = (
 export const updateCacheDeleteUser = (
   cache: any,
   data: any,
-  organizationId: string
+  organizationId: string,
+  assignmentsPageSize: number
 ) => {
   try {
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
-    const response: any = cache.readQuery(userListArgs(organizationId))
+    const response: any = cache.readQuery(
+      userListArgs(organizationId, assignmentsPageSize)
+    )
+
+    const newData = reject(propEq('id', id), response.myDocuments)
 
     const writeData = {
       ...userListArgs(organizationId),
-      data: { myDocuments: reject(propEq('id', id), response.myDocuments) },
+      data: { myDocuments: newData },
     }
 
     cache.writeQuery(writeData)

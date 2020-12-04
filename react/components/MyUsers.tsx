@@ -51,7 +51,7 @@ const MyUsers = ({
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
-      updateCacheDeleteUser(cache, data, organizationId),
+      updateCacheDeleteUser(cache, data, organizationId, assignmentsPageSize),
   })
 
   const [isAddNewUserOpen, setIsAddNewUserOpen] = useState(false)
@@ -278,18 +278,14 @@ const MyUsers = ({
           </div>
         </div>
         <div className="flex justify-center">
-          {loadingAssignments || assignments.length >= assignmentsPageSize ? (
-            <Button
-              size="small"
-              onClick={loadMoreAssignments}
-              isLoading={loadingAssignments}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.showMore',
-              })}
-            </Button>
-          ) : (
-            <div />
-          )}
+          <Button
+            size="small"
+            onClick={loadMoreAssignments}
+            isLoading={loadingAssignments}>
+            {intl.formatMessage({
+              id: 'store/my-users.my-organization.showMore',
+            })}
+          </Button>
         </div>
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}
@@ -320,6 +316,7 @@ const MyUsers = ({
           onClose={closeModalAddNewUser}
           onSuccess={closeModalAddNewUser}
           showToast={showToast}
+          assignmentsPageSize={assignmentsPageSize}
           isCurrentUserAdmin={isCurrentUserAdmin}
           existingUsers={assignments.map((assignment: OrganizationAssignment) =>
             pathOr('', ['personaId_linked', 'email'], assignment)

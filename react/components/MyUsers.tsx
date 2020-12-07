@@ -43,15 +43,12 @@ const MyUsers = ({
   showToast,
   intl,
 }: Props) => {
-  const PAGE_SIZE_STEPPER = 10
-  const [assignmentsPageSize, setAssignmentsPageSize] = useState(
-    PAGE_SIZE_STEPPER
-  )
+  const PAGE_SIZE_STEPPER = 100
 
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
-      updateCacheDeleteUser(cache, data, organizationId, assignmentsPageSize),
+      updateCacheDeleteUser(cache, data, organizationId),
   })
 
   const [isAddNewUserOpen, setIsAddNewUserOpen] = useState(false)
@@ -79,21 +76,18 @@ const MyUsers = ({
       schema: BUSINESS_ROLE_SCHEMA,
     },
   })
-  const { data: orgAssignments, loading: loadingAssignments } = useQuery(
-    documentQuery,
-    {
-      skip: organizationId == '',
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        fields: ORG_ASSIGNMENT_FIELDS,
-        where: `businessOrganizationId=${organizationId}`,
-        schema: ORG_ASSIGNMENT_SCHEMA,
-        page: 1,
-        pageSize: assignmentsPageSize,
-        sort: 'email ASC',
-      },
-    }
-  )
+  const { data: orgAssignments } = useQuery(documentQuery, {
+    skip: organizationId == '',
+    variables: {
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: `businessOrganizationId=${organizationId}`,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: PAGE_SIZE_STEPPER,
+      sort: 'email ASC',
+    },
+  })
 
   const { data: defaultAssignmentData } = useQuery(documentQuery, {
     skip: organizationId == '',
@@ -230,9 +224,9 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
-  const loadMoreAssignments = () => {
-    setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
-  }
+  // const loadMoreAssignments = () => {
+  //   setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
+  // }
 
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
@@ -277,16 +271,16 @@ const MyUsers = ({
             )}
           </div>
         </div>
-        <div className="flex justify-center">
-          <Button
-            size="small"
-            onClick={loadMoreAssignments}
-            isLoading={loadingAssignments}>
-            {intl.formatMessage({
-              id: 'store/my-users.my-organization.showMore',
-            })}
-          </Button>
-        </div>
+        {/*<div className="flex justify-center">*/}
+        {/*  <Button*/}
+        {/*    size="small"*/}
+        {/*    onClick={loadMoreAssignments}*/}
+        {/*    isLoading={loadingAssignments}>*/}
+        {/*    {intl.formatMessage({*/}
+        {/*      id: 'store/my-users.my-organization.showMore',*/}
+        {/*    })}*/}
+        {/*  </Button>*/}
+        {/*</div>*/}
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}
           isLoading={deleteConfirmationLoading}
@@ -316,7 +310,6 @@ const MyUsers = ({
           onClose={closeModalAddNewUser}
           onSuccess={closeModalAddNewUser}
           showToast={showToast}
-          assignmentsPageSize={assignmentsPageSize}
           isCurrentUserAdmin={isCurrentUserAdmin}
           existingUsers={assignments.map((assignment: OrganizationAssignment) =>
             pathOr('', ['personaId_linked', 'email'], assignment)

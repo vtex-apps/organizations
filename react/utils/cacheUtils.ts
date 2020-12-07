@@ -16,7 +16,7 @@ const compareEmailFields = (a: any, b: any) => {
   return emailA.value.localeCompare(emailB.value)
 }
 
-const userListArgs = (orgId: string, assignmentsPageSize: number = 10) => {
+const userListArgs = (orgId: string) => {
   return {
     query: GET_DOCUMENT,
     variables: {
@@ -25,7 +25,7 @@ const userListArgs = (orgId: string, assignmentsPageSize: number = 10) => {
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
       page: 1,
-      pageSize: assignmentsPageSize,
+      pageSize: 100,
       sort: 'email ASC',
     },
   }
@@ -103,14 +103,10 @@ export const updateCacheAddUser = (
   organizationId: string,
   email: string,
   budgetAmount: string,
-  roleId: string,
-  assignmentsPageSize: number
-  // setAssignmentsPageSize: (pageSize: any) => void
+  roleId: string
 ) => {
   try {
-    const response: any = cache.readQuery(
-      userListArgs(organizationId, assignmentsPageSize)
-    )
+    const response: any = cache.readQuery(userListArgs(organizationId))
 
     const org = pathOr(
       '',
@@ -167,7 +163,7 @@ export const updateCacheAddUser = (
       { id: id, fields: assignmentFields, __typename: 'Document' },
     ].sort(compareEmailFields)
     const writeData = {
-      ...userListArgs(organizationId, assignmentsPageSize),
+      ...userListArgs(organizationId),
       data: { myDocuments: newData },
     }
     cache.writeQuery(writeData)
@@ -239,14 +235,11 @@ export const updateCacheEditUser = (
 export const updateCacheDeleteUser = (
   cache: any,
   data: any,
-  organizationId: string,
-  assignmentsPageSize: number
+  organizationId: string
 ) => {
   try {
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
-    const response: any = cache.readQuery(
-      userListArgs(organizationId, assignmentsPageSize)
-    )
+    const response: any = cache.readQuery(userListArgs(organizationId))
 
     const newData = reject(propEq('id', id), response.myDocuments)
 

@@ -30,8 +30,6 @@ interface Props {
   showToast: (message: any) => void
   isCurrentUserAdmin: boolean
   intl: any
-  assignmentsPageSize: number
-  // setAssignmentsPageSize: (pageSize: number) => void
 }
 
 interface State {
@@ -85,8 +83,6 @@ const AddUser = ({
   existingUsers,
   showToast,
   isCurrentUserAdmin,
-  // setAssignmentsPageSize,
-  assignmentsPageSize,
 }: Props) => {
   const client = useApolloClient()
   const [createDocument, { loading: loadingAdd }] = useMutation(CREATE_DOCUMENT)
@@ -343,8 +339,7 @@ const AddUser = ({
                 organizationId,
                 state.email,
                 state.budgetAmount,
-                state.roleId,
-                assignmentsPageSize
+                state.roleId
               )
             },
           })

@@ -224,10 +224,6 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
-  // const loadMoreAssignments = () => {
-  //   setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
-  // }
-
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
@@ -271,16 +267,6 @@ const MyUsers = ({
             )}
           </div>
         </div>
-        {/*<div className="flex justify-center">*/}
-        {/*  <Button*/}
-        {/*    size="small"*/}
-        {/*    onClick={loadMoreAssignments}*/}
-        {/*    isLoading={loadingAssignments}>*/}
-        {/*    {intl.formatMessage({*/}
-        {/*      id: 'store/my-users.my-organization.showMore',*/}
-        {/*    })}*/}
-        {/*  </Button>*/}
-        {/*</div>*/}
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}
           isLoading={deleteConfirmationLoading}

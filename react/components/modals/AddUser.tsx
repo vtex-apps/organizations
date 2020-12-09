@@ -345,7 +345,7 @@ const AddUser = ({
           })
         })
         .catch(handleGraphqlError())
-        .then(async () => {
+        .then(() => {
           dispatch({
             type: 'RESPONSE',
             args: {

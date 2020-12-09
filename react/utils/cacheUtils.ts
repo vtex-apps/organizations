@@ -10,6 +10,12 @@ import {
   ORG_ASSIGNMENT_SCHEMA,
 } from './const'
 
+const compareEmailFields = (a: any, b: any) => {
+  const emailA = a.fields.find(({ key }: { key: string }) => key === 'email')
+  const emailB = b.fields.find(({ key }: { key: string }) => key === 'email')
+  return emailA.value.localeCompare(emailB.value)
+}
+
 const userListArgs = (orgId: string) => {
   return {
     query: GET_DOCUMENT,
@@ -18,6 +24,9 @@ const userListArgs = (orgId: string) => {
       fields: ORG_ASSIGNMENT_FIELDS,
       where: `businessOrganizationId=${orgId}`,
       schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: 100,
+      sort: 'email ASC',
     },
   }
 }
@@ -149,15 +158,16 @@ export const updateCacheAddUser = (
       },
     ]
 
-    response.myDocuments = [
+    const newData = [
       ...response.myDocuments,
       { id: id, fields: assignmentFields, __typename: 'Document' },
-    ]
+    ].sort(compareEmailFields)
     const writeData = {
       ...userListArgs(organizationId),
-      data: { myDocuments: response.myDocuments },
+      data: { myDocuments: newData },
     }
     cache.writeQuery(writeData)
+    // setAssignmentsPageSize((pageSize: number) => pageSize + 1)
   } catch (e) {
     // continue regardless of error
   }
@@ -231,9 +241,11 @@ export const updateCacheDeleteUser = (
     const id = pathOr('', ['deleteMyDocument', 'cacheId'], data)
     const response: any = cache.readQuery(userListArgs(organizationId))
 
+    const newData = reject(propEq('id', id), response.myDocuments)
+
     const writeData = {
       ...userListArgs(organizationId),
-      data: { myDocuments: reject(propEq('id', id), response.myDocuments) },
+      data: { myDocuments: newData },
     }
 
     cache.writeQuery(writeData)

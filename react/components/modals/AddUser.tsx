@@ -85,8 +85,10 @@ const AddUser = ({
   isCurrentUserAdmin,
 }: Props) => {
   const client = useApolloClient()
-  const [createDocument] = useMutation(CREATE_DOCUMENT)
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [createDocument, { loading: loadingAdd }] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument, { loading: loadingUpdate }] = useMutation(
+    UPDATE_DOCUMENT
+  )
 
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
@@ -329,7 +331,7 @@ const AddUser = ({
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
-            update: (cache: any, { data }: any) =>
+            update: (cache: any, { data }: any) => {
               updateCacheAddUser(
                 cache,
                 data,
@@ -338,7 +340,8 @@ const AddUser = ({
                 state.email,
                 state.budgetAmount,
                 state.roleId
-              ),
+              )
+            },
           })
         })
         .catch(handleGraphqlError())
@@ -462,6 +465,7 @@ const AddUser = ({
           <Button
             variation="primary"
             type="submit"
+            isLoading={loadingAdd || loadingUpdate}
             disabled={
               !state.touched.email ||
               !state.touched.roleId ||

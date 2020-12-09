@@ -43,10 +43,7 @@ const MyUsers = ({
   showToast,
   intl,
 }: Props) => {
-  const PAGE_SIZE_STEPPER = 10
-  const [assignmentsPageSize, setAssignmentsPageSize] = useState(
-    PAGE_SIZE_STEPPER
-  )
+  const PAGE_SIZE_STEPPER = 100
 
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
@@ -79,20 +76,18 @@ const MyUsers = ({
       schema: BUSINESS_ROLE_SCHEMA,
     },
   })
-  const { data: orgAssignments, loading: loadingAssignments } = useQuery(
-    documentQuery,
-    {
-      skip: organizationId == '',
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        fields: ORG_ASSIGNMENT_FIELDS,
-        where: `businessOrganizationId=${organizationId}`,
-        schema: ORG_ASSIGNMENT_SCHEMA,
-        page: 1,
-        pageSize: assignmentsPageSize,
-      },
-    }
-  )
+  const { data: orgAssignments } = useQuery(documentQuery, {
+    skip: organizationId == '',
+    variables: {
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: `businessOrganizationId=${organizationId}`,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: PAGE_SIZE_STEPPER,
+      sort: 'email ASC',
+    },
+  })
 
   const { data: defaultAssignmentData } = useQuery(documentQuery, {
     skip: organizationId == '',
@@ -229,10 +224,6 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
-  const loadMoreAssignments = () => {
-    setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
-  }
-
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
@@ -275,20 +266,6 @@ const MyUsers = ({
               }
             )}
           </div>
-        </div>
-        <div className="flex justify-center">
-          {loadingAssignments || assignments.length >= assignmentsPageSize ? (
-            <Button
-              size="small"
-              onClick={loadMoreAssignments}
-              isLoading={loadingAssignments}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.showMore',
-              })}
-            </Button>
-          ) : (
-            <div />
-          )}
         </div>
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}

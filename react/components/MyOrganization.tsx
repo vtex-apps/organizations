@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
 import { Alert, ToastConsumer, Button, Spinner, Tag } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
@@ -60,7 +60,7 @@ const MyOrganization = ({ intl }: Props) => {
   )
 
   // Load data
-  const load = () => {
+  const load = useCallback(() => {
     let organizationIdData = ''
     let orgAssignmentsData = ([] as any) as OrganizationAssignment[]
     let defaultAssignmentData = ({} as any) as OrganizationAssignment
@@ -162,7 +162,7 @@ const MyOrganization = ({ intl }: Props) => {
           userRoleData,
         })
       })
-  }
+  }, [client, email])
 
   // update state variables
   const updateState = (data: any) => {
@@ -187,7 +187,7 @@ const MyOrganization = ({ intl }: Props) => {
       setLoading(false)
       abortController.abort()
     }
-  }, [email])
+  }, [email, load])
 
   // after profile data loaded
   useEffect(() => {

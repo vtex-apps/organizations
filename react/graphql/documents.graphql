@@ -4,7 +4,8 @@ query getDocuments(
   $schema: String
   $where: String
   $page: Int
-  $pageSize: Int
+  $pageSize: Int,
+  $sort: String
 ) {
   myDocuments(
     acronym: $acronym
@@ -12,7 +13,8 @@ query getDocuments(
     schema: $schema
     where: $where
     page: $page
-    pageSize: $pageSize
+    pageSize: $pageSize,
+    sort: $sort
   ) {
     id
     fields {

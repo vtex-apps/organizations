@@ -3,6 +3,7 @@ import { useQuery, useMutation, useApolloClient } from 'react-apollo'
 import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
+import { Input } from 'vtex.styleguide'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -44,7 +45,7 @@ const MyUsers = ({
   intl,
 }: Props) => {
   const PAGE_SIZE_STEPPER = 100
-
+  const [searchUser, setSearchUser] = useState('')
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -224,6 +225,13 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
+  const handleChangeSearch = (event: any) => {
+    setSearchUser(event.target.value)
+  }
+
+  // eslint-disable-next-line prettier/prettier
+  const assignmentsFilter = assignments.filter(item => item.email?.toLowerCase().includes(searchUser))
+
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
@@ -247,8 +255,15 @@ const MyUsers = ({
       </div>
       <div className="flex flex-column">
         <div>
+          <Input
+            placeholder="Search"
+            value={searchUser}
+            onChange={handleChangeSearch}
+          />
+        </div>
+        <div>
           <div className="mb5">
-            {assignments.map(
+            {assignmentsFilter.map(
               (assignment: OrganizationAssignment, index: number) => {
                 return (
                   <div key={`list-item-${index}`}>

@@ -46,7 +46,6 @@ const MyUsers = ({
 }: Props) => {
   const PAGE_SIZE_STEPPER = 100
   const [searchUser, setSearchUser] = useState('')
-  const [assignmentsToRender, setAssignmentsToRender] = useState<OrganizationAssignment[]>([])
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -122,11 +121,6 @@ const MyUsers = ({
     propEq('email', email),
     defaultAssignment
   ) as OrganizationAssignment
-
-  React.useEffect(() => {
-    setAssignmentsToRender(assignments)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgAssignments])
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -233,10 +227,10 @@ const MyUsers = ({
 
   const handleChangeSearch = (event: any) => {
     setSearchUser(event.target.value)
-    // eslint-disable-next-line prettier/prettier
-    const assignmentsFilter = assignments.filter(item => item.email?.toLowerCase().includes(event.target.value))
-    setAssignmentsToRender(assignmentsFilter)
   }
+
+  // eslint-disable-next-line prettier/prettier
+  const assignmentsFilter = assignments.filter(item => item.email?.toLowerCase().includes(searchUser))
 
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
@@ -269,7 +263,7 @@ const MyUsers = ({
         </div>
         <div>
           <div className="mb5">
-            {assignmentsToRender.map(
+            {assignmentsFilter.map(
               (assignment: OrganizationAssignment, index: number) => {
                 return (
                   <div key={`list-item-${index}`}>

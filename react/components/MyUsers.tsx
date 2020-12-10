@@ -3,6 +3,7 @@ import { useQuery, useMutation, useApolloClient } from 'react-apollo'
 import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
+import { Input } from 'vtex.styleguide'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -44,7 +45,8 @@ const MyUsers = ({
   intl,
 }: Props) => {
   const PAGE_SIZE_STEPPER = 100
-
+  const [searchUser, setSearchUser] = useState('')
+  const [assignmentsToRender, setAssignmentsToRender] = useState<OrganizationAssignment[]>([])
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -120,6 +122,11 @@ const MyUsers = ({
     propEq('email', email),
     defaultAssignment
   ) as OrganizationAssignment
+
+  React.useEffect(() => {
+    setAssignmentsToRender(assignments)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgAssignments])
 
   const deleteOrgAssignment = (assignment: OrganizationAssignment) => {
     return deleteDocument({
@@ -224,6 +231,13 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
+  const handleChangeSearch = (event: any) => {
+    setSearchUser(event.target.value)
+    // eslint-disable-next-line prettier/prettier
+    const assignmentsFilter = assignments.filter(item => item.email?.toLowerCase().includes(event.target.value))
+    setAssignmentsToRender(assignmentsFilter)
+  }
+
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
       <div className="flex-row">
@@ -247,8 +261,15 @@ const MyUsers = ({
       </div>
       <div className="flex flex-column">
         <div>
+          <Input
+            placeholder="Search"
+            value={searchUser}
+            onChange={handleChangeSearch}
+          />
+        </div>
+        <div>
           <div className="mb5">
-            {assignments.map(
+            {assignmentsToRender.map(
               (assignment: OrganizationAssignment, index: number) => {
                 return (
                   <div key={`list-item-${index}`}>

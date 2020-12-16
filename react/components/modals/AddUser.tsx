@@ -485,7 +485,7 @@ const AddUser = ({
               (state.touched.email && !isEmpty(state.formErrors.email)) ||
               (state.touched.roleId && !isEmpty(state.formErrors.roleId))
             }>
-            {intl.formatMessage({ id: 'store/my-users.add-user' })}
+            {intl.formatMessage({ id: 'store/my-organization.add-user' })}
           </Button>
         </div>
       </form>

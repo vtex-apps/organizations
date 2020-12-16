@@ -188,7 +188,7 @@ const MyUsers = ({
         setSharedOrgAssignment(({} as any) as OrganizationAssignment)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.user.delete.error',
+            id: 'store/my-organization.toast.user.delete.error',
           })} ${message}`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -238,7 +238,7 @@ const MyUsers = ({
         <div className="fl pr2">
           <h3>
             {intl.formatMessage({
-              id: 'store/my-users.my-organization.users-in-organization',
+              id: 'store/my-organization.my-organization.users-in-organization',
             })}
           </h3>
         </div>
@@ -248,7 +248,7 @@ const MyUsers = ({
             size="small"
             onClick={() => addNewUser()}>
             {intl.formatMessage({
-              id: 'store/my-users.my-user.table.button.add-new',
+              id: 'store/my-organization.my-user.table.button.add-new',
             })}
           </Button>
         </div>
@@ -289,10 +289,10 @@ const MyUsers = ({
           onClose={closeDelete}
           assignment={sharedOrgAssignment}
           confirmAction={intl.formatMessage({
-            id: 'store/my-users.my-user.delete-confirmation-action',
+            id: 'store/my-organization.my-user.delete-confirmation-action',
           })}
           message={intl.formatMessage({
-            id: 'store/my-users.my-user.delete-confirmation-message',
+            id: 'store/my-organization.my-user.delete-confirmation-message',
           })}
         />
         <UserEditModal

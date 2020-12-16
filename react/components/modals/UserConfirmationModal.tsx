@@ -35,7 +35,9 @@ const UserConfirmationModal = ({
       }}
       cancelation={{
         onClick: () => onClose(),
-        label: intl.formatMessage({ id: 'store/my-users.button.cancel' }),
+        label: intl.formatMessage({
+          id: 'store/my-organization.button.cancel',
+        }),
       }}
       isOpen={isOpen}
       onClose={() => onClose()}>

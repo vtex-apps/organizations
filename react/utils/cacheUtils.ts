@@ -167,7 +167,6 @@ export const updateCacheAddUser = (
       data: { myDocuments: newData },
     }
     cache.writeQuery(writeData)
-    // setAssignmentsPageSize((pageSize: number) => pageSize + 1)
   } catch (e) {
     // continue regardless of error
   }

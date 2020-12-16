@@ -41,7 +41,9 @@ const ConfirmationModal = ({
       onClose={() => onClose()}>
       <h1>
         {confirmAction}{' '}
-        {intl.formatMessage({ id: 'store/my-users.errors.organization.text' })}
+        {intl.formatMessage({
+          id: 'store/my-organization.errors.organization.text',
+        })}
       </h1>
       <div className="flex flex-column mb5 mt5">
         <div>

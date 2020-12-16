@@ -276,7 +276,7 @@ const MyOrganization = ({ intl }: Props) => {
       <span className="mr4">
         <Tag type="success" variation="low">
           {intl.formatMessage({
-            id: 'store/my-users.my-organization.status.isOrgAdmin',
+            id: 'store/my-organization.my-organization.status.isOrgAdmin',
           })}
         </Tag>
       </span>
@@ -288,7 +288,7 @@ const MyOrganization = ({ intl }: Props) => {
   const headerConfig = () => {
     return {
       namespace: 'vtex-account__my_organization',
-      titleId: 'store/my-users.my-organization.organization.title',
+      titleId: 'store/my-organization.my-organization.organization.title',
       headerContent: getHeaderContent(),
     }
   }
@@ -309,7 +309,8 @@ const MyOrganization = ({ intl }: Props) => {
                         {' '}
                         <div className="fl flex-grow-1 justify-start w-90">
                           {intl.formatMessage({
-                            id: 'store/my-users.my-organization.reload-message',
+                            id:
+                              'store/my-organization.my-organization.reload-message',
                           })}
                         </div>
                         <div className="fl flex-grow-1 justify-end w-10">
@@ -330,7 +331,7 @@ const MyOrganization = ({ intl }: Props) => {
                       <h2 className="">
                         {intl.formatMessage({
                           id:
-                            'store/my-users.my-organization.create-new-organization',
+                            'store/my-organization.my-organization.create-new-organization',
                         })}
                       </h2>
 

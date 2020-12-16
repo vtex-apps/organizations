@@ -1,8 +1,8 @@
 {
-  "my-account-link.my-users-link": {
-    "component": "MyUsersLink"
+  "my-account-link.my-organizations-link": {
+    "component": "MyOrganizationLink"
   },
-  "my-account-link.my-users-page": {
-    "component": "MyUsersPage"
+  "my-account-link.my-organizations-page": {
+    "component": "MyOrganizationPage"
   }
 }

@@ -149,7 +149,7 @@ const UserEditModal = ({
         const message = getErrorMessage(e)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.user.edit.error',
+            id: 'store/my-organization.toast.user.edit.error',
           })} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -160,14 +160,18 @@ const UserEditModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      title={intl.formatMessage({ id: 'store/my-users.edit-user.title' })}
+      title={intl.formatMessage({
+        id: 'store/my-organization.edit-user.title',
+      })}
       responsiveFullScreen
       centered
       bottomBar={
         <div className="nowrap">
           <span className="mr4">
             <Button variation="tertiary" onClick={() => onClose()}>
-              {intl.formatMessage({ id: 'store/my-users.button.cancel' })}
+              {intl.formatMessage({
+                id: 'store/my-organization.button.cancel',
+              })}
             </Button>
           </span>
           <span>
@@ -175,7 +179,7 @@ const UserEditModal = ({
               variation="secondary"
               disabled={roleId === ''}
               onClick={() => onSaveEdit()}>
-              {intl.formatMessage({ id: 'store/my-users.button.save' })}
+              {intl.formatMessage({ id: 'store/my-organization.button.save' })}
             </Button>
           </span>
         </div>
@@ -186,12 +190,15 @@ const UserEditModal = ({
       ) : (
         <div>
           <div className="mb5 mt5">
-            {intl.formatMessage({ id: 'store/my-users.label.email' })} : {email}
+            {intl.formatMessage({ id: 'store/my-organization.label.email' })} :{' '}
+            {email}
           </div>
           <div className="mb5">
             <CurrencyInput
               type="text"
-              label={intl.formatMessage({ id: 'store/my-users.budget-amount' })}
+              label={intl.formatMessage({
+                id: 'store/my-organization.budget-amount',
+              })}
               onChange={(e: { target: { value: string } }) => {
                 setBudgetAmount(e.target.value)
               }}

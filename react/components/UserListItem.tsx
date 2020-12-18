@@ -65,7 +65,7 @@ const UserListItem = ({
             <div className="pt2 f6">
               <span>
                 {intl.formatMessage({
-                  id: 'store/my-users.my-user.table-title.email',
+                  id: 'store/my-organization.my-user.table-title.email',
                 })}
               </span>
             </div>
@@ -77,7 +77,7 @@ const UserListItem = ({
             <div className="pt2 f6">
               <span>
                 {intl.formatMessage({
-                  id: 'store/my-users.my-user.table-title.role',
+                  id: 'store/my-organization.my-user.table-title.role',
                 })}
               </span>
             </div>
@@ -91,7 +91,7 @@ const UserListItem = ({
             <div className="pt2 f6">
               <span>
                 {intl.formatMessage({
-                  id: 'store/my-users.my-user.table-title.status',
+                  id: 'store/my-organization.my-user.table-title.status',
                 })}
               </span>
             </div>
@@ -100,13 +100,15 @@ const UserListItem = ({
                 {isApprovedUser ? (
                   <Tag type="success" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.approved',
+                      id:
+                        'store/my-organization.my-organization.status.approved',
                     })}
                   </Tag>
                 ) : (
                   <Tag type="warning" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.not-approved',
+                      id:
+                        'store/my-organization.my-organization.status.not-approved',
                     })}
                   </Tag>
                 )}
@@ -142,7 +144,8 @@ const UserListItem = ({
                 {isAdminUserListItem && (
                   <Tag type="success" variation="low">
                     {intl.formatMessage({
-                      id: 'store/my-users.my-organization.status.isOrgAdmin',
+                      id:
+                        'store/my-organization.my-organization.status.isOrgAdmin',
                     })}
                   </Tag>
                 )}
@@ -159,7 +162,7 @@ const UserListItem = ({
                       onClick={() => edit(orgAssignment.id)}
                       block>
                       {intl.formatMessage({
-                        id: 'store/my-users.my-user.table-title.edit',
+                        id: 'store/my-organization.my-user.table-title.edit',
                       })}
                     </Button>
                   </div>
@@ -170,7 +173,7 @@ const UserListItem = ({
                       onClick={() => deleteAssignment(orgAssignment.id)}
                       block>
                       {intl.formatMessage({
-                        id: 'store/my-users.my-user.table-title.delete',
+                        id: 'store/my-organization.my-user.table-title.delete',
                       })}
                     </Button>
                   </div>

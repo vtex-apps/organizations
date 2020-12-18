@@ -34,7 +34,7 @@ const WarningModal = ({
         <div className="nowrap">
           <span className="mr4">
             <Button variation="tertiary" onClick={() => onOk()}>
-              {intl.formatMessage({ id: 'store/my-users.button.ok' })}
+              {intl.formatMessage({ id: 'store/my-organization.button.ok' })}
             </Button>
           </span>
         </div>

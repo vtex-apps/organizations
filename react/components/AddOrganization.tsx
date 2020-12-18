@@ -219,7 +219,7 @@ const AddOrganization = ({
       .catch((message: string) => {
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.organization.create.error',
+            id: 'store/my-organization.toast.organization.create.error',
           })} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -250,10 +250,10 @@ const AddOrganization = ({
       <div className="mb5">
         <Input
           placeholder={intl.formatMessage({
-            id: 'store/my-users.input.placeholder.organizationName',
+            id: 'store/my-organization.input.placeholder.organizationName',
           })}
           label={intl.formatMessage({
-            id: 'store/my-users.input.label.organizationName',
+            id: 'store/my-organization.input.label.organizationName',
           })}
           value={name}
           error={pathOr(
@@ -275,10 +275,10 @@ const AddOrganization = ({
       <div className="mb5">
         <Input
           placeholder={intl.formatMessage({
-            id: 'store/my-users.input.placeholder.telephone',
+            id: 'store/my-organization.input.placeholder.telephone',
           })}
           label={intl.formatMessage({
-            id: 'store/my-users.input.label.telephone',
+            id: 'store/my-organization.input.label.telephone',
           })}
           value={telephone}
           error={pathOr(
@@ -303,10 +303,10 @@ const AddOrganization = ({
       <div className="mb5">
         <Input
           placeholder={intl.formatMessage({
-            id: 'store/my-users.input.placeholder.address',
+            id: 'store/my-organization.input.placeholder.address',
           })}
           label={intl.formatMessage({
-            id: 'store/my-users.input.label.address',
+            id: 'store/my-organization.input.label.address',
           })}
           value={address}
           onChange={(e: any) => setAddress(e.target.value)}
@@ -315,10 +315,10 @@ const AddOrganization = ({
       <div className="mb5">
         <Input
           placeholder={intl.formatMessage({
-            id: 'store/my-users.input.placeholder.email',
+            id: 'store/my-organization.input.placeholder.email',
           })}
           label={intl.formatMessage({
-            id: 'store/my-users.input.label.email',
+            id: 'store/my-organization.input.label.email',
           })}
           value={email}
           error={pathOr(
@@ -352,7 +352,7 @@ const AddOrganization = ({
               ))
           }
           onClick={() => createOrganization(roleId)}>
-          {intl.formatMessage({ id: 'store/my-users.button.save' })}
+          {intl.formatMessage({ id: 'store/my-organization.button.save' })}
         </Button>
       </div>
     </PageBlock>

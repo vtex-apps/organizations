@@ -130,7 +130,7 @@ const DefaultAssignmentInfo = ({
         const message = getErrorMessage(e)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.organization.leave.error',
+            id: 'store/my-organization.toast.organization.leave.error',
           })}"${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -180,7 +180,7 @@ const DefaultAssignmentInfo = ({
         setIsLeaveOrgConfirmationOpen(false)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.organization.leave.error',
+            id: 'store/my-organization.toast.organization.leave.error',
           })}"${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -249,7 +249,7 @@ const DefaultAssignmentInfo = ({
         const message = getErrorMessage(e)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.organization.leave.error',
+            id: 'store/my-organization.toast.organization.leave.error',
           })}"${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -313,7 +313,7 @@ const DefaultAssignmentInfo = ({
         setIsDeleteOrgConfirmationOpen(false)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.organization.delete.error',
+            id: 'store/my-organization.toast.organization.delete.error',
           })} "${message}"`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -326,7 +326,7 @@ const DefaultAssignmentInfo = ({
       <div>
         <h3>
           {intl.formatMessage({
-            id: 'store/my-users.my-organization.organization',
+            id: 'store/my-organization.my-organization.organization',
           })}
         </h3>
       </div>
@@ -335,7 +335,7 @@ const DefaultAssignmentInfo = ({
           <div className="w-100 pt2 pb2">
             <span>
               {intl.formatMessage({
-                id: 'store/my-users.my-organization.organization.name',
+                id: 'store/my-organization.my-organization.organization.name',
               })}
               :{' '}
             </span>
@@ -350,7 +350,7 @@ const DefaultAssignmentInfo = ({
           <div className="w-100 pt2 pb2">
             <span>
               {intl.formatMessage({
-                id: 'store/my-users.my-organization.role',
+                id: 'store/my-organization.my-organization.role',
               })}{' '}
             </span>
             :{' '}
@@ -370,7 +370,7 @@ const DefaultAssignmentInfo = ({
               onClick={() => leaveOrganization()}
               block>
               {intl.formatMessage({
-                id: 'store/my-users.my-organization.leave',
+                id: 'store/my-organization.my-organization.leave',
               })}
             </Button>
           </span>
@@ -383,7 +383,7 @@ const DefaultAssignmentInfo = ({
                 onClick={() => deleteCurrentOrganization()}
                 block>
                 {intl.formatMessage({
-                  id: 'store/my-users.my-organization.delete',
+                  id: 'store/my-organization.my-organization.delete',
                 })}
               </Button>
             </span>
@@ -395,19 +395,21 @@ const DefaultAssignmentInfo = ({
           isOpen={isLeaveWarningOpen}
           assignment={defaultAssignment}
           title={intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-leave-title',
+            id: 'store/my-organization.my-organization.unable-to-leave-title',
           })}
           messageLine1={intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-leave-message1',
+            id:
+              'store/my-organization.my-organization.unable-to-leave-message1',
           })}
           messageLine2={
             isOrgAdmin
               ? intl.formatMessage({
                   id:
-                    'store/my-users.my-organization.unable-to-leave-manager-message2',
+                    'store/my-organization.my-organization.unable-to-leave-manager-message2',
                 })
               : intl.formatMessage({
-                  id: 'store/my-users.my-organization.unable-to-leave-message2',
+                  id:
+                    'store/my-organization.my-organization.unable-to-leave-message2',
                 })
           }
         />
@@ -418,13 +420,15 @@ const DefaultAssignmentInfo = ({
           isOpen={isDeleteAssignmentWarningOpen}
           assignment={defaultAssignment}
           title={intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-delete-title',
+            id: 'store/my-organization.my-organization.unable-to-delete-title',
           })}
           messageLine1={intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-delete-message1',
+            id:
+              'store/my-organization.my-organization.unable-to-delete-message1',
           })}
           messageLine2={intl.formatMessage({
-            id: 'store/my-users.my-organization.unable-to-delete-message2',
+            id:
+              'store/my-organization.my-organization.unable-to-delete-message2',
           })}
         />
 
@@ -435,10 +439,10 @@ const DefaultAssignmentInfo = ({
           onClose={closeLeaveOrganization}
           assignment={defaultAssignment}
           confirmAction={intl.formatMessage({
-            id: 'store/my-users.my-organization.button.leave',
+            id: 'store/my-organization.my-organization.button.leave',
           })}
           message={intl.formatMessage({
-            id: 'store/my-users.my-organization.leave.message',
+            id: 'store/my-organization.my-organization.leave.message',
           })}
         />
 
@@ -449,10 +453,10 @@ const DefaultAssignmentInfo = ({
           onClose={closeDeleteOrganization}
           assignment={defaultAssignment}
           confirmAction={intl.formatMessage({
-            id: 'store/my-users.my-organization.button.delete',
+            id: 'store/my-organization.my-organization.button.delete',
           })}
           message={intl.formatMessage({
-            id: 'store/my-users.my-organization.delete.message',
+            id: 'store/my-organization.my-organization.delete.message',
           })}
         />
       </div>

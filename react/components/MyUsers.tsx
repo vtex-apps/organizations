@@ -3,6 +3,7 @@ import { useQuery, useMutation, useApolloClient } from 'react-apollo'
 import { Button } from 'vtex.styleguide'
 import { pathOr, find, propEq } from 'ramda'
 import { injectIntl } from 'react-intl'
+import { Input } from 'vtex.styleguide'
 
 import { documentSerializer } from '../utils/documentSerializer'
 
@@ -43,11 +44,8 @@ const MyUsers = ({
   showToast,
   intl,
 }: Props) => {
-  const PAGE_SIZE_STEPPER = 10
-  const [assignmentsPageSize, setAssignmentsPageSize] = useState(
-    PAGE_SIZE_STEPPER
-  )
-
+  const PAGE_SIZE_STEPPER = 100
+  const [searchUser, setSearchUser] = useState('')
   const [updateDocument] = useMutation(UPDATE_DOCUMENT)
   const [deleteDocument] = useMutation(DELETE_DOCUMENT, {
     update: (cache: any, { data }: any) =>
@@ -79,20 +77,18 @@ const MyUsers = ({
       schema: BUSINESS_ROLE_SCHEMA,
     },
   })
-  const { data: orgAssignments, loading: loadingAssignments } = useQuery(
-    documentQuery,
-    {
-      skip: organizationId == '',
-      variables: {
-        acronym: ORG_ASSIGNMENT,
-        fields: ORG_ASSIGNMENT_FIELDS,
-        where: `businessOrganizationId=${organizationId}`,
-        schema: ORG_ASSIGNMENT_SCHEMA,
-        page: 1,
-        pageSize: assignmentsPageSize,
-      },
-    }
-  )
+  const { data: orgAssignments } = useQuery(documentQuery, {
+    skip: organizationId == '',
+    variables: {
+      acronym: ORG_ASSIGNMENT,
+      fields: ORG_ASSIGNMENT_FIELDS,
+      where: `businessOrganizationId=${organizationId}`,
+      schema: ORG_ASSIGNMENT_SCHEMA,
+      page: 1,
+      pageSize: PAGE_SIZE_STEPPER,
+      sort: 'email ASC',
+    },
+  })
 
   const { data: defaultAssignmentData } = useQuery(documentQuery, {
     skip: organizationId == '',
@@ -192,7 +188,7 @@ const MyUsers = ({
         setSharedOrgAssignment(({} as any) as OrganizationAssignment)
         showToast({
           message: `${intl.formatMessage({
-            id: 'store/my-users.toast.user.delete.error',
+            id: 'store/my-organization.toast.user.delete.error',
           })} ${message}`,
           duration: 5000,
           horizontalPosition: 'right',
@@ -229,9 +225,12 @@ const MyUsers = ({
     setIsAddNewUserOpen(false)
   }
 
-  const loadMoreAssignments = () => {
-    setAssignmentsPageSize(assignmentsPageSize + PAGE_SIZE_STEPPER)
+  const handleChangeSearch = (event: any) => {
+    setSearchUser(event.target.value)
   }
+
+  // eslint-disable-next-line prettier/prettier
+  const assignmentsFilter = assignments.filter(item => item.email?.toLowerCase().includes(searchUser))
 
   return defaultUserAssignment ? (
     <div className="flex flex-column pa5">
@@ -239,7 +238,7 @@ const MyUsers = ({
         <div className="fl pr2">
           <h3>
             {intl.formatMessage({
-              id: 'store/my-users.my-organization.users-in-organization',
+              id: 'store/my-organization.my-organization.users-in-organization',
             })}
           </h3>
         </div>
@@ -249,15 +248,22 @@ const MyUsers = ({
             size="small"
             onClick={() => addNewUser()}>
             {intl.formatMessage({
-              id: 'store/my-users.my-user.table.button.add-new',
+              id: 'store/my-organization.my-user.table.button.add-new',
             })}
           </Button>
         </div>
       </div>
       <div className="flex flex-column">
         <div>
+          <Input
+            placeholder="Search"
+            value={searchUser}
+            onChange={handleChangeSearch}
+          />
+        </div>
+        <div>
           <div className="mb5">
-            {assignments.map(
+            {assignmentsFilter.map(
               (assignment: OrganizationAssignment, index: number) => {
                 return (
                   <div key={`list-item-${index}`}>
@@ -276,20 +282,6 @@ const MyUsers = ({
             )}
           </div>
         </div>
-        <div className="flex justify-center">
-          {loadingAssignments || assignments.length >= assignmentsPageSize ? (
-            <Button
-              size="small"
-              onClick={loadMoreAssignments}
-              isLoading={loadingAssignments}>
-              {intl.formatMessage({
-                id: 'store/my-users.my-organization.showMore',
-              })}
-            </Button>
-          ) : (
-            <div />
-          )}
-        </div>
         <UserConfirmationModal
           isOpen={isDeleteConfirmationOpen}
           isLoading={deleteConfirmationLoading}
@@ -297,10 +289,10 @@ const MyUsers = ({
           onClose={closeDelete}
           assignment={sharedOrgAssignment}
           confirmAction={intl.formatMessage({
-            id: 'store/my-users.my-user.delete-confirmation-action',
+            id: 'store/my-organization.my-user.delete-confirmation-action',
           })}
           message={intl.formatMessage({
-            id: 'store/my-users.my-user.delete-confirmation-message',
+            id: 'store/my-organization.my-user.delete-confirmation-message',
           })}
         />
         <UserEditModal

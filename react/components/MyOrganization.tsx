@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useQuery, useApolloClient } from 'react-apollo'
 import { Alert, ToastConsumer, Button, Spinner, Tag } from 'vtex.styleguide'
 import { injectIntl } from 'react-intl'
@@ -60,7 +60,7 @@ const MyOrganization = ({ intl }: Props) => {
   )
 
   // Load data
-  const load = () => {
+  const load = useCallback(() => {
     let organizationIdData = ''
     let orgAssignmentsData = ([] as any) as OrganizationAssignment[]
     let defaultAssignmentData = ({} as any) as OrganizationAssignment
@@ -162,7 +162,7 @@ const MyOrganization = ({ intl }: Props) => {
           userRoleData,
         })
       })
-  }
+  }, [client, email])
 
   // update state variables
   const updateState = (data: any) => {
@@ -187,7 +187,7 @@ const MyOrganization = ({ intl }: Props) => {
       setLoading(false)
       abortController.abort()
     }
-  }, [email])
+  }, [email, load])
 
   // after profile data loaded
   useEffect(() => {
@@ -276,7 +276,7 @@ const MyOrganization = ({ intl }: Props) => {
       <span className="mr4">
         <Tag type="success" variation="low">
           {intl.formatMessage({
-            id: 'store/my-users.my-organization.status.isOrgAdmin',
+            id: 'store/my-organization.my-organization.status.isOrgAdmin',
           })}
         </Tag>
       </span>
@@ -288,7 +288,7 @@ const MyOrganization = ({ intl }: Props) => {
   const headerConfig = () => {
     return {
       namespace: 'vtex-account__my_organization',
-      titleId: 'store/my-users.my-organization.organization.title',
+      titleId: 'store/my-organization.my-organization.organization.title',
       headerContent: getHeaderContent(),
     }
   }
@@ -309,7 +309,8 @@ const MyOrganization = ({ intl }: Props) => {
                         {' '}
                         <div className="fl flex-grow-1 justify-start w-90">
                           {intl.formatMessage({
-                            id: 'store/my-users.my-organization.reload-message',
+                            id:
+                              'store/my-organization.my-organization.reload-message',
                           })}
                         </div>
                         <div className="fl flex-grow-1 justify-end w-10">
@@ -330,7 +331,7 @@ const MyOrganization = ({ intl }: Props) => {
                       <h2 className="">
                         {intl.formatMessage({
                           id:
-                            'store/my-users.my-organization.create-new-organization',
+                            'store/my-organization.my-organization.create-new-organization',
                         })}
                       </h2>
 
@@ -345,12 +346,12 @@ const MyOrganization = ({ intl }: Props) => {
                     <div className="flex flex-column items-center">
                       <span className="c-on-base">
                         {intl.formatMessage({
-                          id: 'store/my-users.my-organization.not-yet-assigned-1',
+                          id: 'store/my-organization.my-organization.not-yet-assigned-1',
                         })}
                       </span>
                       <span className="c-on-base">
                         {intl.formatMessage({
-                          id: 'store/my-users.my-organization.not-yet-assigned-2',
+                          id: 'store/my-organization.my-organization.not-yet-assigned-2',
                         })}
                       </span>
                     </div>

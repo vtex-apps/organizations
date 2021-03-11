@@ -3,12 +3,16 @@ import { Route } from 'react-router-dom'
 import { ToastProvider } from 'vtex.styleguide'
 import MyOrganization from './components/MyOrganization'
 
-const MyUsersPage = () => {
+const MyOrganizationPage = () => {
   return (
     <ToastProvider positioning="window">
-      <Route path="/users" exact component={() => <MyOrganization />} />
+      <Route
+        path="/myorganization"
+        exact
+        component={() => <MyOrganization />}
+      />
     </ToastProvider>
   )
 }
 
-export default MyUsersPage
+export default MyOrganizationPage

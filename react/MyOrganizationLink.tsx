@@ -11,13 +11,13 @@ interface Props {
   intl: any
 }
 
-const myUsersLink: FC<Props> = ({ render, intl }: Props) => {
+const MyOrganizationLink: FC<Props> = ({ render, intl }: Props) => {
   return render([
     {
-      name: intl.formatMessage({ id: 'store/my-users.link' }),
-      path: '/users',
+      name: intl.formatMessage({ id: 'store/my-organization.link' }),
+      path: '/myorganization',
     },
   ])
 }
 
-export default injectIntl(myUsersLink)
+export default injectIntl(MyOrganizationLink)

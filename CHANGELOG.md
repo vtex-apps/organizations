@@ -8,7 +8,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
 - Message added when user is not assigned to any organization
+
+## [1.7.0] - 2020-12-18
+
+### Changed
+
+- Update labels to use `My Organization` / `organization` instead of `My users`/`users`
+
+## [1.6.0] - 2020-12-10
+
+## [1.5.0] - 2020-12-09
+
+## [1.4.0] - 2020-12-08
+
+## [1.3.0] - 2020-11-23
 
 ## [1.2.0] - 2020-10-29
 
@@ -75,4 +90,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     * `Persona` with schema name `persona-schema-v1`
     * `BusinessOrganization` with schema name `business-organization-schema-v1`
     * `OrgAssignment` with schema name `organization-assignment-schema-v1`
-

@@ -85,8 +85,10 @@ const AddUser = ({
   isCurrentUserAdmin,
 }: Props) => {
   const client = useApolloClient()
-  const [createDocument] = useMutation(CREATE_DOCUMENT)
-  const [updateDocument] = useMutation(UPDATE_DOCUMENT)
+  const [createDocument, { loading: loadingAdd }] = useMutation(CREATE_DOCUMENT)
+  const [updateDocument, { loading: loadingUpdate }] = useMutation(
+    UPDATE_DOCUMENT
+  )
 
   const reducer = (state: State, action: Actions): State => {
     let errors: string[] = []
@@ -94,7 +96,9 @@ const AddUser = ({
       case 'CHANGE_ROLE':
         if (isEmpty(action.args.roleId)) {
           errors = [
-            intl.formatMessage({ id: 'store/my-users.errors.role-id.empty' }),
+            intl.formatMessage({
+              id: 'store/my-organization.errors.role-id.empty',
+            }),
           ]
         }
         return {
@@ -105,17 +109,23 @@ const AddUser = ({
       case 'CHANGE_EMAIL': {
         if (isEmpty(action.args.email)) {
           errors = [
-            intl.formatMessage({ id: 'store/my-users.errors.email.empty' }),
+            intl.formatMessage({
+              id: 'store/my-organization.errors.email.empty',
+            }),
           ]
         } else if (
           !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(action.args.email)
         ) {
           errors = [
-            intl.formatMessage({ id: 'store/my-users.errors.email.invalid' }),
+            intl.formatMessage({
+              id: 'store/my-organization.errors.email.invalid',
+            }),
           ]
         } else if (contains(action.args.email, existingUsers)) {
           errors = [
-            intl.formatMessage({ id: 'store/my-users.errors.email.exists' }),
+            intl.formatMessage({
+              id: 'store/my-organization.errors.email.exists',
+            }),
           ]
         }
 
@@ -312,7 +322,8 @@ const AddUser = ({
           } else {
             showToast({
               message: intl.formatMessage({
-                id: 'store/my-users.my-organization.user.already.assigned',
+                id:
+                  'store/my-organization.my-organization.user.already.assigned',
               }),
               duration: 5000,
               horizontalPosition: 'right',
@@ -329,7 +340,7 @@ const AddUser = ({
               },
               schema: ORG_ASSIGNMENT_SCHEMA,
             },
-            update: (cache: any, { data }: any) =>
+            update: (cache: any, { data }: any) => {
               updateCacheAddUser(
                 cache,
                 data,
@@ -338,7 +349,8 @@ const AddUser = ({
                 state.email,
                 state.budgetAmount,
                 state.roleId
-              ),
+              )
+            },
           })
         })
         .catch(handleGraphqlError())
@@ -347,7 +359,9 @@ const AddUser = ({
             type: 'RESPONSE',
             args: {
               type: 'SUCCESS',
-              message: intl.formatMessage({ id: 'store/my-users.success' }),
+              message: intl.formatMessage({
+                id: 'store/my-organization.success',
+              }),
             },
           })
           dispatch({
@@ -377,7 +391,7 @@ const AddUser = ({
           if (message) {
             showToast({
               message: `${intl.formatMessage({
-                id: 'store/my-users.toast.user.create.error',
+                id: 'store/my-organization.toast.user.create.error',
               })} "${message}"`,
               duration: 5000,
               horizontalPosition: 'right',
@@ -389,14 +403,14 @@ const AddUser = ({
 
   return (
     <Modal
-      title={intl.formatMessage({ id: 'store/my-users.add-user.title' })}
+      title={intl.formatMessage({ id: 'store/my-organization.add-user.title' })}
       isOpen={isOpen}
       onClose={() => onClose()}>
       <form onSubmit={(e: SyntheticEvent) => handleSubmit(e)}>
         <div className="mt3 flex">
           <Input
             type="text"
-            label={intl.formatMessage({ id: 'store/my-users.email' })}
+            label={intl.formatMessage({ id: 'store/my-organization.email' })}
             onChange={(e: { target: { value: string } }) => {
               dispatch({
                 type: 'CHANGE_EMAIL',
@@ -411,7 +425,9 @@ const AddUser = ({
         <div className="mt3 flex">
           <CurrencyInput
             type="text"
-            label={intl.formatMessage({ id: 'store/my-users.budget-amount' })}
+            label={intl.formatMessage({
+              id: 'store/my-organization.budget-amount',
+            })}
             onChange={(e: { target: { value: string } }) => {
               dispatch({
                 type: 'CHANGE_BUDGET_AMOUNT',
@@ -428,7 +444,7 @@ const AddUser = ({
         </div>
         <div className="mt5">
           <Dropdown
-            label={intl.formatMessage({ id: 'store/my-users.role-id' })}
+            label={intl.formatMessage({ id: 'store/my-organization.role-id' })}
             options={roles}
             onChange={(e: { target: { value: string } }) => {
               dispatch({
@@ -462,13 +478,14 @@ const AddUser = ({
           <Button
             variation="primary"
             type="submit"
+            isLoading={loadingAdd || loadingUpdate}
             disabled={
               !state.touched.email ||
               !state.touched.roleId ||
               (state.touched.email && !isEmpty(state.formErrors.email)) ||
               (state.touched.roleId && !isEmpty(state.formErrors.roleId))
             }>
-            {intl.formatMessage({ id: 'store/my-users.add-user' })}
+            {intl.formatMessage({ id: 'store/my-organization.add-user' })}
           </Button>
         </div>
       </form>

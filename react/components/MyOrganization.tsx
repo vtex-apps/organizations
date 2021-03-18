@@ -326,7 +326,7 @@ const MyOrganization = ({ intl }: Props) => {
                   </div>
                 )}
                 {(organizationId == '' || organizationId === 'null') &&
-                  isOrgAdmin && (
+                  (isOrgAdmin ? (
                     <div className="mb5 mt5">
                       <h2 className="">
                         {intl.formatMessage({
@@ -342,7 +342,20 @@ const MyOrganization = ({ intl }: Props) => {
                         showToast={showToast}
                       />
                     </div>
-                  )}
+                  ) : (
+                    <div className="flex flex-column items-center">
+                      <span className="c-on-base">
+                        {intl.formatMessage({
+                          id: 'store/my-organization.my-organization.not-yet-assigned-1',
+                        })}
+                      </span>
+                      <span className="c-on-base">
+                        {intl.formatMessage({
+                          id: 'store/my-organization.my-organization.not-yet-assigned-2',
+                        })}
+                      </span>
+                    </div>
+                  ))}
                 {defaultOrgAssignment && defaultOrgAssignment.id && (
                   <div className="ba b--light-gray">
                     <DefaultAssignmentInfo

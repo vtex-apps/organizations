@@ -69,5 +69,7 @@
   "store/my-organization.my-organization.status.approved": "Aprovado",
   "store/my-organization.my-organization.status.not-approved": "Não Aprovado",
   "store/my-organization.my-organization.status.isOrgAdmin": "Organização Admin",
-  "store/my-organization.my-organization.showMore": "Show More"
+  "store/my-organization.my-organization.showMore": "Show More",
+  "store/my-organization.my-organization.not-yet-assigned-1": "Você ainda não foi atribuído a nenhuma organização.",
+  "store/my-organization.my-organization.not-yet-assigned-2": "Solicite permissão para criar uma organização se você for um administrador."
 }

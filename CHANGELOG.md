@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Message added when user is not assigned to any organization
+
 ## [1.7.0] - 2020-12-18
+
 ### Changed
+
 - Update labels to use `My Organization` / `organization` instead of `My users`/`users`
 
 ## [1.6.0] - 2020-12-10

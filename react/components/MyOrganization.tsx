@@ -346,12 +346,14 @@ const MyOrganization = ({ intl }: Props) => {
                     <div className="flex flex-column items-center">
                       <span className="c-on-base">
                         {intl.formatMessage({
-                          id: 'store/my-organization.my-organization.not-yet-assigned-1',
+                          id:
+                            'store/my-organization.my-organization.not-yet-assigned-1',
                         })}
                       </span>
                       <span className="c-on-base">
                         {intl.formatMessage({
-                          id: 'store/my-organization.my-organization.not-yet-assigned-2',
+                          id:
+                            'store/my-organization.my-organization.not-yet-assigned-2',
                         })}
                       </span>
                     </div>

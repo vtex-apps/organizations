@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- I18n Ar, Hu.
+
+### Changed
+
+- Fixing typos in pt.json
+
 ## [1.8.1] - 2021-05-19
 
 ### Changed
+
 - Fixing typos in pt.json
 
 ## [1.8.0] - 2021-04-26

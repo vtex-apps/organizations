@@ -65,7 +65,7 @@
   "store/my-organization.toast.user.reinvitation.error": "فشل إعادة إرسال الدعوة، ",
   "store/my-organization.my-organization.reload-message": "تم تطبيق التغييرات الخاصة بك بنجاح، قد يستغرق الأمر بعض الوقت لإظهارها",
   "store/my-organization.my-organization.organization.title": "منظماتي",
-  "store/my-organization.my-organization.organization.returnBtn.text": "عودة",
+  "store/my-organization.my-organization.organization.returnBtn.text": "رجوع",
   "store/my-organization.my-organization.status.approved": "معتمد(ة)",
   "store/my-organization.my-organization.status.not-approved": "غير معتمد",
   "store/my-organization.my-organization.status.isOrgAdmin": "مشرف المنظمة",
